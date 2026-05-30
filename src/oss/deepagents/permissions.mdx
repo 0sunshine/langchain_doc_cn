@@ -1,6 +1,6 @@
 ---
 title: Permissions
-description: Control filesystem access with declarative permission rules for Deep Agents
+description: 使用声明式 permission rules 控制 Deep Agents 的 filesystem access
 ---
 
 import PermissionsBasicPy from '/snippets/code-samples/permissions-basic-py.mdx';
@@ -22,31 +22,31 @@ import PermissionsCompositeBackendJs from '/snippets/code-samples/permissions-co
 import PermissionsCompositeBackendInvalidPy from '/snippets/code-samples/permissions-composite-backend-invalid-py.mdx';
 import PermissionsCompositeBackendInvalidJs from '/snippets/code-samples/permissions-composite-backend-invalid-js.mdx';
 
-Control which files and directories an agent can read or write to using declarative permission rules. Pass a list of rules to `permissions=` and the agent's built-in filesystem tools respect them.
+使用声明式 permission rules 控制 agent 可以读取或写入哪些文件和目录。向 `permissions=` 传入 rules 列表后，agent 内置的 filesystem tools 会遵守这些规则。
 
 :::python
 <Note>
-    Permissions require `deepagents>=0.5.2`.
+    Permissions 需要 `deepagents>=0.5.2`。
 </Note>
 :::
 
 :::js
 <Note>
-    Permissions require `deepagents>=1.9.1`.
+    Permissions 需要 `deepagents>=1.9.1`。
 </Note>
 :::
 
-Permissions only apply to the built-in filesystem tools (`ls`, `read_file`, `glob`, `grep`, `write_file`, `edit_file`). Custom tools and MCP tools that access the filesystem are not covered. Permissions also do not apply to [sandbox backends](/oss/deepagents/sandboxes), which support arbitrary command execution via the `execute` tool.
+Permissions 只适用于内置 filesystem tools（`ls`、`read_file`、`glob`、`grep`、`write_file`、`edit_file`）。访问 filesystem 的 custom tools 和 MCP tools 不在覆盖范围内。Permissions 也不适用于 [sandbox backends](/oss/deepagents/sandboxes)，因为它们通过 `execute` tool 支持任意 command execution。
 
 <Tip>
-Use `permissions` when you need **path-based allow/deny rules** on the built-in filesystem tools. Use [backend policy hooks](/oss/deepagents/backends#add-policy-hooks) when you need custom validation logic (rate limiting, audit logging, content inspection) or need to control custom tools.
+当你需要对内置 filesystem tools 使用 **path-based allow/deny rules** 时，请使用 `permissions`。当你需要 custom validation logic（rate limiting、audit logging、content inspection），或需要控制 custom tools 时，请使用 [backend policy hooks](/oss/deepagents/backends#add-policy-hooks)。
 </Tip>
 
-## Basic usage
+## 基本用法
 
 :::python
 
-Pass a list of @[`FilesystemPermission`] rules to @[`create_deep_agent`]. Rules are evaluated in declaration order. The first matching rule wins. If no rule matches, the operation is allowed.
+向 @[`create_deep_agent`] 传入 @[`FilesystemPermission`] rules 列表。Rules 会按声明顺序求值。第一条匹配 rule 生效。如果没有 rule 匹配，则允许该操作。
 
 <PermissionsBasicPy />
 
@@ -54,7 +54,7 @@ Pass a list of @[`FilesystemPermission`] rules to @[`create_deep_agent`]. Rules 
 
 :::js
 
-Pass a list of `FilesystemPermission` rules to `createDeepAgent`. Rules are evaluated in declaration order. The first matching rule wins. If no rule matches, the operation is allowed.
+向 `createDeepAgent` 传入 `FilesystemPermission` rules 列表。Rules 会按声明顺序求值。第一条匹配 rule 生效。如果没有 rule 匹配，则允许该操作。
 
 <PermissionsBasicJs />
 
@@ -64,63 +64,63 @@ Pass a list of `FilesystemPermission` rules to `createDeepAgent`. Rules are eval
 
 :::python
 
-Each `FilesystemPermission` has three fields:
+每个 `FilesystemPermission` 有三个字段：
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `operations` | `list["read" \| "write"]` | Operations this rule applies to. `"read"` covers `ls`, `read_file`, `glob`, `grep`. `"write"` covers `write_file`, `edit_file`. |
-| `paths` | `list[str]` | Glob patterns for matching file paths (e.g., `["/workspace/**"]`). Supports `**` for recursive matching and `{a,b}` for alternation. |
-| `mode` | `"allow" \| "deny"` | Whether to allow or deny matching operations. Defaults to `"allow"`. |
+| 字段 | 类型 | 描述 |
+|---|---|---|
+| `operations` | `list["read" \| "write"]` | 这条 rule 适用的 operations。`"read"` 覆盖 `ls`、`read_file`、`glob`、`grep`。`"write"` 覆盖 `write_file`、`edit_file`。 |
+| `paths` | `list[str]` | 用于匹配 file paths 的 glob patterns（例如 `["/workspace/**"]`）。支持用于 recursive matching 的 `**`，以及用于 alternation 的 `{a,b}`。 |
+| `mode` | `"allow" \| "deny"` | 是否允许或拒绝匹配的 operations。默认是 `"allow"`。 |
 
-Rules use first-match-wins evaluation: the first rule whose `operations` and `paths` match the current call determines the outcome. If no rule matches, the call is **allowed** (permissive default).
+Rules 使用 first-match-wins evaluation：第一条 `operations` 和 `paths` 与当前调用匹配的 rule 决定结果。如果没有 rule 匹配，则调用被**允许**（permissive default）。
 
 :::
 
 :::js
 
-Each `FilesystemPermission` has three fields:
+每个 `FilesystemPermission` 有三个字段：
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `operations` | `("read" \| "write")[]` | Operations this rule applies to. `"read"` covers `ls`, `read_file`, `glob`, `grep`. `"write"` covers `write_file`, `edit_file`. |
-| `paths` | `string[]` | Glob patterns for matching file paths (e.g., `["/workspace/**"]`). Supports `**` for recursive matching and `{a,b}` for alternation. |
-| `mode` | `"allow" \| "deny"` | Whether to allow or deny matching operations. Defaults to `"allow"`. |
+| 字段 | 类型 | 描述 |
+|---|---|---|
+| `operations` | `("read" \| "write")[]` | 这条 rule 适用的 operations。`"read"` 覆盖 `ls`、`read_file`、`glob`、`grep`。`"write"` 覆盖 `write_file`、`edit_file`。 |
+| `paths` | `string[]` | 用于匹配 file paths 的 glob patterns（例如 `["/workspace/**"]`）。支持用于 recursive matching 的 `**`，以及用于 alternation 的 `{a,b}`。 |
+| `mode` | `"allow" \| "deny"` | 是否允许或拒绝匹配的 operations。默认是 `"allow"`。 |
 
-Rules use first-match-wins evaluation: the first rule whose `operations` and `paths` match the current call determines the outcome. If no rule matches, the call is **allowed** (permissive default).
+Rules 使用 first-match-wins evaluation：第一条 `operations` 和 `paths` 与当前调用匹配的 rule 决定结果。如果没有 rule 匹配，则调用被**允许**（permissive default）。
 
-Paths must be absolute (start with `/`) and cannot contain `..` or `~`. Invalid paths throw at agent construction time.
+Paths 必须是绝对路径（以 `/` 开头），且不能包含 `..` 或 `~`。Invalid paths 会在 agent construction time 抛出错误。
 
 :::
 
-## Examples
+## 示例
 
 :::python
 
-### Isolate to a workspace directory
+### 隔离到 workspace 目录
 
-Allow reads and writes only under `/workspace/` and deny everything else:
+只允许在 `/workspace/` 下读取和写入，并拒绝其他所有访问：
 
 <PermissionsIsolateWorkspacePy />
 
-### Protect specific files
+### 保护特定文件
 
 <PermissionsProtectFilesPy />
 
 ### Read-only memory
 
-Allow the agent to read memory files but prevent it from modifying them. This is useful for organization-wide policies or shared knowledge bases that should only be updated by application code. See [read-only vs writable memory](/oss/deepagents/memory#read-only-vs-writable-memory) for more context.
+允许 agent 读取 memory files，但阻止它修改它们。这适用于 organization-wide policies，或只应由 application code 更新的 shared knowledge bases。更多背景请参阅 [read-only vs writable memory](/oss/deepagents/memory#read-only-vs-writable-memory)。
 
 <PermissionsReadOnlyMemoryPy />
 
-### Deny all access
+### 拒绝所有访问
 
-Block all reads and writes. This is a restrictive baseline you can layer more specific allow rules on top of:
+阻止所有读取和写入。这是一个 restrictive baseline，你可以在其上叠加更具体的 allow rules：
 
 <PermissionsDenyAllPy />
 
 ### Rule ordering
 
-Because of first-match-wins, rule order matters. Place more specific rules before broader ones:
+由于使用 first-match-wins，rule order 很重要。请把更具体的 rules 放在更宽泛的 rules 之前：
 
 <PermissionsRuleOrderingPy />
 
@@ -128,31 +128,31 @@ Because of first-match-wins, rule order matters. Place more specific rules befor
 
 :::js
 
-### Isolate to a workspace directory
+### 隔离到 workspace 目录
 
-Allow reads and writes only under `/workspace/` and deny everything else:
+只允许在 `/workspace/` 下读取和写入，并拒绝其他所有访问：
 
 <PermissionsIsolateWorkspaceJs />
 
-### Protect specific files
+### 保护特定文件
 
 <PermissionsProtectFilesJs />
 
 ### Read-only memory
 
-Allow the agent to read memory files but prevent it from modifying them. This is useful for organization-wide policies or shared knowledge bases that should only be updated by application code. See [read-only vs writable memory](/oss/deepagents/memory#read-only-vs-writable-memory) for more context.
+允许 agent 读取 memory files，但阻止它修改它们。这适用于 organization-wide policies，或只应由 application code 更新的 shared knowledge bases。更多背景请参阅 [read-only vs writable memory](/oss/deepagents/memory#read-only-vs-writable-memory)。
 
 <PermissionsReadOnlyMemoryJs />
 
-### Deny all access
+### 拒绝所有访问
 
-Block all reads and writes. This is a restrictive baseline you can layer more specific allow rules on top of:
+阻止所有读取和写入。这是一个 restrictive baseline，你可以在其上叠加更具体的 allow rules：
 
 <PermissionsDenyAllJs />
 
 ### Rule ordering
 
-Because of first-match-wins, rule order matters. Place more specific rules before broader ones:
+由于使用 first-match-wins，rule order 很重要。请把更具体的 rules 放在更宽泛的 rules 之前：
 
 <PermissionsRuleOrderingJs />
 
@@ -162,7 +162,7 @@ Because of first-match-wins, rule order matters. Place more specific rules befor
 
 :::python
 
-[Subagents](/oss/deepagents/subagents) inherit the parent agent's permissions by default. To give a subagent different permissions, set the `permissions` field in its spec. This **replaces** the parent's rules entirely.
+[Subagents](/oss/deepagents/subagents) 默认继承 parent agent 的 permissions。要给 subagent 不同 permissions，请在它的 spec 中设置 `permissions` 字段。这会完全**替换** parent rules。
 
 <PermissionsSubagentPy />
 
@@ -170,11 +170,11 @@ Because of first-match-wins, rule order matters. Place more specific rules befor
 
 :::js
 
-[Subagents](/oss/deepagents/subagents) inherit the parent agent's permissions by default. To give a subagent different permissions, set the `permissions` field in its spec. This **replaces** the parent's rules entirely.
+[Subagents](/oss/deepagents/subagents) 默认继承 parent agent 的 permissions。要给 subagent 不同 permissions，请在它的 spec 中设置 `permissions` 字段。这会完全**替换** parent rules。
 
 <PermissionsSubagentJs />
 
-To explicitly grant a subagent unrestricted access, set `permissions: []`. An empty array overrides the parent rules with no restrictions. Omitting `permissions` inherits from the parent.
+要显式授予 subagent unrestricted access，请设置 `permissions: []`。空数组会用无任何限制的规则覆盖 parent rules。省略 `permissions` 则继承 parent。
 
 :::
 
@@ -182,11 +182,11 @@ To explicitly grant a subagent unrestricted access, set `permissions: []`. An em
 
 :::python
 
-When using a @[`CompositeBackend`] with a sandbox default, every permission path must be scoped under a known route prefix. Sandboxes support arbitrary command execution, so path-based restrictions alone cannot prevent filesystem access through shell commands. Scoping permissions to route-specific [backends](/oss/deepagents/backends) avoids this conflict.
+当使用带 sandbox default 的 @[`CompositeBackend`] 时，每个 permission path 都必须 scoped under 一个已知 route prefix。Sandboxes 支持任意 command execution，因此仅靠 path-based restrictions 无法阻止通过 shell commands 访问 filesystem。将 permissions scoped 到 route-specific [backends](/oss/deepagents/backends) 可以避免这个冲突。
 
 <PermissionsCompositeBackendPy />
 
-Permissions that include paths outside any route raise `NotImplementedError`:
+包含任意 route 之外 paths 的 permissions 会引发 `NotImplementedError`：
 
 <PermissionsCompositeBackendInvalidPy />
 
@@ -194,13 +194,12 @@ Permissions that include paths outside any route raise `NotImplementedError`:
 
 :::js
 
-When using a `CompositeBackend` with a sandbox default, every permission path must be scoped under a known route prefix. Sandboxes support arbitrary command execution, so path-based restrictions alone cannot prevent filesystem access through shell commands. Scoping permissions to route-specific [backends](/oss/deepagents/backends) avoids this conflict.
+当使用带 sandbox default 的 `CompositeBackend` 时，每个 permission path 都必须 scoped under 一个已知 route prefix。Sandboxes 支持任意 command execution，因此仅靠 path-based restrictions 无法阻止通过 shell commands 访问 filesystem。将 permissions scoped 到 route-specific [backends](/oss/deepagents/backends) 可以避免这个冲突。
 
 <PermissionsCompositeBackendJs />
 
-Permissions that include paths outside any route throw at construction time:
+包含任意 route 之外 paths 的 permissions 会在 construction time 抛出错误：
 
 <PermissionsCompositeBackendInvalidJs />
 
 :::
-

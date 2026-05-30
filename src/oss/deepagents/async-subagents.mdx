@@ -1,19 +1,19 @@
 ---
-title: Async subagents
-description: Launch background subagents that run concurrently while the supervisor continues interacting with the user
+title: 异步 subagents
+description: 启动并发运行的后台 subagents，同时 supervisor 继续与用户交互
 ---
 
-Async subagents let a supervisor agent launch background tasks that return immediately, so the supervisor can continue interacting with the user while subagents work concurrently. The supervisor can check progress, send follow-up instructions, or cancel tasks at any point.
+Async subagents 允许 supervisor agent 启动会立即返回的后台任务，这样 supervisor 可以在 subagents 并发工作时继续与用户交互。supervisor 可以随时检查进度、发送后续指令，或取消任务。
 
-This builds on [subagents](/oss/deepagents/subagents), which run synchronously and block the supervisor until completion. Use async subagents when tasks are long-running, parallelizable, or need mid-flight steering.
+这建立在 [subagents](/oss/deepagents/subagents) 之上；普通 subagents 是同步运行的，会阻塞 supervisor 直到完成。当任务运行时间较长、可并行化，或需要在执行过程中进行引导时，请使用 async subagents。
 
 <Note>
 :::python
-Async subagents are a preview feature available in `deepagents` 0.5.0. Preview features are under active development and APIs may change.
+Async subagents 是 `deepagents` 0.5.0 中提供的 preview feature。Preview features 正在积极开发中，API 可能会变化。
 :::
 
 :::js
-Async subagents are a preview feature available in `deepagents` 1.9.0. Preview features are under active development and APIs may change.
+Async subagents 是 `deepagents` 1.9.0 中提供的 preview feature。Preview features 正在积极开发中，API 可能会变化。
 :::
 </Note>
 
@@ -29,23 +29,23 @@ graph TB
 ```
 
 <Note>
-Async subagents communicate with any server that implements the [Agent Protocol](https://github.com/langchain-ai/agent-protocol). You can use [LangSmith Deployments](/langsmith/deployment), or self-host any Agent Protocol-compatible server. Each subagent runs independently of the supervisor, which controls them through the SDK to launch, check, update, and cancel.
+Async subagents 可以与任何实现了 [Agent Protocol](https://github.com/langchain-ai/agent-protocol) 的 server 通信。你可以使用 [LangSmith Deployments](/langsmith/deployment)，也可以 self-host 任何兼容 Agent Protocol 的 server。每个 subagent 都独立于 supervisor 运行，supervisor 通过 SDK 控制它们的 launch、check、update 和 cancel。
 </Note>
 
-## When to use async subagents
+## 何时使用 async subagents
 
-| Dimension            | Sync subagents                                                  | Async subagents                                                   |
+| 维度 | Sync subagents | Async subagents |
 |----------------------|-----------------------------------------------------------------|-------------------------------------------------------------------|
-| **Execution model**  | Supervisor blocks until subagent completes                      | Returns job ID immediately; supervisor continues                  |
-| **Concurrency**      | Parallel but blocking                                           | Parallel and non-blocking                                         |
-| **Mid-task updates** | Not possible                                                    | Send follow-up instructions via `update_async_task`           |
-| **Cancellation**     | Not possible                                                    | Cancel running tasks via `cancel_async_task`                  |
-| **Statefulness**     | Stateless -- no persistent state between invocations            | Stateful -- maintains state on its own thread across interactions |
-| **Best for**         | Tasks where the agent should wait for results before continuing | Long-running, complex tasks managed interactively in a chat       |
+| **Execution model** | Supervisor 阻塞直到 subagent 完成 | 立即返回 job ID；supervisor 继续运行 |
+| **Concurrency** | 并行但阻塞 | 并行且非阻塞 |
+| **Mid-task updates** | 不支持 | 通过 `update_async_task` 发送后续指令 |
+| **Cancellation** | 不支持 | 通过 `cancel_async_task` 取消正在运行的任务 |
+| **Statefulness** | 无状态，不在调用之间保留持久状态 | 有状态，在自己的 thread 上跨交互维护状态 |
+| **Best for** | agent 应等待结果再继续的任务 | 在 chat 中交互式管理的长时间复杂任务 |
 
-## Configure async subagents
+## 配置 async subagents
 
-Define async subagents as a list of @[`AsyncSubAgent`] specs, each pointing to an Agent Protocol server:
+将 async subagents 定义为一组 @[`AsyncSubAgent`] specs，每个 spec 都指向一个 Agent Protocol server：
 
 :::python
 ```python
@@ -56,7 +56,7 @@ async_subagents = [
         name="researcher",
         description="Research agent for information gathering and synthesis",
         graph_id="researcher",
-        # No url → ASGI transport (co-deployed in the same deployment)
+        # No url -> ASGI transport (co-deployed in the same deployment)
     ),
     AsyncSubAgent(
         name="coder",
@@ -74,11 +74,11 @@ agent = create_deep_agent(
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `name` | `str` | Required. Unique identifier. The supervisor uses this when launching tasks. |
-| `description` | `str` | Required. What this subagent does. The supervisor uses this to decide which agent to delegate to. |
-| `graph_id` | `str` | Required. The graph ID (or assistant ID) on the Agent Protocol server. For LangGraph-based deployments, this must match a graph registered in `langgraph.json`. |
-| `url` | `str` | Optional. When omitted, uses ASGI transport (in-process). When set, uses HTTP transport to a remote Agent Protocol server. |
-| `headers` | `dict[str, str]` | Optional. Additional headers for requests to the remote server. Use for custom authentication with self-hosted Agent Protocol servers. |
+| `name` | `str` | 必填。唯一标识符。supervisor 启动任务时会使用它。 |
+| `description` | `str` | 必填。说明这个 subagent 做什么。supervisor 用它判断要 delegate 给哪个 agent。 |
+| `graph_id` | `str` | 必填。Agent Protocol server 上的 graph ID（或 assistant ID）。对于基于 LangGraph 的 deployments，它必须匹配 `langgraph.json` 中注册的 graph。 |
+| `url` | `str` | 可选。省略时使用 ASGI transport（in-process）。设置后使用 HTTP transport 连接远程 Agent Protocol server。 |
+| `headers` | `dict[str, str]` | 可选。发往远程 server 的额外 headers。可用于 self-hosted Agent Protocol servers 的自定义 authentication。 |
 :::
 
 :::js
@@ -90,7 +90,7 @@ const asyncSubagents: AsyncSubAgent[] = [
     name: "researcher",
     description: "Research agent for information gathering and synthesis",
     graphId: "researcher",
-    // No url → ASGI transport (co-deployed in the same deployment)
+    // No url -> ASGI transport (co-deployed in the same deployment)
   },
   {
     name: "coder",
@@ -108,14 +108,14 @@ const agent = createDeepAgent({
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `name` | `string` | Required. Unique identifier. The supervisor uses this when launching tasks. |
-| `description` | `string` | Required. What this subagent does. The supervisor uses this to decide which agent to delegate to. |
-| `graphId` | `string` | Required. The graph ID (or assistant ID) on the Agent Protocol server. For LangGraph-based deployments, this must match a graph registered in `langgraph.json`. |
-| `url` | `string` | Optional. When omitted, uses ASGI transport (in-process). When set, uses HTTP transport to a remote Agent Protocol server. |
-| `headers` | `Record<string, string>` | Optional. Additional headers for requests to the remote server. Use for custom authentication with self-hosted Agent Protocol servers. |
+| `name` | `string` | 必填。唯一标识符。supervisor 启动任务时会使用它。 |
+| `description` | `string` | 必填。说明这个 subagent 做什么。supervisor 用它判断要 delegate 给哪个 agent。 |
+| `graphId` | `string` | 必填。Agent Protocol server 上的 graph ID（或 assistant ID）。对于基于 LangGraph 的 deployments，它必须匹配 `langgraph.json` 中注册的 graph。 |
+| `url` | `string` | 可选。省略时使用 ASGI transport（in-process）。设置后使用 HTTP transport 连接远程 Agent Protocol server。 |
+| `headers` | `Record<string, string>` | 可选。发往远程 server 的额外 headers。可用于 self-hosted Agent Protocol servers 的自定义 authentication。 |
 :::
 
-For LangGraph-based deployments, register all graphs in the same `langgraph.json` for co-deployed setups:
+对于基于 LangGraph 的 deployments，如果采用 co-deployed 设置，请在同一个 `langgraph.json` 中注册所有 graphs：
 
 ```json
 {
@@ -127,23 +127,23 @@ For LangGraph-based deployments, register all graphs in the same `langgraph.json
 }
 ```
 
-## Use the async subagent tools
+## 使用 async subagent tools
 
-The @[`AsyncSubAgentMiddleware`] gives the supervisor five tools:
+@[`AsyncSubAgentMiddleware`] 会向 supervisor 提供五个 tools：
 
 | Tool | Purpose | Returns |
 |------|---------|---------|
-| `start_async_task` | Start a new background task | Task ID (immediately) |
-| `check_async_task` | Get current status and result of a task | Status + result (if complete) |
-| `update_async_task` | Send new instructions to a running task | Confirmation + updated status |
-| `cancel_async_task` | Stop a running task | Confirmation |
-| `list_async_tasks` | List all tracked tasks with live statuses | Summary of all tasks |
+| `start_async_task` | 启动新的后台任务 | Task ID（立即返回） |
+| `check_async_task` | 获取任务当前状态和结果 | Status + result（如果已完成） |
+| `update_async_task` | 向正在运行的任务发送新指令 | Confirmation + updated status |
+| `cancel_async_task` | 停止正在运行的任务 | Confirmation |
+| `list_async_tasks` | 列出所有已跟踪任务及实时状态 | 所有任务的 summary |
 
-The supervisor's LLM calls these tools like any other tool. The middleware handles thread creation, run management, and state persistence automatically.
+supervisor 的 LLM 会像调用其他 tool 一样调用这些 tools。middleware 会自动处理 thread 创建、run 管理和 state 持久化。
 
-### Understand the lifecycle
+### 理解 lifecycle
 
-A typical interaction follows this sequence:
+典型交互遵循如下序列：
 
 ```mermaid
 sequenceDiagram
@@ -167,37 +167,37 @@ sequenceDiagram
     Supervisor-->>User: "Here are the results"
 ```
 
-- **Launch** creates a new thread on the server, starts a run with the task description as input, and returns the thread ID as the task ID. The supervisor reports this ID to the user and does not poll for completion.
-- **Check** fetches the current run status. If the run succeeded, it retrieves the thread state to extract the subagent's final output. If still running, it reports that to the user.
-- **Update** creates a new run on the same thread with an interrupt multitask strategy. The previous run is interrupted, and the subagent restarts with the full conversation history plus the new instructions. The task ID stays the same.
-- **Cancel** calls `runs.cancel()` on the server and marks the task as `"cancelled"`.
-- **List** iterates over all tracked tasks. For non-terminal tasks, it fetches live status from the server in parallel. Terminal statuses (`success`, `error`, `cancelled`) are returned from cache.
+- **Launch** 会在 server 上创建一个新 thread，用任务描述作为输入启动 run，并将 thread ID 作为 task ID 返回。supervisor 会把这个 ID 报告给用户，并且不会轮询完成状态。
+- **Check** 会获取当前 run status。如果 run 成功，它会检索 thread state 以提取 subagent 的最终输出。如果仍在运行，则向用户报告这一点。
+- **Update** 会在同一 thread 上创建新的 run，并使用 interrupt multitask strategy。前一个 run 会被中断，subagent 会带着完整 conversation history 加上新指令重新开始。task ID 保持不变。
+- **Cancel** 会在 server 上调用 `runs.cancel()`，并将任务标记为 `"cancelled"`。
+- **List** 会遍历所有已跟踪任务。对于非终态任务，它会并行从 server 获取实时 status。终态 status（`success`、`error`、`cancelled`）会从 cache 返回。
 
-## Understand state management
+## 理解 state management
 
 :::python
-Task metadata is stored in a dedicated state channel (`async_tasks`) on the supervisor's graph, separate from the message history. This is critical because deep agents [compact their message history](/oss/deepagents/context-engineering#summarization) when the context window fills up. If task IDs were only in tool messages, they would be lost during compaction. The dedicated channel ensures the supervisor can always recall its tasks through `list_async_tasks`, even after multiple rounds of summarization.
+Task metadata 存储在 supervisor graph 的专用 state channel（`async_tasks`）中，与 message history 分离。这一点很关键，因为当 context window 填满时，deep agents 会[压缩它们的 message history](/oss/deepagents/context-engineering#summarization)。如果 task ID 只存在于 tool messages 中，它们会在 compaction 期间丢失。专用 channel 确保 supervisor 即使经过多轮 summarization 后，也始终能通过 `list_async_tasks` 回忆起自己的任务。
 
-Each tracked task records the task ID, agent name, thread ID, run ID, status, and timestamps (`created_at`, `last_checked_at`, `last_updated_at`).
+每个被跟踪的 task 都会记录 task ID、agent name、thread ID、run ID、status 和 timestamps（`created_at`、`last_checked_at`、`last_updated_at`）。
 :::
 
 :::js
-Task metadata is stored in a dedicated state channel (`asyncTasks`) on the supervisor's graph, separate from the message history. This is critical because deep agents [compact their message history](/oss/deepagents/context-engineering#summarization) when the context window fills up/ If task IDs were only in tool messages, they would be lost during compaction. The dedicated channel ensures the supervisor can always recall its tasks through `list_async_tasks`, even after multiple rounds of summarization.
+Task metadata 存储在 supervisor graph 的专用 state channel（`asyncTasks`）中，与 message history 分离。这一点很关键，因为当 context window 填满时，deep agents 会[压缩它们的 message history](/oss/deepagents/context-engineering#summarization)。如果 task ID 只存在于 tool messages 中，它们会在 compaction 期间丢失。专用 channel 确保 supervisor 即使经过多轮 summarization 后，也始终能通过 `list_async_tasks` 回忆起自己的任务。
 
-Each tracked task records the task ID, agent name, thread ID, run ID, status, and timestamps (`createdAt`, `checkedAt`, `updatedAt`).
+每个被跟踪的 task 都会记录 task ID、agent name、thread ID、run ID、status 和 timestamps（`createdAt`、`checkedAt`、`updatedAt`）。
 :::
 
-## Choose a transport
+## 选择 transport
 
-### ASGI transport (co-deployed)
+### ASGI transport（co-deployed）
 
-When a subagent spec omits the `url` field, the LangGraph SDK uses ASGI transport -- SDK calls are routed through in-process function calls rather than HTTP. For LangGraph-based deployments, this requires both graphs to be registered in the same `langgraph.json`.
+当 subagent spec 省略 `url` field 时，LangGraph SDK 会使用 ASGI transport，也就是 SDK calls 会通过 in-process function calls 路由，而不是通过 HTTP。对于基于 LangGraph 的 deployments，这要求两个 graphs 都注册在同一个 `langgraph.json` 中。
 
-ASGI transport eliminates network latency and requires no additional auth configuration. The subagent still runs as a separate thread with its own state. This is the recommended default.
+ASGI transport 消除了网络延迟，也不需要额外的 auth 配置。subagent 仍会作为独立 thread 运行，并拥有自己的 state。这是推荐的默认方式。
 
-### HTTP transport (remote)
+### HTTP transport（remote）
 
-Add a `url` field to switch to HTTP transport, where SDK calls go over the network to a remote Agent Protocol server:
+添加 `url` field 可切换到 HTTP transport，此时 SDK calls 会通过网络发送到远程 Agent Protocol server：
 
 :::python
 ```python
@@ -221,27 +221,23 @@ AsyncSubAgent(
 ```
 :::
 
-For LangGraph deployments, authentication is handled by the LangGraph SDK using `LANGSMITH_API_KEY` (or `LANGGRAPH_API_KEY`) from environment variables. Self-hosted Agent Protocol servers may use a different authentication mechanism.
+对于 LangGraph deployments，authentication 由 LangGraph SDK 使用环境变量中的 `LANGSMITH_API_KEY`（或 `LANGGRAPH_API_KEY`）处理。Self-hosted Agent Protocol servers 可能使用不同的 authentication 机制。
 
-Use HTTP transport when subagents need independent scaling, different resource profiles, or are maintained by a different team.
+当 subagents 需要独立扩缩容、不同 resource profiles，或由不同团队维护时，请使用 HTTP transport。
 
-## Choose a deployment topology
+## 选择 deployment topology
 
 ### Single deployment
 
-A single deployment means all agents are co-deployed on the same server using ASGI transport. For LangGraph-based deployments, register all graphs in one `langgraph.json`. This is the recommended starting point -- one server to manage, zero network latency between agents.
+Single deployment 表示所有 agents 都使用 ASGI transport co-deployed 在同一个 server 上。对于基于 LangGraph 的 deployments，请在一个 `langgraph.json` 中注册所有 graphs。这是推荐的起点：只需管理一个 server，agents 之间零网络延迟。
 
 ### Split deployment
 
-Supervisor on one server, subagents on another via HTTP transport. Use when subagents need different compute profiles or independent scaling.
+Supervisor 在一个 server 上，subagents 通过 HTTP transport 放在另一个 server 上。当 subagents 需要不同 compute profiles 或独立扩缩容时使用。
 
 ### Hybrid
 
-In a split deployment, you have the supervisor on one server and subagents on another via HTTP transport. Use when subagents need different compute profiles or independent scaling.
-
-### Hybrid
-
-In a hybrid deployment, some subagents are co-deployed via ASGI, others remote via HTTP:
+在 hybrid deployment 中，一些 subagents 通过 ASGI co-deployed，另一些通过 HTTP 远程运行：
 
 :::python
 ```python
@@ -250,14 +246,14 @@ async_subagents = [
         name="researcher",
         description="Research agent",
         graph_id="researcher",
-        # No url → ASGI (co-deployed)
+        # No url -> ASGI (co-deployed)
     ),
     AsyncSubAgent(
         name="coder",
         description="Coding agent",
         graph_id="coder",
         url="https://coder-deployment.langsmith.dev",
-        # url present → HTTP (remote)
+        # url present -> HTTP (remote)
     ),
 ]
 ```
@@ -270,14 +266,14 @@ const asyncSubagents: AsyncSubAgent[] = [
     name: "researcher",
     description: "Research agent",
     graphId: "researcher",
-    // No url → ASGI (co-deployed)
+    // No url -> ASGI (co-deployed)
   },
   {
     name: "coder",
     description: "Coding agent",
     graphId: "coder",
     url: "https://coder-deployment.langsmith.dev",
-    // url present → HTTP (remote)
+    // url present -> HTTP (remote)
   },
 ];
 ```
@@ -285,17 +281,17 @@ const asyncSubagents: AsyncSubAgent[] = [
 
 ## Best practices
 
-### Size the worker pool for local development
+### 为本地开发设置合适的 worker pool 大小
 
-When running locally with `langgraph dev`, increase the worker pool to accommodate concurrent subagent runs. Each active run occupies a worker slot. A supervisor with 3 concurrent subagent tasks requires 4 slots (1 supervisor + 3 subagents). Under-provisioning causes launches to queue.
+使用 `langgraph dev` 本地运行时，请增大 worker pool 以容纳并发的 subagent runs。每个 active run 都会占用一个 worker slot。一个带有 3 个并发 subagent tasks 的 supervisor 需要 4 个 slots（1 个 supervisor + 3 个 subagents）。资源不足会导致 launch 排队。
 
 ```bash
 langgraph dev --n-jobs-per-worker 10
 ```
 
-### Write clear subagent descriptions
+### 编写清晰的 subagent descriptions
 
-The supervisor uses descriptions to decide which subagent to launch. Be specific and action-oriented:
+supervisor 使用 descriptions 判断要启动哪个 subagent。请具体、面向动作地描述：
 
 :::python
 ```python
@@ -333,17 +329,17 @@ AsyncSubAgent(
 ```
 :::
 
-### Trace with thread IDs
+### 用 thread IDs 追踪
 
-When using LangGraph-based deployments, every async subagent run is a standard LangGraph run, fully visible in LangSmith. The supervisor's trace shows tool calls for `launch`, `check`, `update`, `cancel`, and `list`. Each subagent run appears as a separate trace, linked by thread ID. Use the thread ID (task ID) to correlate supervisor orchestration traces with subagent execution traces.
+使用基于 LangGraph 的 deployments 时，每个 async subagent run 都是标准 LangGraph run，并在 LangSmith 中完全可见。supervisor 的 trace 会显示 `launch`、`check`、`update`、`cancel` 和 `list` 的 tool calls。每个 subagent run 都会作为单独 trace 出现，并通过 thread ID 关联。使用 thread ID（task ID）可以将 supervisor orchestration traces 与 subagent execution traces 对应起来。
 
 ## Troubleshooting
 
-### Supervisor polls immediately after launch
+### Supervisor 在 launch 后立即轮询
 
-**Problem**: The supervisor calls `check` in a loop right after launching, turning async execution into blocking.
+**Problem**：supervisor 在 launch 后立刻循环调用 `check`，把 async execution 变成了阻塞执行。
 
-**Solution**: The middleware injects system prompt rules to prevent this. If polling persists, reinforce the behavior in your supervisor's system prompt:
+**Solution**：middleware 会注入 system prompt rules 来防止这种情况。如果仍然轮询，请在 supervisor 的 system prompt 中强化这个行为：
 
 :::python
 ```python
@@ -371,24 +367,24 @@ const agent = createDeepAgent({
 ```
 :::
 
-### Supervisor reports stale status
+### Supervisor 报告过期 status
 
-**Problem**: The supervisor references a task status from earlier in conversation history instead of making a fresh `check` call.
+**Problem**：supervisor 引用了 conversation history 中较早的 task status，而没有发起新的 `check` 调用。
 
-**Solution**: The middleware prompt instructs the model that "task statuses in conversation history are always stale." If this still occurs, add explicit instructions to always call `check` or `list` before reporting status.
+**Solution**：middleware prompt 会指示 model：“conversation history 中的 task statuses 总是过期的。”如果仍出现这种情况，请添加明确指令，要求在报告 status 前始终调用 `check` 或 `list`。
 
-### Task ID lookup failures
+### Task ID 查找失败
 
-**Problem**: The supervisor truncates or reformats the task ID, causing `check` or `cancel` to fail.
+**Problem**：supervisor 截断或重新格式化 task ID，导致 `check` 或 `cancel` 失败。
 
-**Solution**: The middleware prompt instructs the model to always use the full task ID. If truncation persists, this is typically a model-specific issue -- try a different model or add "always show the full task_id, never truncate or abbreviate it" to your system prompt.
+**Solution**：middleware prompt 会指示 model 始终使用完整 task ID。如果仍然截断，这通常是 model-specific 问题；请尝试另一个 model，或在 system prompt 中加入“always show the full task_id, never truncate or abbreviate it”。
 
-### Subagent launches queue instead of running
+### Subagent launch 排队而不是运行
 
-**Problem**: Launching a subagent hangs or takes a long time to start.
+**Problem**：启动 subagent 时卡住，或需要很长时间才开始。
 
-**Solution**: The worker pool is likely exhausted. Increase the pool size with `--n-jobs-per-worker`. See [Size the worker pool](#size-the-worker-pool-for-local-development).
+**Solution**：worker pool 可能已经耗尽。用 `--n-jobs-per-worker` 增大 pool size。参见[设置 worker pool 大小](#为本地开发设置合适的-worker-pool-大小)。
 
 ## Reference implementation
 
-The [async-deep-agents](https://github.com/langchain-ai/async-deep-agents) repository contains working examples in both Python and TypeScript that deploy to LangSmith Deployments. It demonstrates a supervisor with researcher and coder subagents running as background tasks.
+[async-deep-agents](https://github.com/langchain-ai/async-deep-agents) repository 包含 Python 和 TypeScript 的可运行示例，并可部署到 LangSmith Deployments。它展示了一个 supervisor 搭配 researcher 和 coder subagents 作为后台任务运行。

@@ -1,13 +1,13 @@
 ---
 title: Overview
-description: Build UIs that display real-time subagent streams, task progress, and sandbox for Deep Agents
+description: 为 Deep Agents 构建展示实时 subagent streams、task progress 和 sandbox 的 UI
 ---
 
-Build frontends that visualize deep agent workflows in real time. These patterns show how to render subagent progress, task planning, streaming content, and IDE-like sandbox experiences from agents created with `createDeepAgent`.
+构建能够实时可视化 deep agent workflows 的 frontends。这些 patterns 展示如何从使用 `createDeepAgent` 创建的 agents 中，渲染 subagent progress、task planning、streaming content，以及类似 IDE 的 sandbox experiences。
 
 ## Architecture
 
-Deep Agents use a coordinator-worker architecture. The main agent plans tasks and delegates to specialized subagents, each running in isolation. On the frontend, `useStream` surfaces both the coordinator's messages and each subagent's streaming state.
+Deep Agents 使用 coordinator-worker architecture。main agent 规划任务并 delegate 给 specialized subagents，每个 subagent 都隔离运行。在 frontend 中，`useStream` 会暴露 coordinator 的 messages，以及每个 subagent 的 streaming state。
 
 ```mermaid
 %%{
@@ -78,7 +78,7 @@ const agent = createDeepAgent({
 
 :::
 
-On the frontend, connect with `useStream` the same way as with `createAgent`. Deep agent patterns use additional `useStream` features like `stream.subagents`, `stream.values.todos`, and `filterSubagentMessages` to render subagent-specific UIs.
+在 frontend 中，用与 `createAgent` 相同的方式连接 `useStream`。Deep agent patterns 会使用更多 `useStream` features，例如 `stream.subagents`、`stream.values.todos` 和 `filterSubagentMessages`，用于渲染 subagent-specific UIs。
 
 ```ts
 import { useStream } from "@langchain/react";
@@ -99,19 +99,16 @@ function App() {
 
 <CardGroup cols={3}>
   <Card title="Subagent streaming" icon="arrows-split" href="/oss/deepagents/frontend/subagent-streaming">
-    Display specialist subagents with streaming content, progress tracking, and collapsible cards.
+    显示 specialist subagents，包括 streaming content、progress tracking 和 collapsible cards。
   </Card>
   <Card title="Todo list" icon="list-check" href="/oss/deepagents/frontend/todo-list">
-    Track agent progress with a real-time todo list synced from agent state.
+    用从 agent state 同步的实时 todo list 跟踪 agent progress。
   </Card>
   <Card title="Sandbox" icon="code" href="/oss/deepagents/frontend/sandbox">
-    Build an IDE-like UI with a file browser, code viewer, and diff panel backed by a sandbox.
+    构建由 sandbox 支撑的类 IDE UI，包括 file browser、code viewer 和 diff panel。
   </Card>
 </CardGroup>
 
 ## Related patterns
 
-The [LangChain frontend patterns](/oss/langchain/frontend/overview), including
-markdown messages, tool calling, and human-in-the-loop, all work with deep
-agents too. Deep Agents are built on the same LangGraph runtime, so
-`useStream` provides the same core API.
+[LangChain frontend patterns](/oss/langchain/frontend/overview) 中的 markdown messages、tool calling 和 human-in-the-loop 等模式，也都适用于 deep agents。Deep Agents 构建在同一个 LangGraph runtime 之上，因此 `useStream` 提供相同的核心 API。

@@ -1,43 +1,43 @@
 ---
 title: Memory
-description: Add persistent memory to agents built with Deep Agents so they learn and improve across conversations
+description: 为使用 Deep Agents 构建的 agents 添加 persistent memory，使它们能跨 conversations 学习和改进
 ---
 
-Memory lets your agent learn and improve across conversations. Deep Agents makes memory first class with filesystem-backed memory: the agent reads and writes memory as files, and you control where those files are stored using [backends](/oss/deepagents/backends).
+Memory 让你的 agent 能跨 conversations 学习和改进。Deep Agents 将 memory 作为一等能力，并通过 filesystem-backed memory 实现：agent 以文件形式读写 memory，你可以使用 [backends](/oss/deepagents/backends) 控制这些文件存储在哪里。
 
 <Note>
-This page covers **long-term memory**: memory that persists across conversations. For short-term memory (conversation history and scratch files within a single session), see the [context engineering](/oss/deepagents/context-engineering) guide. Short-term memory is managed automatically as part of the agent's [state](/oss/langgraph/graph-api#state).
+本页介绍 **long-term memory**：跨 conversations 持久化的 memory。关于 short-term memory（单个 session 内的 conversation history 和 scratch files），请参见 [context engineering](/oss/deepagents/context-engineering) guide。Short-term memory 会作为 agent [state](/oss/langgraph/graph-api#state) 的一部分自动管理。
 
 ![Short-term memory is scoped to a single thread via checkpoints; long-term memory persists across threads via the store](/oss/images/deepagents/production/memory.png)
 </Note>
 
-## How memory works
+## Memory 如何工作
 
-1. **Point the agent at memory files.** Pass file paths to `memory=` when creating the agent. You can also pass [skills](/oss/deepagents/skills) via `skills=` for procedural memory (reusable instructions that tell the agent *how* to perform a task). A [backend](/oss/deepagents/backends) controls where files are stored and who can access them.
-2. **Agent reads memory.** The agent can load memory files into the system prompt at startup, or read them on demand during the conversation. For example, [skills](/oss/deepagents/skills) use on-demand loading: the agent reads only skill descriptions at startup, then reads the full skill file only when it matches a task. This keeps context lean until a capability is needed.
-3. **Agent updates memory (optional).** When the agent learns new information, it can use its built-in `edit_file` tool to update memory files. Updates can happen during the conversation (the default) or in the background between conversations via [background consolidation](#background-consolidation). Changes are persisted and available in the next conversation. Not all memory is writable: developer-defined [skills](/oss/deepagents/skills) and [organization policies](#organization-level-memory) are typically read-only. See [read-only vs writable memory](#read-only-vs-writable-memory) for details.
+1. **让 agent 指向 memory files。** 创建 agent 时，将 file paths 传给 `memory=`。你也可以通过 `skills=` 传入 [skills](/oss/deepagents/skills)，作为 procedural memory（告诉 agent *如何*执行任务的可复用 instructions）。[backend](/oss/deepagents/backends) 控制文件存储位置以及谁可以访问它们。
+2. **Agent 读取 memory。** agent 可以在启动时将 memory files 加载进 system prompt，也可以在 conversation 期间按需读取。例如，[skills](/oss/deepagents/skills) 使用 on-demand loading：agent 启动时只读取 skill descriptions，只有当某个 skill 匹配 task 时才读取完整 skill file。这能让 context 在需要 capability 之前保持精简。
+3. **Agent 更新 memory（可选）。** 当 agent 学到新信息时，它可以使用内置 `edit_file` tool 更新 memory files。更新可以发生在 conversation 期间（默认），也可以通过 [background consolidation](#background-consolidation) 在 conversations 之间后台进行。变更会持久化，并在下一次 conversation 中可用。并非所有 memory 都可写：developer-defined [skills](/oss/deepagents/skills) 和 [organization policies](#organization-level-memory) 通常是 read-only。详情参见 [read-only vs writable memory](#read-only-vs-writable-memory)。
 
-The two most common patterns are [agent-scoped memory](#agent-scoped-memory) (shared across all users) and [user-scoped memory](#user-scoped-memory) (isolated per user).
+最常见的两种模式是 [agent-scoped memory](#agent-scoped-memory)（所有用户共享）和 [user-scoped memory](#user-scoped-memory)（按用户隔离）。
 
 ## Scoped memory
 
-Agent memory can be scoped so the same memory files are accessible to everyone using the agent or memory files can be individual to each user.
+Agent memory 可以设置 scope，使同一组 memory files 对所有使用该 agent 的人可见，或者让 memory files 对每个用户独立。
 
 ### Agent-scoped memory
 
-Give the agent its own persistent identity that evolves over time. Agent-scoped memory is shared across all users, so the agent builds up its own persona, accumulated knowledge, and learned preferences through every conversation. As it interacts with users, it develops expertise, refines its approach, and remembers what works. It can also learn and update [skills](/oss/deepagents/skills) when it has write access.
+为 agent 提供一个随时间演化的持久身份。Agent-scoped memory 在所有用户之间共享，因此 agent 会通过每次 conversation 积累自己的 persona、知识和偏好。随着它与用户交互，它会发展专业能力、改进处理方式，并记住哪些做法有效。如果它拥有 write access，也可以学习并更新 [skills](/oss/deepagents/skills)。
 
-The key is the backend namespace: setting it to `(assistant_id,)` means every conversation for this agent reads and writes to the same memory file.
+关键在于 backend namespace：将它设为 `(assistant_id,)` 表示该 agent 的每个 conversation 都会读取和写入同一个 memory file。
 
 :::python
 <Note>
-Accessing `rt.server_info` requires `deepagents>=0.5.0`. On older versions, read the assistant ID from `get_config()["metadata"]["assistant_id"]` instead.
+访问 `rt.server_info` 需要 `deepagents>=0.5.0`。在旧版本中，请改从 `get_config()["metadata"]["assistant_id"]` 读取 assistant ID。
 </Note>
 :::
 
 :::js
 <Note>
-Accessing `rt.serverInfo` requires `deepagents>=1.9.0`. On older versions, read the assistant ID from `getConfig().metadata.assistantId` instead.
+访问 `rt.serverInfo` 需要 `deepagents>=1.9.0`。在旧版本中，请改从 `getConfig().metadata.assistantId` 读取 assistant ID。
 </Note>
 :::
 
@@ -91,9 +91,9 @@ const agent = createDeepAgent({
 ```
 :::
 
-<Accordion title="Full example: seed memory and invoke">
+<Accordion title="完整示例：seed memory 并 invoke">
 
-Populate the store with initial memories, then invoke the agent across two threads to see it remember and update what it learns.
+先向 store 写入初始 memories，然后跨两个 threads invoke agent，观察它如何记住并更新学到的内容。
 
 :::python
 ```python
@@ -232,9 +232,9 @@ await agent.invoke({
 
 ### User-scoped memory
 
-Give each user their own memory file. The agent remembers preferences, context, and history per user while core agent instructions stay fixed. Users can also have per-user [skills](/oss/deepagents/skills) if stored in a user-scoped backend.
+为每个用户提供自己的 memory file。agent 会按用户记住 preferences、context 和 history，同时 core agent instructions 保持固定。如果 user-scoped backend 中保存了 per-user [skills](/oss/deepagents/skills)，用户也可以拥有自己的 skills。
 
-The namespace uses `(user_id,)` so each user gets an isolated copy of the memory file. User A's preferences never leak into User B's conversations.
+namespace 使用 `(user_id,)`，因此每个用户都会得到一份隔离的 memory file。User A 的 preferences 永远不会泄漏到 User B 的 conversations 中。
 
 :::python
 ```python
@@ -282,9 +282,9 @@ const agent = createDeepAgent({
 ```
 :::
 
-<Accordion title="Full example: isolated memory across users">
+<Accordion title="完整示例：跨用户隔离 memory">
 
-Seed per-user memories and invoke the agent as two different users. Each user sees only their own preferences.
+为不同用户 seed per-user memories，并以两个不同用户身份 invoke agent。每个用户只会看到自己的 preferences。
 
 :::python
 ```python
@@ -432,24 +432,24 @@ await agent.invoke(
 
 ## Advanced usage
 
-On top of the basic configuration options for memory paths and scope, you can also configure more advanced parameters for memory:
+除了 memory paths 和 scope 的基本配置外，你还可以为 memory 配置更高级的参数：
 
 | Dimension | Question it answers | Options |
 |---|---|---|
-| **Duration** | How long does it last? | [Short-term](/oss/deepagents/context-engineering) (single conversation) or [long-term](#scoped-memory) (across conversations) |
-| **Information type** | What kind of information is it? | [Episodic](#episodic-memory) (past experiences), [procedural](/oss/deepagents/skills) (instructions and skills), or [semantic](/oss/concepts/memory#semantic-memory) (facts) |
-| **Scope** | Who can see and modify it? | [User](#user-scoped-memory), [agent](#agent-scoped-memory), or [organization](#organization-level-memory) |
-| **Update strategy** | When are memories written? | During conversation (default) or [between conversations](#background-consolidation) |
-| **Retrieval** | How are memories read? | Loaded into prompt (default) or on demand (e.g., [skills](/oss/deepagents/skills)) |
-| **Agent permissions** | Can the agent write to memory? | [Read-write](#read-only-vs-writable-memory) (default) or [read-only](#read-only-vs-writable-memory) (for shared policies) |
+| **Duration** | 它持续多久？ | [Short-term](/oss/deepagents/context-engineering)（单个 conversation）或 [long-term](#scoped-memory)（跨 conversations） |
+| **Information type** | 它是哪类信息？ | [Episodic](#episodic-memory)（过往经历）、[procedural](/oss/deepagents/skills)（instructions 和 skills），或 [semantic](/oss/concepts/memory#semantic-memory)（facts） |
+| **Scope** | 谁可以查看和修改它？ | [User](#user-scoped-memory)、[agent](#agent-scoped-memory) 或 [organization](#organization-level-memory) |
+| **Update strategy** | Memories 何时写入？ | Conversation 期间（默认）或 [between conversations](#background-consolidation) |
+| **Retrieval** | Memories 如何读取？ | 加载到 prompt（默认）或 on demand（例如 [skills](/oss/deepagents/skills)） |
+| **Agent permissions** | agent 可以写入 memory 吗？ | [Read-write](#read-only-vs-writable-memory)（默认）或 [read-only](#read-only-vs-writable-memory)（适用于 shared policies） |
 
 ### Episodic memory
 
-Episodic memory stores records of past experiences: what happened, in what order, and what the outcome was. Unlike semantic memory (facts and preferences stored in files like `AGENTS.md`), episodic memory preserves the full conversational context so the agent can recall *how* a problem was solved, not just *what* was learned from it.
+Episodic memory 存储过往经历的记录：发生了什么、顺序如何，以及结果是什么。不同于 semantic memory（存储在 `AGENTS.md` 等文件中的 facts 和 preferences），episodic memory 会保留完整 conversational context，让 agent 能回忆某个问题是 *如何* 被解决的，而不只是从中学到了 *什么*。
 
-Deep Agents already use [checkpointers](/oss/langgraph/persistence#checkpoints) which is the mechanism that supports episodic memory: every conversation is persisted as a checkpointed thread.
+Deep Agents 已经使用 [checkpointers](/oss/langgraph/persistence#checkpoints)，这正是支持 episodic memory 的机制：每个 conversation 都会作为 checkpointed thread 持久化。
 
-To make past conversations searchable, wrap thread search in a tool. The `user_id` is pulled from the runtime context rather than passed as a parameter:
+要让过往 conversations 可搜索，请将 thread search 包装成 tool。`user_id` 从 runtime context 获取，而不是作为参数传入：
 
 :::python
 ```python
@@ -504,7 +504,7 @@ const searchPastConversations = tool(
 ```
 :::
 
-You can scope thread search by user or organization by adjusting the metadata filter:
+你可以通过调整 metadata filter，将 thread search scoped 到 user 或 organization：
 
 :::python
 ```python
@@ -538,13 +538,13 @@ const orgThreads = await client.threads.search({
 ```
 :::
 
-This is useful for agents that perform complex, multi-step tasks. For example, a coding agent can look back at a past debugging session and skip straight to the likely root cause.
+这对于执行复杂 multi-step tasks 的 agents 很有用。例如，coding agent 可以回看过去的 debugging session，并直接跳到可能的 root cause。
 
 ### Organization-level memory
 
-Organization-level memory follows the same pattern as user-scoped memory, but with an organization-wide namespace instead of a per-user one. Use it for policies or knowledge that should apply across all users and agents in an organization.
+Organization-level memory 遵循与 user-scoped memory 相同的模式，但使用 organization-wide namespace，而不是 per-user namespace。它适用于应在 organization 中所有 users 和 agents 之间生效的 policies 或 knowledge。
 
-Organization memory is typically **read-only** to prevent prompt injection via shared state. See [read-only vs writable memory](#read-only-vs-writable-memory) for details.
+Organization memory 通常是 **read-only**，用于防止 shared state 中的 prompt injection。详情参见 [read-only vs writable memory](#read-only-vs-writable-memory)。
 
 :::python
 ```python
@@ -596,7 +596,7 @@ const agent = createDeepAgent({
 ```
 :::
 
-Populate organization memory from your application code:
+从你的 application code 填充 organization memory：
 
 :::python
 ```python
@@ -634,24 +634,24 @@ await client.store.putItem(
 ```
 :::
 
-Use [permissions](/oss/deepagents/permissions) to enforce that org-level memory is read-only, or [policy hooks](/oss/deepagents/backends#add-policy-hooks) for custom validation logic.
+使用 [permissions](/oss/deepagents/permissions) 强制 org-level memory 为 read-only，或使用 [policy hooks](/oss/deepagents/backends#add-policy-hooks) 实现自定义 validation logic。
 
 ### Background consolidation
 
-By default, the agent writes memories during the conversation (hot path). An alternative is to process memories **between conversations** as a background task, sometimes called **sleep time compute**. A separate deep agent reviews recent conversations, extracts key facts, and merges them with existing memories.
+默认情况下，agent 会在 conversation 期间写入 memories（hot path）。另一种方式是将 memories 作为 background task 在 **conversations 之间**处理，有时称为 **sleep time compute**。一个独立 deep agent 会 review 最近 conversations、抽取关键 facts，并将它们与现有 memories 合并。
 
 | Approach | Pros | Cons |
 |---|---|---|
-| **Hot path** (during conversation) | Memories available immediately, transparent to user | Adds latency, agent must multitask |
-| **Background** (between conversations) | No user-facing latency, can synthesize across multiple conversations | Memories not available until next conversation, requires a second agent |
+| **Hot path**（conversation 期间） | Memories 立即可用，对用户透明 | 增加 latency，agent 必须 multitask |
+| **Background**（conversations 之间） | 没有 user-facing latency，可以跨多个 conversations synthesis | Memories 要到下一次 conversation 才可用，需要第二个 agent |
 
-For most applications, the hot path is sufficient. Add background consolidation when you need to reduce latency or improve memory quality across many conversations.
+对于大多数应用，hot path 已经足够。当你需要降低 latency 或在大量 conversations 中提升 memory quality 时，再加入 background consolidation。
 
-The recommended pattern is to deploy a **consolidation agent** alongside your main agent — a deep agent that reads recent conversation history, extracts key facts, and merges them into the memory store — and trigger it on a [cron schedule](#cron). Pick a cadence that reflects how often your users actually interact with the agent: a chat product with steady daily traffic might consolidate every few hours, while a tool used a handful of times per week only needs to run nightly or weekly. Consolidating much more often than users converse just burns tokens on no-op runs.
+推荐模式是将一个 **consolidation agent** 与 main agent 一起部署：这是一个 deep agent，负责读取最近 conversation history、抽取关键 facts，并将其合并到 memory store 中；然后用 [cron schedule](#cron) 触发它。选择 cadence 时应反映用户真实交互频率：一个日常流量稳定的 chat product 可能每几小时 consolidate 一次，而每周只使用几次的 tool 可能 nightly 或 weekly 运行就够了。比用户 conversation 更频繁地 consolidate，通常只是在 no-op runs 上消耗 tokens。
 
 #### Consolidation agent
 
-The consolidation agent reads recent conversation history and merges key facts into the memory store. Register it alongside your main agent in `langgraph.json`:
+consolidation agent 会读取最近 conversation history，并将关键 facts 合并到 memory store。请在 `langgraph.json` 中把它和 main agent 一起注册：
 
 :::python
 ```python consolidation_agent.py
@@ -763,7 +763,7 @@ export { agent };
 
 #### Cron
 
-A [cron job](/langsmith/cron-jobs) runs the consolidation agent on a fixed schedule. The agent searches recent conversations and synthesizes them into memory. Match the schedule to your usage patterns so consolidation runs roughly track real activity.
+[cron job](/langsmith/cron-jobs) 会按固定 schedule 运行 consolidation agent。agent 搜索最近 conversations，并将它们 synthesis 到 memory 中。请让 schedule 与你的 usage patterns 匹配，让 consolidation 大致跟随真实 activity。
 
 ```mermaid
 graph LR
@@ -774,7 +774,7 @@ graph LR
 
     classDef trigger fill:#F6FFDB,stroke:#6E8900,stroke-width:2px,color:#2E3900
     classDef process fill:#E5F4FF,stroke:#006DDD,stroke-width:2px,color:#030710
-    classDef output fill:#EBD0F0,stroke:#885270,stroke-width:2px,color:#441E33
+    classDef output fill:#EBD0F0,stroke:#885270,color:#441E33
     classDef schedule fill:#FDF3FF,stroke:#7E65AE,stroke-width:2px,color:#504B5F
 
     class Conv1,Conv2 trigger
@@ -783,7 +783,7 @@ graph LR
     class Cron schedule
 ```
 
-Schedule the consolidation agent with a cron job:
+使用 cron job 调度 consolidation agent：
 
 :::python
 ```python
@@ -816,41 +816,41 @@ const cronJob = await client.crons.create(
 :::
 
 <Note>
-All cron schedules are interpreted in **UTC**. See [cron jobs](/langsmith/cron-jobs) for details on managing and deleting cron jobs.
+所有 cron schedules 都按 **UTC** 解释。关于管理和删除 cron jobs 的细节，请参见 [cron jobs](/langsmith/cron-jobs)。
 </Note>
 
 <Warning>
-The cron interval must match the lookback window inside the consolidation agent. The example above runs every 6 hours (`0 */6 * * *`) and the agent's `search_recent_conversations` tool looks back `timedelta(hours=6)` — keep these in sync. If the cron runs more often than the lookback, you'll reprocess the same conversations; if it runs less often, you'll drop memories that fall outside the window.
+cron interval 必须与 consolidation agent 内部的 lookback window 匹配。上面的示例每 6 小时运行一次（`0 */6 * * *`），agent 的 `search_recent_conversations` tool 会向前看 `timedelta(hours=6)`；请保持二者同步。如果 cron 运行得比 lookback 更频繁，就会重复处理相同 conversations；如果运行得更少，就会丢失落在窗口之外的 memories。
 </Warning>
 
-For more on deploying agents with background processes, see [going to production](/oss/deepagents/going-to-production).
+关于使用 background processes 部署 agents 的更多信息，请参见 [going to production](/oss/deepagents/going-to-production)。
 
 ### Read-only vs writable memory
 
-By default, the agent can both read and write memory files. For shared state like organization policies or compliance rules, you may want to make memory **read-only** so the agent can reference it but not modify it. This prevents prompt injection via shared memory and ensures that only your application code controls what's in the file.
+默认情况下，agent 可以读写 memory files。对于 organization policies 或 compliance rules 这样的 shared state，你可能希望让 memory **read-only**，使 agent 能引用它但不能修改它。这可以防止通过 shared memory 进行 prompt injection，并确保文件内容只由你的 application code 控制。
 
 | Permission | Use case | How it works |
 |---|---|---|
-| **Read-write** (default) | User preferences, agent self-improvement, learned [skills](/oss/deepagents/skills) | Agent updates files via `edit_file` tool |
-| **Read-only** | Organization policies, compliance rules, shared knowledge bases, developer-defined [skills](/oss/deepagents/skills) | Populate via application code or the [Store API](/langsmith/custom-store). Use [permissions](/oss/deepagents/permissions) to deny writes to specific paths, or [policy hooks](/oss/deepagents/backends#add-policy-hooks) for custom validation logic. |
+| **Read-write**（默认） | User preferences、agent self-improvement、学到的 [skills](/oss/deepagents/skills) | Agent 通过 `edit_file` tool 更新 files |
+| **Read-only** | Organization policies、compliance rules、shared knowledge bases、developer-defined [skills](/oss/deepagents/skills) | 通过 application code 或 [Store API](/langsmith/custom-store) 填充。使用 [permissions](/oss/deepagents/permissions) 拒绝写入特定 paths，或使用 [policy hooks](/oss/deepagents/backends#add-policy-hooks) 实现 custom validation logic。 |
 
-**Security considerations:** If one user can write to memory that another user reads, a malicious user could inject instructions into shared state. To mitigate this:
+**Security considerations：** 如果一个用户能写入另一个用户会读取的 memory，恶意用户就可能向 shared state 注入 instructions。缓解方式包括：
 
-- **Default to user scope** `(user_id)` unless you have a specific reason to share
-- Use **read-only memory** for shared policies (populate via application code, not the agent)
-- Add **human-in-the-loop** validation before the agent writes to shared memory. Use an [interrupt](/oss/langgraph/interrupts) to require human approval for writes to sensitive paths.
+- 除非有明确共享理由，否则**默认使用 user scope** `(user_id)`
+- 对 shared policies 使用 **read-only memory**（通过 application code 填充，而不是 agent）
+- 在 agent 写入 shared memory 前添加 **human-in-the-loop** validation。使用 [interrupt](/oss/langgraph/interrupts) 对敏感 paths 的写入要求人工审批。
 
-To enforce read-only memory, use [permissions](/oss/deepagents/permissions) to declaratively deny writes to specific paths. For custom validation logic (rate limiting, audit logging, content inspection), use [backend policy hooks](/oss/deepagents/backends#add-policy-hooks).
+要强制 read-only memory，请使用 [permissions](/oss/deepagents/permissions) 声明式拒绝写入特定 paths。对于 custom validation logic（rate limiting、audit logging、content inspection），请使用 [backend policy hooks](/oss/deepagents/backends#add-policy-hooks)。
 
 ### Concurrent writes
 
-Multiple threads can write to memory in parallel, but concurrent writes to the **same file** can cause last-write-wins conflicts. For user-scoped memory this is rare since users typically have one active conversation at a time. For agent-scoped or organization-scoped memory, consider using [background consolidation](#background-consolidation) to serialize writes, or structure memory as separate files per topic to reduce contention.
+多个 threads 可以并行写入 memory，但对**同一个 file** 的 concurrent writes 可能导致 last-write-wins conflicts。对于 user-scoped memory，这种情况较少见，因为用户通常一次只有一个 active conversation。对于 agent-scoped 或 organization-scoped memory，可以考虑使用 [background consolidation](#background-consolidation) 来串行化 writes，或将 memory 按 topic 拆成多个 files，以减少 contention。
 
-In practice, if a write fails due to a conflict, the LLM is usually smart enough to retry or recover gracefully, so a single lost write is not catastrophic.
+实践中，如果一次 write 因 conflict 失败，LLM 通常足够聪明，可以 retry 或优雅恢复，因此单次 lost write 通常不是灾难性的。
 
-### Multiple agents in the same deployment
+### 同一 deployment 中的多个 agents
 
-To give each agent its own memory in a shared deployment, add `assistant_id` to the namespace:
+要在 shared deployment 中为每个 agent 提供自己的 memory，请将 `assistant_id` 加入 namespace：
 
 :::python
 ```python
@@ -874,8 +874,8 @@ new StoreBackend({
 ```
 :::
 
-Use `assistant_id` alone if you only need per-agent isolation without per-user scoping.
+如果只需要 per-agent isolation 而不需要 per-user scoping，可以只使用 `assistant_id`。
 
 <Tip>
-Use [LangSmith tracing](/langsmith/trace-with-langgraph) to audit what your agent writes to memory. Every file write appears as a tool call in the trace.
+使用 [LangSmith tracing](/langsmith/trace-with-langgraph) audit agent 写入 memory 的内容。每次 file write 都会在 trace 中显示为一个 tool call。
 </Tip>

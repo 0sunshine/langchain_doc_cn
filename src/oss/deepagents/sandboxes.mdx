@@ -1,7 +1,7 @@
 ---
 title: Sandboxes
 sidebarTitle: Sandboxes
-description: Execute code in isolated environments with sandbox backends
+description: 使用 sandbox backends 在隔离环境中执行代码
 ---
 
 import SandboxBasicJs from '/snippets/deepagents-sandbox-basic-js.mdx';
@@ -11,13 +11,13 @@ import SandboxLifecycleFactoryAssistantTs from '/snippets/deepagents-sandbox-lif
 import SandboxLifecycleFactoryThreadPy from '/snippets/deepagents-sandbox-lifecycle-factory-thread-py.mdx';
 import SandboxLifecycleFactoryThreadTs from '/snippets/deepagents-sandbox-lifecycle-factory-thread-ts.mdx';
 
-Agents generate code, interact with filesystems, and run shell commands. Because we can't predict what an agent might do, it's important that its environment is isolated so it can't access credentials, files, or the network. Sandboxes provide this isolation by creating a boundary between the agent's execution environment and your host system.
+Agents 会生成代码、与 filesystems 交互，并运行 shell commands。因为我们无法预先知道 agent 可能会做什么，所以必须把它的环境隔离起来，避免它访问 credentials、files 或 network。Sandboxes 会在 agent 的执行环境和你的 host system 之间创建边界，从而提供这种隔离。
 
-In Deep Agents, **sandboxes are [backends](/oss/deepagents/backends)** that define the environment where the agent operates. Unlike other backends (State, Filesystem, Store) which only expose file operations, sandbox backends also give the agent an `execute` tool for running shell commands. When you configure a sandbox backend, the agent gets:
+在 Deep Agents 中，**sandboxes 是 [backends](/oss/deepagents/backends)**，用于定义 agent 运行的环境。不同于其他只暴露文件操作的 backends（State、Filesystem、Store），sandbox backends 还会给 agent 一个 `execute` tool，用来运行 shell commands。配置 sandbox backend 后，agent 会获得：
 
-- All standard filesystem tools (`ls`, `read_file`, `write_file`, `edit_file`, `glob`, `grep`)
-- The `execute` tool for running arbitrary shell commands in the sandbox
-- A secure boundary that protects your host system
+- 所有标准 filesystem tools（`ls`、`read_file`、`write_file`、`edit_file`、`glob`、`grep`）
+- 用于在 sandbox 中运行任意 shell commands 的 `execute` tool
+- 保护 host system 的安全边界
 
 ```mermaid
 graph LR
@@ -43,22 +43,22 @@ graph LR
 
 ## Why use sandboxes?
 
-Sandboxes are used for security.
-They let agents execute arbitrary code, access files, and use the network without compromising your credentials, local files, or host system.
-This isolation is essential when agents run autonomously.
+Sandboxes 用于安全隔离。
+它们允许 agents 执行任意代码、访问文件、使用 network，同时不会危及你的 credentials、本地 files 或 host system。
+当 agents 自主运行时，这种隔离尤其重要。
 
-Sandboxes are especially useful for:
+Sandboxes 特别适合：
 
-- Coding agents: Agents that run autonomously can use shell, git, clone repositories (many providers offer native git APIs, e.g., [Daytona's git operations](https://www.daytona.io/docs/en/git-operations/)), and run Docker-in-Docker for build and test pipelines
-- Data analysis agents—Load files, install data analysis libraries (pandas, numpy, etc.), run statistical calculations, and create outputs like PowerPoint presentations in a safe, isolated environment
+- Coding agents：自主运行的 agents 可以使用 shell、git、clone repositories（许多 providers 提供原生 git APIs，例如 [Daytona 的 git operations](https://www.daytona.io/docs/en/git-operations/)），并运行 Docker-in-Docker 来完成 build 和 test pipelines
+- Data analysis agents：在安全隔离环境中加载文件、安装数据分析库（pandas、numpy 等）、运行统计计算，并创建 PowerPoint presentations 等输出
 
 <Tip>
-    **Using Deep Agents Code?** Deep Agents Code has built-in sandbox support via the `--sandbox` flag. See [Use remote sandboxes](/oss/deepagents/code/remote-sandboxes) for Deep Agents Code-specific setup, flags (`--sandbox-id`, `--sandbox-setup`), and examples.
+    **使用 Deep Agents Code？** Deep Agents Code 通过 `--sandbox` flag 内置支持 sandbox。Deep Agents Code 专用的 setup、flags（`--sandbox-id`、`--sandbox-setup`）和示例，请参阅 [Use remote sandboxes](/oss/deepagents/code/remote-sandboxes)。
 </Tip>
 
 ## Basic usage
 
-These examples assume you have already created a sandbox/devbox using the provider's SDK and have credentials set up. For signup, authentication, and provider-specific lifecycle details, see [Available providers](#available-providers).
+这些示例假设你已经使用 provider 的 SDK 创建了 sandbox/devbox，并配置好了 credentials。注册、认证和 provider-specific lifecycle 细节，请参阅 [Available providers](#available-providers)。
 
 :::js
 <SandboxBasicJs />
@@ -71,12 +71,12 @@ These examples assume you have already created a sandbox/devbox using the provid
 ## Available providers
 
 :::python
-For provider-specific setup, authentication, and lifecycle details, see [sandbox integrations](/oss/integrations/sandboxes).
+provider-specific setup、authentication 和 lifecycle 细节请参阅 [sandbox integrations](/oss/integrations/sandboxes)。
 :::
 
 :::js
 <Note>
-Skills require `deepagents>=1.7.0`.
+Skills 需要 `deepagents>=1.7.0`。
 </Note>
 
 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -111,22 +111,22 @@ Skills require `deepagents>=1.7.0`.
 </div>
 :::
 
-Don't see your provider? You can implement your own sandbox backend. See [Contributing a sandbox integration](/oss/contributing/integrations-langchain).
+没有看到你的 provider？你可以实现自己的 sandbox backend。请参阅 [Contributing a sandbox integration](/oss/contributing/integrations-langchain)。
 
 ## Lifecycle and scoping
 
-Most applications choose either one sandbox per [thread](/langsmith/use-threads) (thread-scoped) or one shared sandbox for every thread on the same [assistant](/langsmith/assistants) (assistant-scoped).
+大多数应用会选择每个 [thread](/langsmith/use-threads) 一个 sandbox（thread-scoped），或者同一 [assistant](/langsmith/assistants) 上所有 threads 共用一个 sandbox（assistant-scoped）。
 
-Sandboxes consume resources and cost money until they are shut down. Make sure you shut sandboxes down once they are no longer in use.
+Sandboxes 在关闭前会持续消耗资源并产生费用。请确保在不再使用时关闭 sandboxes。
 
-For the full lifecycle table, async [graph factory](/langsmith/graph-rebuild) notes, TTL behavior, LangGraph Deployment wiring, and client-side examples, see [Sandbox lifecycle](/oss/deepagents/going-to-production#lifecycle) in Going to production.
+完整 lifecycle table、async [graph factory](/langsmith/graph-rebuild) 注意事项、TTL 行为、LangGraph Deployment wiring 和 client-side 示例，请参阅 Going to production 中的 [Sandbox lifecycle](/oss/deepagents/going-to-production#lifecycle)。
 
 ### Thread-scoped (default)
 
-Each conversation gets its own sandbox. The first run creates it; follow-up turns on the same thread reuse it. When the thread ends or the sandbox TTL expires, the environment goes away. Store the mapping with provider labels or metadata as in the following example so each run resolves to the same sandbox.
+每个 conversation 都获得自己的 sandbox。第一次运行会创建它；同一个 thread 上的后续 turns 会复用它。当 thread 结束或 sandbox TTL 过期时，该环境会消失。请像下面示例那样，用 provider labels 或 metadata 存储映射，使每次运行都能解析到同一个 sandbox。
 
 <Tip>
-When users can return after idle time, configure a TTL on the sandbox so the provider deletes or archives idle environments automatically.
+当 users 可能在空闲后返回时，请在 sandbox 上配置 TTL，让 provider 自动删除或归档闲置环境。
 </Tip>
 
 <Tabs>
@@ -144,10 +144,10 @@ When users can return after idle time, configure a TTL on the sandbox so the pro
 
 ### Assistant-scoped
 
-Every thread on the same assistant reuses one sandbox. Files, installed packages, and cloned repositories persist across conversations.
+同一 assistant 上的每个 thread 都会复用同一个 sandbox。Files、已安装 packages 和 cloned repositories 会跨 conversations 保留。
 
 <Warning>
-Assistant-scoped sandboxes accumulate in-sandbox state over time. Configure a TTL with your sandbox provider, use snapshots to reset periodically, or implement cleanup logic so disk and memory do not grow without bound.
+Assistant-scoped sandboxes 会随着时间积累 in-sandbox state。请用你的 sandbox provider 配置 TTL、使用 snapshots 定期重置，或实现 cleanup logic，避免 disk 和 memory 无限制增长。
 </Warning>
 
 <Tabs>
@@ -163,53 +163,53 @@ Assistant-scoped sandboxes accumulate in-sandbox state over time. Configure a TT
     </Tab>
 </Tabs>
 
-For manual create, execute, and teardown outside a graph factory, see [Basic usage](#basic-usage) and [sandbox integrations](/oss/integrations/sandboxes) for provider-specific APIs.
+如果需要在 graph factory 外部手动 create、execute 和 teardown，请参阅 [Basic usage](#basic-usage) 以及 provider-specific APIs 的 [sandbox integrations](/oss/integrations/sandboxes)。
 
 ## Integration patterns
 
-There are two architecture patterns for integrating agents with sandboxes, based on where the agent runs.
+根据 agent 在哪里运行，agents 与 sandboxes 集成有两种架构模式。
 
 ### Agent in sandbox pattern
 
-The agent runs inside the sandbox and you communicate with it over the network. You build a Docker or VM image with your agent framework pre-installed, run it inside the sandbox, and connect from outside to send messages.
+agent 在 sandbox 内运行，你通过 network 与它通信。你需要构建一个预装 agent framework 的 Docker 或 VM image，在 sandbox 内运行它，然后从外部连接并发送 messages。
 
-Benefits:
+优点：
 
-- ✅ Mirrors local development closely.
-- ✅ Tight coupling between agent and environment.
+- ✓ 更接近本地开发环境。
+- ✓ agent 与执行环境耦合紧密。
 
-Trade-offs:
+取舍：
 
-- 🔴 API keys must live inside the sandbox (security risk).
-- 🔴 Updates require rebuilding images.
-- 🔴 Requires infrastructure for communication (WebSocket or HTTP layer).
+- ⚠ API keys 必须放在 sandbox 内（安全风险）。
+- ⚠ 更新需要重新构建 images。
+- ⚠ 需要通信基础设施（WebSocket 或 HTTP layer）。
 
-To run an agent in a sandbox, build an image and install deepagents on it.
+要在 sandbox 中运行 agent，请构建一个 image 并安装 deepagents。
 
 ```dockerfile
 FROM python:3.11
 RUN pip install deepagents-code
 ```
 
-Then run the agent inside the sandbox.
-To use the agent inside the sandbox you have to add additional infrastructure to handle communication between your application and the agent inside the sandbox.
+然后在 sandbox 内运行 agent。
+要使用 sandbox 内的 agent，你必须添加额外基础设施，处理你的应用与 sandbox 内 agent 之间的通信。
 
 ### Sandbox as tool pattern
 
-The agent runs on your machine or server. When it needs to execute code, it calls sandbox tools (such as `execute`, `read_file`, or `write_file`) which invoke the provider's APIs to run operations in a remote sandbox.
+agent 在你的机器或 server 上运行。当它需要执行代码时，会调用 sandbox tools（例如 `execute`、`read_file` 或 `write_file`），这些 tools 会调用 provider APIs，在远程 sandbox 中运行操作。
 
-Benefits:
+优点：
 
-- ✅ Update agent code instantly without rebuilding images.
-- ✅ Cleaner separation between agent state and execution.
-    - API keys stay outside the sandbox.
-    - Sandbox failures don't lose agent state.
-    - Option to run tasks in multiple sandboxes in parallel.
-- ✅ Pay only for execution time.
+- ✓ 无需重建 images 即可立即更新 agent code。
+- ✓ agent state 与 execution 的分离更清晰。
+    - API keys 留在 sandbox 外。
+    - Sandbox failure 不会丢失 agent state。
+    - 可以选择在多个 sandboxes 中并行运行 tasks。
+- ✓ 只为 execution time 付费。
 
-Trade-offs:
+取舍：
 
-- 🔴 Network latency on each execution call.
+- ⚠ 每次 execution call 都有 network latency。
 
 :::python
 
@@ -292,24 +292,24 @@ try {
 
 :::
 
-The examples in this doc use the sandbox as a tool pattern.
-Choose the agent in sandbox pattern when your provider's SDK handles the communication layer and you want production to mirror local development.
-Choose the sandbox as tool pattern when you need to iterate quickly on agent logic, keep API keys outside the sandbox, or prefer cleaner separation of concerns.
+本文档中的示例使用 sandbox as a tool pattern。
+当 provider 的 SDK 负责通信层，而且你希望 production 尽可能贴近本地开发时，选择 agent in sandbox pattern。
+当你需要快速迭代 agent logic、把 API keys 保留在 sandbox 外，或偏好更清晰的关注点分离时，选择 sandbox as tool pattern。
 
 ## How sandboxes work
 
 ### Isolation boundaries
 
-All sandbox providers protect your host system from the agent's filesystem and shell operations. The agent cannot read your local files, access environment variables on your machine, or interfere with other processes. However, sandboxes alone do **not** protect against:
+所有 sandbox providers 都会保护你的 host system，避免 agent 的 filesystem 和 shell operations 影响它。agent 无法读取你的本地文件、访问你机器上的 environment variables，或干扰其他 processes。不过，sandboxes 本身**不能**防御：
 
-- **Context injection**: An attacker who controls part of the agent's input can instruct it to run arbitrary commands inside the sandbox. The sandbox is isolated, but the agent has full control within it.
-- **Network exfiltration**: Unless network access is blocked, a context-injected agent can send data out of the sandbox over HTTP or DNS. Some providers support blocking network access (e.g., `blockNetwork: true` on Modal).
+- **Context injection**：攻击者如果控制了 agent input 的一部分，就可以指示它在 sandbox 内运行任意 commands。sandbox 是隔离的，但 agent 在其中拥有完整控制权。
+- **Network exfiltration**：除非 network access 被阻断，否则被 context-injected 的 agent 可以通过 HTTP 或 DNS 把数据发出 sandbox。部分 providers 支持阻断 network access（例如 Modal 上的 `blockNetwork: true`）。
 
-See [security considerations](#security-considerations) for how to handle secrets and mitigate these risks.
+如何处理 secrets 和缓解这些风险，请参阅 [security considerations](#security-considerations)。
 
 ### The `execute` method
 
-Sandbox backends have a simple architecture: the only method a provider must implement is `execute()`, which runs a shell command and returns its output. Every other filesystem operation (`read`, `write`, `edit`, `ls`, `glob`, `grep`) is built on top of `execute()` by the @[`BaseSandbox`] base class, which constructs scripts and runs them inside the sandbox via `execute()`.
+Sandbox backends 的架构很简单：provider 唯一必须实现的方法是 `execute()`，它负责运行 shell command 并返回输出。其他所有 filesystem operations（`read`、`write`、`edit`、`ls`、`glob`、`grep`）都由 @[`BaseSandbox`] base class 基于 `execute()` 构建；它会生成 scripts，并通过 `execute()` 在 sandbox 中运行。
 
 ```mermaid
 graph TB
@@ -331,13 +331,13 @@ graph TB
     class Provider trigger
 ```
 
-This design means:
-- **Adding a new provider is straightforward.** Implement `execute()`—the base class handles everything else.
-- **The `execute` tool is conditionally available.** On every model call, the harness checks whether the backend implements @[`SandboxBackendProtocol`]. If not, the tool is filtered out and the agent never sees it.
+这意味着：
+- **添加新 provider 很直接。** 实现 `execute()` 即可，其他部分由 base class 处理。
+- **`execute` tool 是有条件可用的。** 每次 model call 时，harness 都会检查 backend 是否实现了 @[`SandboxBackendProtocol`]。如果没有，该 tool 会被过滤掉，agent 永远看不到它。
 
-When the agent calls the `execute` tool, it provides a `command` string and gets back the combined stdout/stderr, exit code, and a truncation notice if the output was too large.
+当 agent 调用 `execute` tool 时，它会提供一个 `command` string，并得到合并后的 stdout/stderr、exit code，以及在输出过大时的截断提示。
 
-You can also call the backend `execute()` method directly in your application code.
+你也可以在 application code 中直接调用 backend 的 `execute()` 方法。
 
 :::python
 <Tabs>
@@ -452,7 +452,7 @@ You can also call the backend `execute()` method directly in your application co
 </Tabs>
 :::
 
-For example:
+例如：
 
 ```
 4
@@ -464,18 +464,18 @@ bash: foobar: command not found
 [Command failed with exit code 127]
 ```
 
-If a command produces very large output, the result is automatically saved to a file and the agent is instructed to use `read_file` to access it incrementally. This prevents context window overflow.
+如果 command 产生非常大的输出，结果会自动保存到文件，agent 会被指示使用 `read_file` 增量访问它。这可以防止 context window overflow。
 
 ### Two planes of file access
 
-There are two distinct ways files move in and out of a sandbox, and it's important to understand when to use each:
+文件进出 sandbox 有两种不同方式，理解何时使用哪一种很重要：
 
-**Agent filesystem tools**: `read_file`, `write_file`, `edit_file`, `ls`, `glob`, `grep`, and `execute` are the tools the LLM calls during its execution. These go through `execute()` inside the sandbox. The agent uses them to read code, write files, and run commands as part of its task.
+**Agent filesystem tools**：`read_file`、`write_file`、`edit_file`、`ls`、`glob`、`grep` 和 `execute` 是 LLM 在执行过程中调用的 tools。它们会通过 sandbox 内的 `execute()` 执行。agent 使用这些 tools 读取代码、写文件，并作为任务的一部分运行 commands。
 
-**File transfer APIs**: the `uploadFiles()` and `downloadFiles()` methods that your application code calls. These use the provider's native file transfer APIs (not shell commands) and are designed for moving files between your host environment and the sandbox. Use these to:
-- **Seed the sandbox** with source code, configuration, or data before the agent runs
-- **Retrieve artifacts** (generated code, build outputs, reports) after the agent finishes
-- **Pre-populate dependencies** that the agent will need
+**File transfer APIs**：你的 application code 调用的 `uploadFiles()` 和 `downloadFiles()` 方法。它们使用 provider 的原生 file transfer APIs（不是 shell commands），用于在 host environment 和 sandbox 之间移动文件。使用它们可以：
+- 在 agent 运行前，用 source code、configuration 或 data **seed the sandbox**
+- 在 agent 完成后**取回 artifacts**（生成的 code、build outputs、reports）
+- **预填充 dependencies**，供 agent 后续使用
 
 ```mermaid
 graph LR
@@ -509,7 +509,7 @@ graph LR
 
 ### Seeding the sandbox
 
-Use `uploadFiles()` to populate the sandbox before the agent runs. File contents are provided as `Uint8Array`:
+使用 `uploadFiles()` 在 agent 运行前填充 sandbox。File contents 以 `Uint8Array` 提供：
 
 ```typescript
 const encoder = new TextEncoder();
@@ -528,7 +528,7 @@ for (const res of responses) {
 
 ### Retrieving artifacts
 
-Use `downloadFiles()` to retrieve files from the sandbox after the agent finishes:
+使用 `downloadFiles()` 在 agent 完成后从 sandbox 取回文件：
 
 ```typescript
 const results = await sandbox.downloadFiles(["src/index.js", "output.txt"]);
@@ -544,18 +544,18 @@ for (const result of results) {
 ```
 
 <Note>
-Inside the sandbox, the agent uses its own filesystem tools (`read_file`, `write_file`): not `uploadFiles` or `downloadFiles`. Those methods are for your application code to move files across the boundary between your host and the sandbox.
+在 sandbox 内部，agent 使用自己的 filesystem tools（`read_file`、`write_file`），而不是 `uploadFiles` 或 `downloadFiles`。这些方法用于你的 application code 在 host 和 sandbox 之间移动文件。
 </Note>
 :::
 
 :::python
 ## Working with files
 
-The deepagents sandbox backends support file transfer APIs for moving files between your application and the sandbox.
+deepagents sandbox backends 支持 file transfer APIs，用于在你的 application 和 sandbox 之间移动文件。
 
 ### Seeding the sandbox
 
-Use `upload_files()` to populate the sandbox before the agent runs. Paths must be absolute and contents are `bytes`:
+使用 `upload_files()` 在 agent 运行前填充 sandbox。Paths 必须是 absolute，contents 是 `bytes`：
 
 <Tabs>
     <Tab title="Daytona">
@@ -685,7 +685,7 @@ Use `upload_files()` to populate the sandbox before the agent runs. Paths must b
 
 ### Retrieving artifacts
 
-Use `download_files()` to retrieve files from the sandbox after the agent finishes:
+使用 `download_files()` 在 agent 完成后从 sandbox 取回文件：
 
 <Tabs>
     <Tab title="Daytona">
@@ -815,40 +815,40 @@ Use `download_files()` to retrieve files from the sandbox after the agent finish
 </Tabs>
 
 <Note>
-Inside the sandbox, the agent uses filesystem tools (`read_file`, `write_file`). The `upload_files` and `download_files` methods are for your application code to move files across the boundary between your host and the sandbox.
+在 sandbox 内部，agent 使用 filesystem tools（`read_file`、`write_file`）。`upload_files` 和 `download_files` 方法用于你的 application code 在 host 和 sandbox 之间移动文件。
 </Note>
 :::
 
 ## Security considerations
 
-Sandboxes isolate code execution from your host system, but they don't protect against **context injection**. An attacker who controls part of the agent's input can instruct it to read files, run commands, or exfiltrate data from within the sandbox. This makes credentials inside the sandbox especially dangerous.
+Sandboxes 会把代码执行与 host system 隔离开，但它们无法防御 **context injection**。如果攻击者控制了 agent input 的一部分，就可以指示它在 sandbox 内读取文件、运行 commands 或外传数据。这会让 sandbox 内的 credentials 特别危险。
 
 <Warning>
-**Never put secrets inside a sandbox.** API keys, tokens, database credentials, and other secrets injected into a sandbox (via environment variables, mounted files, or the `secrets` option) can be read and exfiltrated by a context-injected agent. This applies even to short-lived or scoped credentials—if an agent can access them, so can an attacker.
+**绝不要把 secrets 放进 sandbox。** 注入到 sandbox 中的 API keys、tokens、database credentials 和其他 secrets（通过 environment variables、mounted files 或 `secrets` option）都可能被 context-injected agent 读取并外传。即便是 short-lived 或 scoped credentials 也一样；只要 agent 能访问它们，攻击者也能访问。
 </Warning>
 
 ### Handling secrets safely
 
-If your agent needs to call authenticated APIs or access protected resources, you have two options:
+如果你的 agent 需要调用 authenticated APIs 或访问受保护资源，有两个选择：
 
-1. **Keep secrets in tools outside the sandbox.** Define tools that run in your host environment (not inside the sandbox) and handle authentication there. The agent calls these tools by name, but never sees the credentials. This is the recommended approach.
+1. **把 secrets 留在 sandbox 外的 tools 中。** 定义在 host environment 中运行的 tools（不在 sandbox 内），并在那里处理 authentication。agent 会按名称调用这些 tools，但永远看不到 credentials。这是推荐方式。
 
-2. **Use a network proxy that injects credentials.** Some sandbox providers support proxies that intercept outgoing HTTP requests from the sandbox and attach credentials (e.g., `Authorization` headers) before forwarding them. The agent never sees the secret—it just makes plain requests to a URL. This approach is not yet widely available across providers.
+2. **使用会注入 credentials 的 network proxy。** 某些 sandbox providers 支持 proxy，它会拦截 sandbox 发出的 HTTP requests，并在转发前附加 credentials（例如 `Authorization` headers）。agent 永远看不到 secret；它只是向某个 URL 发起普通 request。这种方式目前在 providers 之间还不普遍。
 
 <Warning>
-If you must inject secrets into a sandbox (not recommended), take these precautions:
+如果你必须把 secrets 注入 sandbox（不推荐），请采取以下预防措施：
 
-- Enable [human-in-the-loop](/oss/deepagents/human-in-the-loop) approval for **all** tool calls, not just sensitive ones
-- Block or restrict network access from the sandbox to limit exfiltration paths
-- Use the narrowest possible credential scope and shortest possible lifetime
-- Monitor sandbox network traffic for unexpected outbound requests
+- 对**所有** tool calls 启用 [human-in-the-loop](/oss/deepagents/human-in-the-loop) approval，而不只是敏感 tool calls
+- 阻断或限制 sandbox 的 network access，减少外传路径
+- 使用尽可能窄的 credential scope 和尽可能短的 lifetime
+- 监控 sandbox network traffic，发现异常 outbound requests
 
-Even with these safeguards, this remains an unsafe workaround. A sufficiently creative enough context injection attack can bypass output filtering and HITL review.
+即使有这些防护，这仍然是不安全的 workaround。足够有创意的 context injection attack 可以绕过 output filtering 和 HITL review。
 </Warning>
 
 ### General best practices
 
-- Review sandbox outputs before acting on them in your application
-- Block sandbox network access when not needed
-- Use [middleware](/oss/langchain/middleware) to filter or redact sensitive patterns in tool outputs
-- Treat everything produced inside the sandbox as untrusted input
+- 在 application 对 sandbox outputs 采取行动前先 review 它们
+- 不需要 network 时，阻断 sandbox network access
+- 使用 [middleware](/oss/langchain/middleware) 过滤或 redact tool outputs 中的敏感 patterns
+- 把 sandbox 内产生的一切都视为 untrusted input

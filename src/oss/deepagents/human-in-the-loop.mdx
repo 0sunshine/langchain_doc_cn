@@ -1,12 +1,12 @@
 ---
 title: Human-in-the-loop
-description: Learn how to configure human approval for sensitive tool operations
+description: 学习如何为敏感 tool 操作配置人工审批
 ---
 
 import HitlBasicConfigPy from '/snippets/code-samples/hitl-basic-config-py.mdx';
 import HitlBasicConfigJs from '/snippets/code-samples/hitl-basic-config-js.mdx';
 
-Some tool operations may be sensitive and require human approval before execution. Deep Agents support human-in-the-loop workflows through LangGraph's interrupt capabilities. You can configure which tools require approval using the `interrupt_on` parameter.
+某些 tool 操作可能比较敏感，需要在执行前获得人工审批。Deep Agents 通过 LangGraph 的 interrupt capabilities 支持 human-in-the-loop workflows。你可以使用 `interrupt_on` 参数配置哪些 tools 需要审批。
 
 ```mermaid
 graph LR
@@ -33,13 +33,13 @@ graph LR
     class ToolMessage process
 ```
 
-## Basic configuration
+## 基本配置
 
-The `interrupt_on` parameter accepts a dictionary mapping tool names to interrupt configurations. Each tool can be configured with:
+`interrupt_on` 参数接受一个 dictionary，将 tool names 映射到 interrupt configurations。每个 tool 都可以这样配置：
 
-- **`True`**: Enable interrupts with default behavior (approve, edit, reject, respond allowed)
-- **`False`**: Disable interrupts for this tool
-- **`{"allowed_decisions": [...]}`**: Custom configuration with specific allowed decisions
+- **`True`**：启用 interrupts，并使用默认行为（允许 approve、edit、reject、respond）
+- **`False`**：禁用这个 tool 的 interrupts
+- **`{"allowed_decisions": [...]}`**：使用指定 allowed decisions 的自定义配置
 
 :::python
 <HitlBasicConfigPy />
@@ -51,14 +51,14 @@ The `interrupt_on` parameter accepts a dictionary mapping tool names to interrup
 
 ## Decision types
 
-The `allowed_decisions` list controls what actions a human can take when reviewing a tool call:
+`allowed_decisions` list 控制人工 review 一个 tool call 时可以采取哪些动作：
 
-- **`"approve"`**: Execute the tool with the original arguments as proposed by the agent
-- **`"edit"`**: Modify the tool arguments before execution
-- **`"reject"`**: Skip executing this tool call entirely
-- **`"respond"`**: Return the human's message directly as the tool result, skipping execution — for "ask user" style tools
+- **`"approve"`**：使用 agent 提议的原始 arguments 执行 tool
+- **`"edit"`**：在执行前修改 tool arguments
+- **`"reject"`**：完全跳过这个 tool call，不执行
+- **`"respond"`**：直接将人工消息作为 tool result 返回并跳过执行，适用于“ask user”风格的 tools
 
-You can customize which decisions are available for each tool:
+你可以为每个 tool 自定义可用 decisions：
 
 :::python
 ```python
@@ -90,9 +90,9 @@ const interruptOn = {
 ```
 :::
 
-## Handle interrupts
+## 处理 interrupts
 
-When an interrupt is triggered, the agent pauses execution and returns control. Check for interrupts in the result and handle them accordingly.
+当 interrupt 被触发时，agent 会暂停执行并交还控制权。检查结果中是否有 interrupts，并据此处理。
 
 :::python
 ```python
@@ -193,9 +193,9 @@ console.log(result.messages[result.messages.length - 1].content);
 ```
 :::
 
-## Multiple tool calls
+## 多个 tool calls
 
-When the agent calls multiple tools that require approval, all interrupts are batched together in a single interrupt. You must provide decisions for each one in order.
+当 agent 调用多个需要审批的 tools 时，所有 interrupts 会被批处理到一个 interrupt 中。你必须按顺序为每个 action 提供 decisions。
 
 :::python
 ```python
@@ -263,9 +263,9 @@ if (result.__interrupt__) {
 ```
 :::
 
-## Edit tool arguments
+## 编辑 tool arguments
 
-When `"edit"` is in the allowed decisions, you can modify the tool arguments before execution:
+当 allowed decisions 中包含 `"edit"` 时，你可以在执行前修改 tool arguments：
 
 :::python
 ```python
@@ -321,11 +321,11 @@ if (result.__interrupt__) {
 
 ## Subagent interrupts
 
-When using subagents, you can use interrupts [on tool calls](#interrupts-on-tool-calls) and [within tool calls](#interrupts-within-tool-calls).
+使用 subagents 时，你可以使用 [tool calls 上的 interrupts](#tool-calls-上的-interrupts) 和 [tool calls 内部的 interrupts](#tool-calls-内部的-interrupts)。
 
-### Interrupts on tool calls
+### Tool calls 上的 interrupts
 
-Each subagent can have its own `interrupt_on` configuration that overrides the main agent's settings:
+每个 subagent 都可以有自己的 `interrupt_on` 配置，用来覆盖 main agent 的设置：
 
 :::python
 ```python
@@ -376,11 +376,11 @@ const agent = createDeepAgent({
 ```
 :::
 
-When a subagent triggers an interrupt, the handling is the same—check for `interrupts` on the result and resume with `Command`.
+当 subagent 触发 interrupt 时，处理方式相同：检查 result 上的 `interrupts`，并用 `Command` resume。
 
-### Interrupts within tool calls
+### Tool calls 内部的 interrupts
 
-Subagent tools can call `interrupt()` directly to pause execution and await approval:
+Subagent tools 可以直接调用 `interrupt()` 来暂停执行并等待审批：
 
 :::python
 
@@ -486,7 +486,7 @@ if __name__ == "__main__":
     main()
 ```
 
-When run, this produces the following output:
+运行时会生成以下输出：
 
 ```python
 Invoking agent - sub-agent will use request_approval tool...
@@ -620,7 +620,7 @@ async function main() {
 main().catch(console.error);
 ```
 
-When run, this produces the following output:
+运行时会生成以下输出：
 
 ```typescript
 Invoking agent - sub-agent will use request_approval tool...
@@ -640,9 +640,9 @@ Execution completed!
 
 ## Best practices
 
-### Always use a checkpointer
+### 始终使用 checkpointer
 
-Human-in-the-loop requires a checkpointer to persist agent state between the interrupt and resume:
+Human-in-the-loop 需要 checkpointer 来在 interrupt 与 resume 之间持久化 agent state：
 
 :::python
 ```python
@@ -658,9 +658,9 @@ agent = create_deep_agent(
 ```
 :::
 
-### Use the same thread ID
+### 使用相同 thread ID
 
-When resuming, you must use the same config with the same `thread_id`:
+resume 时，你必须使用带有相同 `thread_id` 的同一个 config：
 
 :::python
 ```python
@@ -673,9 +673,9 @@ result = agent.invoke(Command(resume={...}), config=config, version="v2")
 ```
 :::
 
-### Match decision order to actions
+### 让 decision 顺序匹配 actions
 
-The decisions list must match the order of `action_requests`:
+decisions list 必须与 `action_requests` 的顺序一致：
 
 :::python
 ```python
@@ -697,9 +697,9 @@ if result.interrupts:  # [!code highlight]
 ```
 :::
 
-### Tailor configurations by risk
+### 按风险定制配置
 
-Configure different tools based on their risk level:
+根据不同 tool 的风险等级配置它们：
 
 :::python
 ```python

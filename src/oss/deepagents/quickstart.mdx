@@ -1,6 +1,6 @@
 ---
 title: Quickstart
-description: Build your first deep agent in minutes
+description: 几分钟内构建你的第一个 deep agent
 ---
 
 import QuickstartSearchToolPy from '/snippets/code-samples/quickstart-search-tool-py.mdx';
@@ -10,24 +10,24 @@ import QuickstartCreateAgentJs from '/snippets/code-samples/quickstart-create-ag
 import QuickstartRunAgentPy from '/snippets/code-samples/quickstart-run-agent-py.mdx';
 import QuickstartRunAgentJs from '/snippets/code-samples/quickstart-run-agent-js.mdx';
 
-This guide walks you through creating your first deep agent with planning, file system tools, and subagent capabilities. You'll build a research agent that can conduct research and write reports.
+本指南会带你创建第一个具备 planning、file system tools 和 subagent 能力的 deep agent。你将构建一个可以进行研究并撰写报告的 research agent。
 
 <Tip>
-    **Using an AI coding assistant?**
+    **正在使用 AI coding assistant？**
 
-    - Install the [LangChain Docs MCP server](/use-these-docs) to give your agent access to up-to-date LangChain documentation and examples.
-    - Install [LangChain Skills](https://github.com/langchain-ai/langchain-skills) to improve your agent's performance on LangChain ecosystem tasks.
+    - 安装 [LangChain Docs MCP server](/use-these-docs)，让你的 agent 能访问最新的 LangChain 文档和示例。
+    - 安装 [LangChain Skills](https://github.com/langchain-ai/langchain-skills)，提升 agent 处理 LangChain 生态任务的表现。
 </Tip>
 
-## Prerequisites
+## 前置条件
 
-Before you begin, make sure you have an API key from a model provider (e.g., Gemini, Anthropic, OpenAI).
+开始之前，请确保你已经从某个 model provider（例如 Gemini、Anthropic、OpenAI）获取了 API key。
 
 <Note>
-    Deep Agents require a model that supports [tool calling](/oss/langchain/models#tool-calling). See [customization](/oss/deepagents/customization#model) for how to configure your model.
+    Deep Agents 需要支持 [tool calling](/oss/langchain/models#tool-calling) 的 model。如何配置 model，请参阅 [customization](/oss/deepagents/customization#model)。
 </Note>
 
-## Step 1: Install dependencies
+## Step 1：安装依赖
 
 :::python
 <CodeGroup>
@@ -60,10 +60,10 @@ Before you begin, make sure you have an API key from a model provider (e.g., Gem
 :::
 
 <Note>
-    This guide uses [Tavily](https://tavily.com/) as an example search provider, but you can substitute any search API (e.g., DuckDuckGo, SerpAPI, Brave Search).
+    本指南使用 [Tavily](https://tavily.com/) 作为示例 search provider，但你可以替换为任何 search API（例如 DuckDuckGo、SerpAPI、Brave Search）。
 </Note>
 
-## Step 2: Set up your API keys
+## Step 2：设置 API keys
 
 <Tabs>
     <Tab title="Google">
@@ -117,11 +117,11 @@ Before you begin, make sure you have an API key from a model provider (e.g., Gem
         export TAVILY_API_KEY="your-tavily-api-key"
         ```
 
-        Deep Agents work with any [LangChain chat model](/oss/deepagents/models#supported-models). Set the API key for your provider.
+        Deep Agents 可与任何 [LangChain chat model](/oss/deepagents/models#supported-models) 配合使用。请为你的 provider 设置 API key。
     </Tab>
 </Tabs>
 
-## Step 3: Create a search tool
+## Step 3：创建 search tool
 
 :::python
 <QuickstartSearchToolPy />
@@ -131,9 +131,9 @@ Before you begin, make sure you have an API key from a model provider (e.g., Gem
 <QuickstartSearchToolJs />
 :::
 
-## Step 4: Create a deep agent
+## Step 4：创建 deep agent
 
-Pass a `model` string in `provider:model` format, or an [initialized model instance](/oss/deepagents/models#configure-model-parameters). See [supported models](/oss/deepagents/models#supported-models) for all providers and [suggested models](/oss/deepagents/models#suggested-models) for tested recommendations.
+传入 `provider:model` 格式的 `model` 字符串，或传入一个 [initialized model instance](/oss/deepagents/models#configure-model-parameters)。所有 providers 请参阅 [supported models](/oss/deepagents/models#supported-models)，经过测试的推荐项请参阅 [suggested models](/oss/deepagents/models#suggested-models)。
 
 :::python
 <QuickstartCreateAgentPy />
@@ -143,7 +143,7 @@ Pass a `model` string in `provider:model` format, or an [initialized model insta
 <QuickstartCreateAgentJs />
 :::
 
-## Step 5: Run the agent
+## Step 5：运行 agent
 
 :::python
 <QuickstartRunAgentPy />
@@ -154,33 +154,32 @@ Pass a `model` string in `provider:model` format, or an [initialized model insta
 :::
 
 <Tip>
-Trace your agent's planning steps, tool calls, and subagent delegation with [LangSmith](https://smith.langchain.com). Follow the [observability quickstart](/langsmith/observability-quickstart) to get set up.
+使用 [LangSmith](https://smith.langchain.com) trace agent 的 planning steps、tool calls 和 subagent delegation。按照 [observability quickstart](/langsmith/observability-quickstart) 完成设置。
 </Tip>
 
-## How does it work?
+## 它是如何工作的？
 
-Your deep agent automatically:
+你的 deep agent 会自动：
 
-1. **Plans its approach** using the built-in [`write_todos`](/oss/deepagents/harness#task-planning) tool to break down the research task.
-1. **Conducts research** by calling the `internet_search` tool to gather information.
-1. **Manages context** by using file system tools ([`write_file`](/oss/deepagents/harness#virtual-filesystem-access), [`read_file`](/oss/deepagents/harness#virtual-filesystem-access)) to offload large search results.
-1. **Spawns subagents** as needed to delegate complex subtasks to specialized subagents.
-1. **Synthesizes a report** to compile findings into a coherent response.
+1. **规划方法**：使用内置 [`write_todos`](/oss/deepagents/harness#task-planning) tool 分解 research task。
+1. **开展研究**：调用 `internet_search` tool 收集信息。
+1. **管理 context**：使用 file system tools（[`write_file`](/oss/deepagents/harness#virtual-filesystem-access)、[`read_file`](/oss/deepagents/harness#virtual-filesystem-access)）将大型 search results 转存出去。
+1. **按需生成 subagents**：将复杂 subtasks 委派给专用 subagents。
+1. **综合报告**：将发现整理成连贯的 response。
 
-## Examples
+## 示例
 
-For agents, patterns, and applications you can build with Deep Agents, see [Examples](https://github.com/langchain-ai/deepagents/tree/main/examples).
+要查看可用 Deep Agents 构建的 agents、patterns 和 applications，请参阅 [Examples](https://github.com/langchain-ai/deepagents/tree/main/examples)。
 
 ## Streaming
 
-Deep Agents have built-in [streaming](/oss/langchain/event-streaming) for real-time updates from agent execution using LangGraph.
-This allows you to observe output progressively and review and debug agent and subagent work, such as tool calls, tool results, and LLM responses.
+Deep Agents 内置 [streaming](/oss/langchain/event-streaming)，可基于 LangGraph 从 agent execution 中获取实时更新。
+这让你可以逐步观察输出，并 review 和 debug agent 与 subagent 的工作，例如 tool calls、tool results 和 LLM responses。
 
-## Next steps
+## 下一步
 
-Now that you've built your first deep agent:
+现在你已经构建了第一个 deep agent：
 
-- **Customize your agent**: Learn about [customization options](/oss/deepagents/customization), including custom system prompts, tools, and subagents.
-- **Add long-term memory**: Enable [persistent memory](/oss/deepagents/memory) across conversations.
-- **Deploy to production**: Use [Managed Deep Agents](/langsmith/deploy-managed-deep-agent) to create, run, and operate deep agents in LangSmith.
-
+- **Customize your agent**：了解 [customization options](/oss/deepagents/customization)，包括 custom system prompts、tools 和 subagents。
+- **添加 long-term memory**：在 conversations 之间启用 [persistent memory](/oss/deepagents/memory)。
+- **部署到生产环境**：使用 [Managed Deep Agents](/langsmith/deploy-managed-deep-agent) 在 LangSmith 中创建、运行和运维 deep agents。

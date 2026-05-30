@@ -1,6 +1,6 @@
 ---
 title: Backends
-description: Choose and configure filesystem backends for Deep Agents. You can specify routes to different backends, implement virtual filesystems, and enforce policies.
+description: 选择并配置 Deep Agents 的 filesystem backends。你可以指定路由到不同 backends，实现 virtual filesystems，并执行策略。
 ---
 
 import BackendStatePy from '/snippets/code-samples/backend-state-py.mdx';
@@ -15,42 +15,41 @@ import BackendContextHubPy from '/snippets/code-samples/backend-context-hub-py.m
 import BackendCompositePy from '/snippets/code-samples/backend-composite-py.mdx';
 import BackendCompositeJs from '/snippets/code-samples/backend-composite-js.mdx';
 
-Deep Agents expose a filesystem surface to the agent via tools like `ls`, `read_file`, `write_file`, `edit_file`, `glob`, and `grep`. These tools operate through a pluggable backend. The `read_file` tool natively supports image files (`.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`) across all backends, returning them as multimodal content blocks.
+Deep Agents 通过 `ls`、`read_file`、`write_file`、`edit_file`、`glob` 和 `grep` 等 tools 向 agent 暴露 filesystem surface。这些 tools 通过可插拔 backend 运行。`read_file` tool 在所有 backends 中原生支持 image files（`.png`、`.jpg`、`.jpeg`、`.gif`、`.webp`），并以 multimodal content blocks 返回它们。
 
 :::js
-The `read_file` tool natively supports binary files (images, PDFs, audio, video) across all backends, returning a `ReadResult` with typed `content` and `mimeType`.
+`read_file` tool 在所有 backends 中原生支持 binary files（images、PDFs、audio、video），并返回包含 typed `content` 和 `mimeType` 的 `ReadResult`。
 :::
 
-Sandboxes and the @[`LocalShellBackend`] also provide an `execute` tool.
-This page explains how to:
+Sandboxes 和 @[`LocalShellBackend`] 也会提供 `execute` tool。
+本页说明如何：
 
-
-- [choose a backend](#specify-a-backend),
-- [route different paths to different backends](#route-to-different-backends),
-- [implement your own virtual filesystem](#use-a-virtual-filesystem) (e.g., S3 or Postgres),
-- [set permissions](#permissions) on filesystem access,
+- [choose a backend](#specify-a-backend)
+- [route different paths to different backends](#route-to-different-backends)
+- [implement your own virtual filesystem](#use-a-virtual-filesystem)（例如 S3 或 Postgres）
+- [set permissions](#permissions) 控制 filesystem access
 :::js
-- [add policy hooks](#add-policy-hooks),
-[work with binary and multimodal files](#multimodal-and-binary-files),
+- [add policy hooks](#add-policy-hooks)
+- [work with binary and multimodal files](#multimodal-and-binary-files)
 :::
-- [comply with the backend protocol](#protocol-reference),
+- [comply with the backend protocol](#protocol-reference)
 :::js
-- and [update existing backends to v2](#update-existing-backends-to-v2).
+- 以及 [update existing backends to v2](#update-existing-backends-to-v2)
 :::
 
 ## Quickstart
 
-Here are a few prebuilt filesystem backends that you can quickly use with your deep agent:
+下面是一些可以快速用于 deep agent 的预构建 filesystem backends：
 
 | Built-in backend | Description |
 |---|---|
-| [Default](#statebackend) | `agent = create_deep_agent(model="google_genai:gemini-3.5-flash")` <br></br> Thread-scoped. The default filesystem backend for an agent is stored in `langgraph` state. Files persist across turns within a thread (via your checkpointer) and are not shared across threads. |
-| [Local filesystem persistence](#filesystembackend-local-disk) | `agent = create_deep_agent(model="google_genai:gemini-3.5-flash", backend=FilesystemBackend(root_dir="/Users/nh/Desktop/"))` <br></br>This gives the deep agent access to your local machine's filesystem. You can specify the root directory that the agent has access to. Note that any provided `root_dir` must be an absolute path. Typically, wrap in a [CompositeBackend](#compositebackend-router) to keep internal agent data (offloaded tool results, conversation history) separate from your project files. |
-| [Durable store (LangGraph store)](#storebackend-langgraph-store) | `agent = create_deep_agent(model="google_genai:gemini-3.5-flash", backend=StoreBackend())` <br></br>This gives the agent access to long-term storage that is _persisted across threads_. This is great for storing longer term memories or instructions that are applicable to the agent over multiple executions. |
-| [Context Hub](#contexthubbackend) | `agent = create_deep_agent(model="google_genai:gemini-3.5-flash", backend=ContextHubBackend("my-agent"))` <br></br>Stores files durably in a LangSmith Hub repo, without provisioning a separate LangGraph store. |
-| [Sandbox](/oss/deepagents/sandboxes) | `agent = create_deep_agent(model="google_genai:gemini-3.5-flash", backend=sandbox)` <br></br>Execute code in isolated environments. Sandboxes provide filesystem tools plus the `execute` tool for running shell commands. Choose from Modal, Daytona, Deno, or local VFS. |
-| [Local shell](#localshellbackend-local-shell) | `agent = create_deep_agent(model="google_genai:gemini-3.5-flash", backend=LocalShellBackend(root_dir=".", env={"PATH": "/usr/bin:/bin"}))` <br></br>Filesystem and shell execution directly on the host. No isolation—use only in controlled development environments. See [security considerations](#localshellbackend-local-shell) below. |
-| [Composite](#compositebackend-router) | Thread-scoped by default, `/memories/` persisted across threads. The Composite backend is maximally flexible. You can specify different routes in the filesystem to point towards different backends. See Composite routing below for a ready-to-paste example. |
+| [Default](#statebackend) | `agent = create_deep_agent(model="google_genai:gemini-3.5-flash")` <br></br> Thread-scoped。agent 的默认 filesystem backend 存储在 `langgraph` state 中。Files 会通过你的 checkpointer 在同一个 thread 的多个 turns 之间持久存在，但不会在 threads 之间共享。 |
+| [Local filesystem persistence](#filesystembackend-local-disk) | `agent = create_deep_agent(model="google_genai:gemini-3.5-flash", backend=FilesystemBackend(root_dir="/Users/nh/Desktop/"))` <br></br>这会让 deep agent 访问你本机的 filesystem。你可以指定 agent 有权访问的 root directory。注意，提供的任何 `root_dir` 都必须是 absolute path。通常应包在 [CompositeBackend](#compositebackend-router) 中，让内部 agent data（offloaded tool results、conversation history）和你的 project files 分离。 |
+| [Durable store (LangGraph store)](#storebackend-langgraph-store) | `agent = create_deep_agent(model="google_genai:gemini-3.5-flash", backend=StoreBackend())` <br></br>这会让 agent 访问会_跨 threads 持久存在_的 long-term storage。它很适合保存 longer term memories，或多次执行中都适用于 agent 的 instructions。 |
+| [Context Hub](#contexthubbackend) | `agent = create_deep_agent(model="google_genai:gemini-3.5-flash", backend=ContextHubBackend("my-agent"))` <br></br>把 files 持久存储在 LangSmith Hub repo 中，无需额外配置 LangGraph store。 |
+| [Sandbox](/oss/deepagents/sandboxes) | `agent = create_deep_agent(model="google_genai:gemini-3.5-flash", backend=sandbox)` <br></br>在隔离环境中执行代码。Sandboxes 提供 filesystem tools，并额外提供用于运行 shell commands 的 `execute` tool。可选择 Modal、Daytona、Deno 或 local VFS。 |
+| [Local shell](#localshellbackend-local-shell) | `agent = create_deep_agent(model="google_genai:gemini-3.5-flash", backend=LocalShellBackend(root_dir=".", env={"PATH": "/usr/bin:/bin"}))` <br></br>直接在 host 上进行 filesystem 和 shell execution。没有隔离，只能在受控开发环境中使用。请参阅下方 [security considerations](#localshellbackend-local-shell)。 |
+| [Composite](#compositebackend-router) | 默认 thread-scoped，`/memories/` 跨 threads 持久化。Composite backend 最灵活。你可以指定 filesystem 中的不同 routes 指向不同 backends。下面的 Composite routing 部分提供了可直接粘贴的示例。 |
 
 ```mermaid
 graph TB
@@ -98,46 +97,46 @@ graph TB
 :::
 
 **How it works:**
-- Stores files in LangGraph agent state for the current thread via @[`StateBackend`].
-- Persists across multiple agent turns on the same thread via checkpoints. Files are not shared across threads.
+- 通过 @[`StateBackend`] 把 files 存储在当前 thread 的 LangGraph agent state 中。
+- 通过 checkpoints 在同一个 thread 的多个 agent turns 之间持久存在。Files 不会跨 threads 共享。
 
 <Warning>
-Designed to be used from within a graph. Calling backend methods (e.g., `state_backend.upload_files(...)`) outside of a graph run won't take effect until the graph executes.
+该 backend 设计为在 graph 内部使用。在 graph run 外部调用 backend methods（例如 `state_backend.upload_files(...)`）不会立即生效，要等 graph 执行时才会生效。
 </Warning>
 
 **Best for:**
-- A scratch pad for the agent to write intermediate results.
-- Automatic eviction of large tool outputs which the agent can then read back in piece by piece.
+- 让 agent 写入 intermediate results 的 scratch pad。
+- 自动驱逐大型 tool outputs，之后 agent 可以分片读回。
 
-Note that this backend is shared between the supervisor agent and subagents, and any files a subagent writes will remain in the LangGraph agent state
-even after that subagent's execution is complete. Those files will continue to be available to the supervisor agent and other subagents.
+注意，这个 backend 会由 supervisor agent 和 subagents 共享；subagent 写入的任何 files 都会保留在 LangGraph agent state 中，
+即使该 subagent 的执行已经完成。这些 files 会继续对 supervisor agent 和其他 subagents 可用。
 
 ### FilesystemBackend (local disk)
 
-@[`FilesystemBackend`] reads and writes real files under a configurable root directory.
+@[`FilesystemBackend`] 会在可配置 root directory 下读取和写入真实 files。
 
 <Warning>
-This backend grants agents direct filesystem read/write access.
-Use with caution and only in appropriate environments.
+该 backend 会授予 agents 直接 filesystem read/write access。
+请谨慎使用，并且只在合适环境中使用。
 
 **Appropriate use cases:**
-- Local development CLIs (coding assistants, development tools)
-- CI/CD pipelines (see security considerations below)
+- 本地开发 CLIs（coding assistants、development tools）
+- CI/CD pipelines（参见下方 security considerations）
 
 **Inappropriate use cases:**
-- Web servers or HTTP APIs - use `StateBackend`, `StoreBackend`, or a [sandbox backend](/oss/deepagents/sandboxes) instead
+- Web servers 或 HTTP APIs：请改用 `StateBackend`、`StoreBackend` 或 [sandbox backend](/oss/deepagents/sandboxes)
 
 **Security risks:**
-- Agents can read any accessible file, including secrets (API keys, credentials, `.env` files)
-- Combined with network tools, secrets may be exfiltrated via SSRF attacks
-- File modifications are permanent and irreversible
+- Agents 可以读取任何可访问文件，包括 secrets（API keys、credentials、`.env` files）
+- 如果再结合 network tools，secrets 可能通过 SSRF attacks 外传
+- File modifications 是永久且不可逆的
 
 **Recommended safeguards:**
-1. Enable [Human-in-the-Loop (HITL) middleware](/oss/deepagents/human-in-the-loop) to review sensitive operations.
-1. Exclude secrets from accessible filesystem paths (especially in CI/CD).
-1. Use a [sandbox backend](/oss/deepagents/sandboxes) for production environments requiring filesystem interaction.
-1. **Always** use `virtual_mode=True` with `root_dir` to enable path-based access restrictions (blocks `..`, `~`, and absolute paths outside root).
-   Note that the default (`virtual_mode=False`) provides no security even with `root_dir` set.
+1. 启用 [Human-in-the-Loop (HITL) middleware](/oss/deepagents/human-in-the-loop)，以 review 敏感操作。
+1. 从可访问 filesystem paths 中排除 secrets（尤其是在 CI/CD 中）。
+1. 对需要 filesystem interaction 的 production environments 使用 [sandbox backend](/oss/deepagents/sandboxes)。
+1. 与 `root_dir` 一起**始终**使用 `virtual_mode=True`，启用基于 path 的访问限制（阻止 `..`、`~` 以及 root 外的 absolute paths）。
+   注意默认值（`virtual_mode=False`）即使设置了 `root_dir` 也不提供安全性。
 </Warning>
 
 :::python
@@ -149,19 +148,19 @@ Use with caution and only in appropriate environments.
 :::
 
 **How it works:**
-- Reads/writes real files under a configurable `root_dir`.
-- You can optionally set `virtual_mode=True` to sandbox and normalize paths under `root_dir`.
-- Uses secure path resolution, prevents unsafe symlink traversal when possible, can use ripgrep for fast `grep`.
+- 在可配置的 `root_dir` 下读取/写入真实 files。
+- 你可以选择设置 `virtual_mode=True`，把 paths sandbox 并 normalize 到 `root_dir` 下。
+- 使用安全 path resolution，尽可能防止不安全的 symlink traversal，并可使用 ripgrep 进行快速 `grep`。
 
 **Best for:**
-- Local projects on your machine
+- 你机器上的本地 projects
 - CI sandboxes
 - Mounted persistent volumes
 
 <Tip>
-**Wrap `FilesystemBackend` in a `CompositeBackend`** for most use cases. Deep Agents automatically write internal data to the backend, including offloaded large tool results (under `/large_tool_results/`) and conversation history (under `/conversation_history/`). When you use `FilesystemBackend` alone, these internal files are written to real disk under `root_dir`, mixing agent artifacts with your project files.
+大多数场景下，**把 `FilesystemBackend` 包在 `CompositeBackend` 中**。Deep Agents 会自动把内部数据写入 backend，包括 offloaded large tool results（位于 `/large_tool_results/` 下）和 conversation history（位于 `/conversation_history/` 下）。如果单独使用 `FilesystemBackend`，这些内部 files 会被写到 `root_dir` 下的真实磁盘中，与 project files 混在一起。
 
-Use a `CompositeBackend` to route your project directory to `FilesystemBackend` while keeping internal paths in ephemeral `StateBackend` storage:
+使用 `CompositeBackend` 可以把 project directory 路由到 `FilesystemBackend`，同时让内部 paths 保留在 ephemeral `StateBackend` storage 中：
 
 :::python
 ```python
@@ -194,38 +193,38 @@ const agent = createDeepAgent({
 ```
 :::
 
-This way, agent reads and writes under `/workspace/` go to real disk, while offloaded tool results and other internal data stay in ephemeral state. See [Route to different backends](#route-to-different-backends) for more routing patterns.
+这样，agent 在 `/workspace/` 下的读写会进入真实磁盘，而 offloaded tool results 和其他内部数据会留在 ephemeral state 中。更多 routing patterns 请参阅 [Route to different backends](#route-to-different-backends)。
 </Tip>
 
 ### LocalShellBackend (local shell)
 
 <Warning>
-This backend grants agents direct filesystem read/write access **and** unrestricted shell execution on your host.
-Use with extreme caution and only in appropriate environments.
+该 backend 会授予 agents 直接 filesystem read/write access，**并且**允许在你的 host 上不受限制地执行 shell。
+请极其谨慎地使用，并且只在合适环境中使用。
 
 **Appropriate use cases:**
-- Local development CLIs (coding assistants, development tools)
-- Personal development environments where you trust the agent's code
-- CI/CD pipelines with proper secret management
+- 本地开发 CLIs（coding assistants、development tools）
+- 你信任 agent code 的个人开发环境
+- 配有适当 secret management 的 CI/CD pipelines
 
 **Inappropriate use cases:**
-- Production environments (such as web servers, APIs, multi-tenant systems)
-- Processing untrusted user input or executing untrusted code
+- Production environments（例如 web servers、APIs、multi-tenant systems）
+- 处理 untrusted user input 或执行 untrusted code
 
 **Security risks:**
-- Agents can execute **arbitrary shell commands** with your user's permissions
-- Agents can read any accessible file, including secrets (API keys, credentials, `.env` files)
-- Secrets may be exposed
-- File modifications and command execution are **permanent and irreversible**
-- Commands run directly on your host system
-- Commands can consume unlimited CPU, memory, disk
+- Agents 可以用你的用户权限执行**任意 shell commands**
+- Agents 可以读取任何可访问文件，包括 secrets（API keys、credentials、`.env` files）
+- Secrets 可能被暴露
+- File modifications 和 command execution 是**永久且不可逆的**
+- Commands 直接在你的 host system 上运行
+- Commands 可以消耗不受限制的 CPU、memory、disk
 
 **Recommended safeguards:**
-1. Enable [Human-in-the-Loop (HITL) middleware](/oss/deepagents/human-in-the-loop) to review and approve operations before execution. This is **strongly recommended**.
-2. Run in dedicated development environments only. Never use on shared or production systems.
-3. Use a [sandbox backend](/oss/deepagents/sandboxes) for production environments requiring shell execution.
+1. 启用 [Human-in-the-Loop (HITL) middleware](/oss/deepagents/human-in-the-loop)，在执行前 review 并 approve operations。**强烈推荐**这样做。
+2. 只在专用开发环境中运行。绝不要在 shared 或 production systems 上使用。
+3. 对需要 shell execution 的 production environments 使用 [sandbox backend](/oss/deepagents/sandboxes)。
 
-**Note:** `virtual_mode=True` provides no security with shell access enabled, since commands can access any path on the system.
+**Note:** 启用 shell access 后，`virtual_mode=True` 不提供安全性，因为 commands 可以访问系统上的任何 path。
 </Warning>
 
 :::python
@@ -237,14 +236,14 @@ Use with extreme caution and only in appropriate environments.
 :::
 
 **How it works:**
-- Extends `FilesystemBackend` with the `execute` tool for running shell commands on the host.
-- Commands run directly on your machine using `subprocess.run(shell=True)` with no sandboxing.
-- Supports `timeout` (default 120s), `max_output_bytes` (default 100,000), `env`, and `inherit_env` for environment variables.
-- Shell commands use `root_dir` as the working directory but can access any path on the system.
+- 扩展 `FilesystemBackend`，增加用于在 host 上运行 shell commands 的 `execute` tool。
+- Commands 直接在你的机器上通过 `subprocess.run(shell=True)` 运行，没有 sandboxing。
+- 支持 `timeout`（默认 120s）、`max_output_bytes`（默认 100,000）、`env` 和 `inherit_env` 来配置 environment variables。
+- Shell commands 使用 `root_dir` 作为 working directory，但可以访问系统上的任何 path。
 
 **Best for:**
-- Local coding assistants and development tools
-- Quick iteration during development when you trust the agent
+- 本地 coding assistants 和 development tools
+- 当你信任 agent 时，在开发期间快速迭代
 
 ### StoreBackend (LangGraph store)
 
@@ -257,50 +256,50 @@ Use with extreme caution and only in appropriate environments.
 :::
 
 <Note>
-    When deploying to [LangSmith Deployment](/langsmith/deployment), omit the `store` parameter. The platform automatically provisions a store for your agent.
+    部署到 [LangSmith Deployment](/langsmith/deployment) 时，请省略 `store` 参数。平台会自动为你的 agent provision store。
 </Note>
 
 <Tip>
-    The `namespace` parameter controls data isolation. For multi-user deployments, always set a [namespace factory](/oss/deepagents/backends#namespace-factories) to isolate data per user or tenant.
+    `namespace` 参数控制数据隔离。对于 multi-user deployments，请始终设置 [namespace factory](/oss/deepagents/backends#namespace-factories)，以按 user 或 tenant 隔离数据。
 </Tip>
 
 **How it works:**
-- @[`StoreBackend`] stores files in a LangGraph @[`BaseStore`] provided by the runtime, enabling cross‑thread durable storage.
+- @[`StoreBackend`] 会把 files 存储到 runtime 提供的 LangGraph @[`BaseStore`] 中，从而支持 cross-thread durable storage。
 
 **Best for:**
-- When you already run with a configured LangGraph store (for example, Redis, Postgres, or cloud implementations behind @[`BaseStore`]).
-- When you're deploying your agent through [LangSmith Deployment](/langsmith/deployment) (a store is automatically provisioned for your agent).
+- 当你已经运行在配置好的 LangGraph store 上时（例如 Redis、Postgres，或 @[`BaseStore`] 背后的 cloud implementations）。
+- 当你通过 [LangSmith Deployment](/langsmith/deployment) 部署 agent 时（平台会自动为 agent provision store）。
 
 #### Namespace factories
 
-A namespace factory controls where `StoreBackend` reads and writes data. It receives a LangGraph @[`Runtime`] and returns a tuple of strings used as the store namespace. Use namespace factories to isolate data between users, tenants, or assistants.
+namespace factory 控制 `StoreBackend` 从哪里读取和向哪里写入数据。它接收 LangGraph @[`Runtime`]，并返回一个字符串 tuple 作为 store namespace。使用 namespace factories 可以在 users、tenants 或 assistants 之间隔离数据。
 
-Pass the namespace factory to the `namespace` parameter when constructing a `StoreBackend`:
+构造 `StoreBackend` 时，把 namespace factory 传给 `namespace` 参数：
 
 ```python
 NamespaceFactory = Callable[[Runtime], tuple[str, ...]]
 ```
 
-The `Runtime` provides:
-- `rt.context` — User-supplied context passed via LangGraph's [context schema](https://langchain-ai.github.io/langgraph/concepts/runtime/) (for example, `user_id`)
+`Runtime` 提供：
+- `rt.context` - 通过 LangGraph [context schema](https://langchain-ai.github.io/langgraph/concepts/runtime/) 传入的 user-supplied context（例如 `user_id`）
 :::python
-- `rt.server_info` — Server-specific metadata when running on LangGraph Server (assistant ID, graph ID, authenticated user)
-- `rt.execution_info` — Execution identity information (thread ID, run ID, checkpoint ID)
+- `rt.server_info` - 在 LangGraph Server 上运行时的 server-specific metadata（assistant ID、graph ID、authenticated user）
+- `rt.execution_info` - Execution identity information（thread ID、run ID、checkpoint ID）
 :::
 :::js
-- `rt.serverInfo` — Server-specific metadata when running on LangGraph Server (assistant ID, graph ID, authenticated user)
-- `rt.executionInfo` — Execution identity information (thread ID, run ID, checkpoint ID)
+- `rt.serverInfo` - 在 LangGraph Server 上运行时的 server-specific metadata（assistant ID、graph ID、authenticated user）
+- `rt.executionInfo` - Execution identity information（thread ID、run ID、checkpoint ID）
 :::
 
 :::python
 <Note>
-The `Runtime` argument is available in `deepagents>=0.5.2`. Earlier 0.5.x releases passed a `BackendContext` instead — see [migrating from `BackendContext`](#migrating-from-backendcontext) below. `rt.server_info` and `rt.execution_info` require `deepagents>=0.5.0`.
+`Runtime` argument 在 `deepagents>=0.5.2` 中可用。更早的 0.5.x releases 会传入 `BackendContext`，请参阅下方 [migrating from `BackendContext`](#migrating-from-backendcontext)。`rt.server_info` 和 `rt.execution_info` 需要 `deepagents>=0.5.0`。
 </Note>
 :::
 
 :::js
 <Note>
-The `Runtime` argument is available in `deepagents>=1.9.1`. Earlier 1.9.x releases passed a `BackendContext` instead — see [migrating from `BackendContext`](#migrating-from-backendcontext) below. `rt.serverInfo` and `rt.executionInfo` require `deepagents>=1.9.0`.
+`Runtime` argument 在 `deepagents>=1.9.1` 中可用。更早的 1.9.x releases 会传入 `BackendContext`，请参阅下方 [migrating from `BackendContext`](#migrating-from-backendcontext)。`rt.serverInfo` 和 `rt.executionInfo` 需要 `deepagents>=1.9.0`。
 </Note>
 :::
 
@@ -352,23 +351,23 @@ const backend = new StoreBackend({
 ```
 :::
 
-You can combine multiple components to create more specific scopes — for example, `(user_id, thread_id)` for per-user per-conversation isolation, or append a suffix like `"filesystem"` to disambiguate when the same scope uses multiple store namespaces.
+你可以组合多个 components 来创建更具体的 scope，例如用 `(user_id, thread_id)` 做 per-user per-conversation isolation，或追加 `"filesystem"` 这样的 suffix，以便在同一个 scope 使用多个 store namespaces 时消除歧义。
 
-Namespace components must contain only alphanumeric characters, hyphens, underscores, dots, `@`, `+`, colons, and tildes. Wildcards (`*`, `?`) are rejected to prevent glob injection.
+Namespace components 只能包含 alphanumeric characters、hyphens、underscores、dots、`@`、`+`、colons 和 tildes。Wildcards（`*`、`?`）会被拒绝，以防止 glob injection。
 
 :::python
 <Warning>
-    The `namespace` parameter will be **required** in v0.5.0. Always set it explicitly for new code.
+    `namespace` 参数将在 v0.5.0 中成为**必填项**。新代码请始终显式设置。
 </Warning>
 :::
 :::js
 <Warning>
-    The `namespace` parameter will be **required** in v1.9.0. Always set it explicitly for new code.
+    `namespace` 参数将在 v1.9.0 中成为**必填项**。新代码请始终显式设置。
 </Warning>
 :::
 
 <Note>
-    When no namespace factory is provided, the legacy default uses the `assistant_id` from LangGraph config metadata. This means all users of the same [assistant](/langsmith/assistants) share the same storage. For multi-user [going to production](/oss/deepagents/going-to-production), always provide a namespace factory.
+    如果未提供 namespace factory，legacy default 会使用 LangGraph config metadata 中的 `assistant_id`。这意味着同一个 [assistant](/langsmith/assistants) 的所有 users 都会共享同一份 storage。对于 multi-user [going to production](/oss/deepagents/going-to-production)，请始终提供 namespace factory。
 </Note>
 
 ### ContextHubBackend
@@ -377,25 +376,25 @@ Namespace components must contain only alphanumeric characters, hyphens, undersc
 <BackendContextHubPy />
 :::
 
-`ContextHubBackend` stores files in a LangSmith Hub repo. Construct it with a repo identifier in `owner/name` or `name` format.
+`ContextHubBackend` 会把 files 存储在 LangSmith Hub repo 中。使用 `owner/name` 或 `name` 格式的 repo identifier 构造它。
 
 <Note>
-Set `LANGSMITH_API_KEY` before using `ContextHubBackend`.
+使用 `ContextHubBackend` 前请设置 `LANGSMITH_API_KEY`。
 </Note>
 
 **How it works:**
-- Pulls the Hub repo tree lazily on first use, then serves reads from an in-memory cache.
-- Persists writes and edits as Hub commits and updates the cache after successful commits.
-- Uses optimistic parent-commit writes (`parent_commit`): each push targets the latest known commit hash.
+- 第一次使用时 lazy pull Hub repo tree，之后从 in-memory cache 提供 reads。
+- 把 writes 和 edits 持久化为 Hub commits，并在成功 commit 后更新 cache。
+- 使用 optimistic parent-commit writes（`parent_commit`）：每次 push 都以最新已知 commit hash 为目标。
 
 **Behavior and limits:**
-- If the repo does not exist, first pull is treated as empty; the first successful write can create the repo.
-- If another writer advances the repo first, your stale parent-commit write can fail. Re-pull and retry on conflict.
-- `upload_files()` accepts UTF-8 text. Non-UTF-8 files are rejected per path with `invalid_path`.
+- 如果 repo 不存在，第一次 pull 会被视为空；第一次成功 write 可以创建该 repo。
+- 如果另一个 writer 先推进了 repo，你的 stale parent-commit write 可能失败。遇到 conflict 时请 re-pull 并 retry。
+- `upload_files()` 接受 UTF-8 text。非 UTF-8 files 会按 path 以 `invalid_path` 拒绝。
 
 **Best for:**
-- LangSmith-native durable filesystem persistence without separately wiring a LangGraph `BaseStore`.
-- Workflows that benefit from Hub commit history on filesystem changes.
+- LangSmith-native durable filesystem persistence，无需单独接入 LangGraph `BaseStore`。
+- 受益于 filesystem changes 的 Hub commit history 的 workflows。
 
 ### CompositeBackend (router)
 
@@ -408,36 +407,35 @@ Set `LANGSMITH_API_KEY` before using `ContextHubBackend`.
 :::
 
 **How it works:**
-- @[`CompositeBackend`] routes file operations to different backends based on path prefix.
-- Preserves the original path prefixes in listings and search results.
+- @[`CompositeBackend`] 会根据 path prefix 把 file operations 路由到不同 backends。
+- 在 listings 和 search results 中保留原始 path prefixes。
 
 **Best for:**
-- When you want to give your agent both thread-scoped and cross-thread storage, a `CompositeBackend` allows you provide both a `StateBackend` and `StoreBackend`
-- When you have multiple sources of information that you want to provide to your agent as part of a single filesystem.
-    - e.g. You have long-term memories stored under `/memories/` in one Store and you also have a custom backend that has documentation accessible at /docs/.
+- 当你希望给 agent 同时提供 thread-scoped 和 cross-thread storage 时，`CompositeBackend` 允许你同时提供 `StateBackend` 和 `StoreBackend`。
+- 当你有多个信息来源，希望把它们作为单个 filesystem 的一部分提供给 agent 时。
+    - 例如，你把 long-term memories 存在某个 Store 的 `/memories/` 下，同时还有一个 custom backend 在 `/docs/` 下提供 documentation。
 
 ## Specify a backend
 
 :::python
-- Pass a backend instance to `create_deep_agent(model=..., backend=...)`. The filesystem middleware uses it for all tooling.
-- The backend must implement `BackendProtocol` (for example, `StateBackend()`, `FilesystemBackend(root_dir=".")`, `StoreBackend()`, `ContextHubBackend("my-agent")`).
-- If omitted, the default is `StateBackend()`.
+- 向 `create_deep_agent(model=..., backend=...)` 传入 backend instance。filesystem middleware 会把它用于所有 tooling。
+- backend 必须实现 `BackendProtocol`（例如 `StateBackend()`、`FilesystemBackend(root_dir=".")`、`StoreBackend()`、`ContextHubBackend("my-agent")`）。
+- 如果省略，默认是 `StateBackend()`。
 :::
 
 :::js
-- Pass a backend instance to `createDeepAgent({ backend: ... })`. The filesystem middleware uses it for all tooling.
-- The backend must implement `AnyBackendProtocol` (`BackendProtocolV1` or `BackendProtocolV2`) — for example, `new StateBackend()`, `new FilesystemBackend({ rootDir: "." })`, `new StoreBackend()`.
-- If omitted, the default is `new StateBackend()`.
+- 向 `createDeepAgent({ backend: ... })` 传入 backend instance。filesystem middleware 会把它用于所有 tooling。
+- backend 必须实现 `AnyBackendProtocol`（`BackendProtocolV1` 或 `BackendProtocolV2`），例如 `new StateBackend()`、`new FilesystemBackend({ rootDir: "." })`、`new StoreBackend()`。
+- 如果省略，默认是 `new StateBackend()`。
 
 <Note>
-Before version 1.9.0, only `BackendProtocol` was supported which is now `BackendProtocolV1`. V1 backends are automatically adapted to V2 at runtime via `adaptBackendProtocol()`. No code changes are required to keep using existing V1 backends. To update to v2, see [update existing backends to v2](#update-existing-backends-to-v2).
+在 1.9.0 之前，只支持现在称为 `BackendProtocolV1` 的 `BackendProtocol`。V1 backends 会在运行时通过 `adaptBackendProtocol()` 自动适配为 V2。继续使用现有 V1 backends 不需要修改代码。要升级到 v2，请参阅 [update existing backends to v2](#update-existing-backends-to-v2)。
 </Note>
 :::
 
-
 ## Route to different backends
 
-Route parts of the namespace to different backends. Commonly used to persist `/memories/*` across threads and keep everything else thread-scoped.
+把 namespace 的不同部分路由到不同 backends。常见用途是让 `/memories/*` 跨 threads 持久存在，同时让其他内容保持 thread-scoped。
 
 :::python
 ```python
@@ -472,34 +470,34 @@ const agent = createDeepAgent({
 :::
 
 Behavior:
-- `/workspace/plan.md` → `StateBackend` (thread-scoped)
-- `/memories/agent.md` → `FilesystemBackend` under `/deepagents/myagent`
-- `ls`, `glob`, `grep` aggregate results and show original path prefixes.
+- `/workspace/plan.md` -> `StateBackend`（thread-scoped）
+- `/memories/agent.md` -> `/deepagents/myagent` 下的 `FilesystemBackend`
+- `ls`、`glob`、`grep` 会聚合结果，并显示原始 path prefixes。
 
 Notes:
-- Longer prefixes win (for example, route `"/memories/projects/"` can override `"/memories/"`).
-- For StoreBackend routing, ensure a store is provided via `create_deep_agent(model=..., store=...)` or provisioned by the platform.
-- Deep Agents write internal data (offloaded tool results, conversation history) to the default backend. Use `StateBackend` as the default to keep these artifacts ephemeral and avoid writing them to disk or a persistent store. See the [FilesystemBackend tip](#filesystembackend-local-disk) for a complete example.
+- 更长的 prefixes 优先（例如 route `"/memories/projects/"` 可以覆盖 `"/memories/"`）。
+- 使用 StoreBackend routing 时，请确保通过 `create_deep_agent(model=..., store=...)` 提供了 store，或由平台 provision。
+- Deep Agents 会把内部数据（offloaded tool results、conversation history）写入 default backend。使用 `StateBackend` 作为 default，可以让这些 artifacts 保持 ephemeral，并避免写到磁盘或 persistent store。完整示例请参阅 [FilesystemBackend tip](#filesystembackend-local-disk)。
 
 ## Use a virtual filesystem
 
-Build a custom backend to project a remote or database filesystem (e.g., S3 or Postgres) into the tools namespace.
+构建 custom backend，把远程或数据库 filesystem（例如 S3 或 Postgres）投射到 tools namespace 中。
 
 Design guidelines:
 
-- Paths are absolute (`/x/y.txt`). Decide how to map them to your storage keys/rows.
-- Implement `ls` and `glob` efficiently (server-side filtering where available, otherwise local filter).
-- For external persistence (S3, Postgres, etc.), return `files_update=None` (Python) or omit `filesUpdate` (JS) in write/edit results — only in-memory state backends need to return a files update dict.
+- Paths 是 absolute（`/x/y.txt`）。请决定如何把它们映射到你的 storage keys/rows。
+- 高效实现 `ls` 和 `glob`（可用时做 server-side filtering，否则做 local filter）。
+- 对于 external persistence（S3、Postgres 等），在 write/edit results 中返回 `files_update=None`（Python）或省略 `filesUpdate`（JS）；只有 in-memory state backends 需要返回 files update dict。
 
 :::python
-- Use `ls` and `glob` as the method names.
-- Return structured result types with an `error` field for missing files or invalid patterns (do not raise).
+- 使用 `ls` 和 `glob` 作为方法名。
+- 对于 missing files 或 invalid patterns，请返回带 `error` field 的 structured result types（不要 raise）。
 :::
 
 :::js
-- Use `ls` and `glob` as the method names.
-- All query methods (`ls`, `read`, `readRaw`, `grep`, `glob`) must return structured Result objects (e.g., `LsResult`, `ReadResult`) with an optional `error` field.
-- Support binary files in `read()` by returning `Uint8Array` content with the appropriate `mimeType`.
+- 使用 `ls` 和 `glob` 作为方法名。
+- 所有 query methods（`ls`、`read`、`readRaw`、`grep`、`glob`）都必须返回带 optional `error` field 的 structured Result objects（例如 `LsResult`、`ReadResult`）。
+- 在 `read()` 中支持 binary files：返回带正确 `mimeType` 的 `Uint8Array` content。
 :::
 
 S3-style outline:
@@ -527,7 +525,7 @@ class S3Backend(BackendProtocol):
         ...
 
     def grep(self, pattern: str, path: str | None = None, glob: str | None = None) -> GrepResult:
-        # Optionally filter server‑side; else list and scan content
+        # Optionally filter server-side; else list and scan content
         ...
 
     def glob(self, pattern: str, path: str = "/") -> GlobResult:
@@ -535,11 +533,11 @@ class S3Backend(BackendProtocol):
         ...
 
     def write(self, file_path: str, content: str) -> WriteResult:
-        # Enforce create‑only semantics; return WriteResult(path=file_path, files_update=None)
+        # Enforce create-only semantics; return WriteResult(path=file_path, files_update=None)
         ...
 
     def edit(self, file_path: str, old_string: str, new_string: str, replace_all: bool = False) -> EditResult:
-        # Read → replace (respect uniqueness vs replace_all) → write → return occurrences
+        # Read -> replace (respect uniqueness vs replace_all) -> write -> return occurrences
         ...
 ```
 :::
@@ -598,7 +596,7 @@ class S3Backend implements BackendProtocolV2 {
   }
 
   async edit(filePath: string, oldString: string, newString: string, replaceAll?: boolean): Promise<EditResult> {
-    // Read → replace → write → return { path, occurrences }
+    // Read -> replace -> write -> return { path, occurrences }
     ...
   }
 }
@@ -609,23 +607,23 @@ Postgres-style outline:
 
 :::python
 - Table `files(path text primary key, content text, created_at timestamptz, modified_at timestamptz)`
-- Map tool operations onto SQL:
-  - `ls` uses `WHERE path LIKE $1 || '%'`
-  - `glob` filter in SQL or fetch then apply glob in Python
-  - `grep` can fetch candidate rows by extension or last modified time, then scan lines
+- 把 tool operations 映射到 SQL：
+  - `ls` 使用 `WHERE path LIKE $1 || '%'`
+  - `glob` 在 SQL 中 filter，或 fetch 后在 Python 中 apply glob
+  - `grep` 可以按 extension 或 last modified time fetch candidate rows，然后 scan lines
 :::
 
 :::js
 - Table `files(path text primary key, content text, mime_type text, created_at timestamptz, modified_at timestamptz)`
-- Map tool operations onto SQL:
-  - `ls` uses `WHERE path LIKE $1 || '%'` → return `LsResult`
-  - `glob` filter in SQL or fetch then apply glob locally → return `GlobResult`
-  - `grep` can fetch candidate rows by extension or last modified time, then scan lines (skip rows where `mime_type` is binary) → return `GrepResult`
+- 把 tool operations 映射到 SQL：
+  - `ls` 使用 `WHERE path LIKE $1 || '%'` -> 返回 `LsResult`
+  - `glob` 在 SQL 中 filter，或 fetch 后在本地 apply glob -> 返回 `GlobResult`
+  - `grep` 可以按 extension 或 last modified time fetch candidate rows，然后 scan lines（跳过 `mime_type` 是 binary 的 rows）-> 返回 `GrepResult`
 :::
 
 ## Permissions
 
-Use [permissions](/oss/deepagents/permissions) to declaratively control which files and directories the agent can read or write. Permissions apply to the built-in filesystem tools and are evaluated before the backend is called.
+使用 [permissions](/oss/deepagents/permissions) 声明式控制 agent 可以 read 或 write 哪些 files 和 directories。Permissions 适用于内置 filesystem tools，并在调用 backend 之前进行评估。
 
 :::python
 ```python
@@ -655,13 +653,13 @@ agent = create_deep_agent(
 ```
 :::
 
-For the full set of options including rule ordering, subagent permissions, and composite backend interactions, see the [permissions guide](/oss/deepagents/permissions).
+完整选项，包括 rule ordering、subagent permissions 和 composite backend interactions，请参阅 [permissions guide](/oss/deepagents/permissions)。
 
 ## Add policy hooks
 
-For custom validation logic beyond path-based allow/deny rules (rate limiting, audit logging, content inspection), enforce enterprise rules by subclassing or wrapping a backend.
+如果需要超出 path-based allow/deny rules 的自定义 validation logic（rate limiting、audit logging、content inspection），可以通过 subclassing 或 wrapping backend 来执行 enterprise rules。
 
-Block writes/edits under selected prefixes (subclass):
+阻止在选定 prefixes 下 writes/edits（subclass）：
 
 :::python
 ```python
@@ -714,7 +712,7 @@ class GuardedBackend extends FilesystemBackend {
 ```
 :::
 
-Generic wrapper (works with any backend):
+Generic wrapper（适用于任何 backend）：
 
 :::python
 ```python
@@ -797,10 +795,10 @@ class PolicyWrapper implements BackendProtocolV2 {
 ## Multimodal and binary files
 
 <Note>
-Multi-modal file support (PDFs, audio, video) requires `deepagents>=1.9.0`.
+Multi-modal file support（PDFs、audio、video）需要 `deepagents>=1.9.0`。
 </Note>
 
-V2 backends support binary files natively. When `read()` encounters a binary file (determined by MIME type from the file extension), it returns a `ReadResult` with `Uint8Array` content and the corresponding `mimeType`. Text files return `string` content.
+V2 backends 原生支持 binary files。当 `read()` 遇到 binary file（根据 file extension 的 MIME type 判断）时，它会返回包含 `Uint8Array` content 和对应 `mimeType` 的 `ReadResult`。Text files 返回 `string` content。
 
 ### Supported MIME types
 
@@ -820,17 +818,17 @@ const result = await backend.read("/workspace/screenshot.png");
 if (result.error) {
   console.error(result.error);
 } else if (result.content instanceof Uint8Array) {
-  // Binary file — content is Uint8Array, mimeType is set
+  // Binary file - content is Uint8Array, mimeType is set
   console.log(`Binary file: ${result.mimeType}`); // "image/png"
 } else {
-  // Text file — content is string
+  // Text file - content is string
   console.log(`Text file: ${result.mimeType}`); // "text/plain"
 }
 ```
 
 ### FileData format
 
-`FileData` is the type used to store file content in state and store backends.
+`FileData` 是用于在 state 和 store backends 中存储 file content 的类型。
 
 ```typescript
 type FileData =
@@ -849,21 +847,21 @@ type FileData =
     };
 ```
 
-Backends may encounter either format when reading from state or store. The framework handles both transparently. New writes default to the v2 format. During rolling deployments where older readers need the legacy format, pass `fileFormat: "v1"` to the backend constructor (e.g., `new StoreBackend({ fileFormat: "v1" })`).
+从 state 或 store 读取时，backends 可能遇到任一种格式。framework 会透明处理两者。新的 writes 默认使用 v2 format。在 rolling deployments 中，如果旧 readers 需要 legacy format，请向 backend constructor 传入 `fileFormat: "v1"`（例如 `new StoreBackend({ fileFormat: "v1" })`）。
 :::
 
 ## Migrate from backend factories
 
 <Warning>
 :::python
-The backend factory pattern is **deprecated** as of `deepagents` 0.5.0. Pass pre-constructed backend instances directly instead of factory functions.
+backend factory pattern 从 `deepagents` 0.5.0 起已**弃用**。请直接传入预先构造好的 backend instances，而不是 factory functions。
 :::
 :::js
-The backend factory pattern is **deprecated** as of `deepagents` 1.9.0. Pass pre-constructed backend instances directly instead of factory functions.
+backend factory pattern 从 `deepagents` 1.9.0 起已**弃用**。请直接传入预先构造好的 backend instances，而不是 factory functions。
 :::
 </Warning>
 
-Previously, backends like `StateBackend` and `StoreBackend` required a factory function that received a runtime object, because they needed runtime context (state, store) to operate. Backends now resolve this context internally via LangGraph's `get_config()`, `get_store()`, and `get_runtime()` helpers, so you can pass instances directly.
+以前，`StateBackend` 和 `StoreBackend` 等 backends 需要一个接收 runtime object 的 factory function，因为它们需要 runtime context（state、store）才能运行。现在 backends 会通过 LangGraph 的 `get_config()`、`get_store()` 和 `get_runtime()` helpers 在内部解析这些 context，因此你可以直接传入 instances。
 
 ### What changed
 
@@ -881,11 +879,11 @@ Previously, backends like `StateBackend` and `StoreBackend` required a factory f
 
 | Deprecated | Replacement |
 |---|---|
-| Passing a callable to `backend=` in `create_deep_agent` | Pass a backend instance directly |
-| `runtime` constructor argument on `StateBackend(runtime)` | `StateBackend()` (no arguments needed) |
-| `runtime` constructor argument on `StoreBackend(runtime)` | `StoreBackend()` or `StoreBackend(namespace=..., store=...)` |
-| `files_update` field on `WriteResult` and `EditResult` | State writes are now handled internally by the backend |
-| `Command` wrapping in middleware write/edit tools | Tools return plain strings; no `Command(update=...)` needed |
+| 在 `create_deep_agent` 中向 `backend=` 传入 callable | 直接传入 backend instance |
+| `StateBackend(runtime)` 上的 `runtime` constructor argument | `StateBackend()`（无需 arguments） |
+| `StoreBackend(runtime)` 上的 `runtime` constructor argument | `StoreBackend()` 或 `StoreBackend(namespace=..., store=...)` |
+| `WriteResult` 和 `EditResult` 上的 `files_update` field | State writes 现在由 backend 内部处理 |
+| middleware write/edit tools 中的 `Command` wrapping | Tools 返回 plain strings；不再需要 `Command(update=...)` |
 
 :::
 
@@ -893,16 +891,16 @@ Previously, backends like `StateBackend` and `StoreBackend` required a factory f
 
 | Deprecated | Replacement |
 |---|---|
-| `BackendFactory` type | Pass a backend instance directly |
-| `BackendRuntime` interface | Backends resolve context internally |
+| `BackendFactory` type | 直接传入 backend instance |
+| `BackendRuntime` interface | Backends 会在内部解析 context |
 | `StateBackend(runtime, options?)` constructor overload | `new StateBackend(options?)` |
 | `StoreBackend(stateAndStore, options?)` constructor overload | `new StoreBackend(options?)` |
-| `filesUpdate` field on `WriteResult` and `EditResult` | State writes are now handled internally by the backend |
+| `WriteResult` 和 `EditResult` 上的 `filesUpdate` field | State writes 现在由 backend 内部处理 |
 
 :::
 
 <Note>
-The factory pattern still works at runtime and emits a deprecation warning. Update your code to use direct instances before the next major version.
+factory pattern 在运行时仍然可用，并会发出 deprecation warning。请在下一个 major version 前把代码更新为使用 direct instances。
 </Note>
 
 ### Migration example
@@ -960,13 +958,13 @@ const agent = createDeepAgent({
 
 ### Migrating from `BackendContext`
 
-In `deepagents>=0.5.2` (Python) and `deepagents>=1.9.1` (TypeScript), namespace factories receive a LangGraph @[`Runtime`] directly instead of a `BackendContext` wrapper. The old `BackendContext` form still works via backwards-compatible `.runtime` and `.state` accessors, but those accessors emit a deprecation warning and will be removed in `deepagents>=0.7`.
+在 `deepagents>=0.5.2`（Python）和 `deepagents>=1.9.1`（TypeScript）中，namespace factories 会直接接收 LangGraph @[`Runtime`]，而不是 `BackendContext` wrapper。旧的 `BackendContext` 形式仍可通过 backwards-compatible `.runtime` 和 `.state` accessors 使用，但这些 accessors 会发出 deprecation warning，并将在 `deepagents>=0.7` 中移除。
 
 **What changed:**
 
-- The factory argument is now a `Runtime`, not a `BackendContext`.
-- Drop the `.runtime` accessor — for example, `ctx.runtime.context.user_id` becomes `rt.server_info.user.identity`.
-- There is no direct replacement for `ctx.state`. Namespace info should be read-only and stable for the lifetime of a run, whereas state is mutable and changes step-to-step—deriving a namespace from it risks data ending up under inconsistent keys. If you have a use case that requires reading agent state, please [open an issue](https://github.com/langchain-ai/deepagents/issues).
+- factory argument 现在是 `Runtime`，不是 `BackendContext`。
+- 删除 `.runtime` accessor，例如 `ctx.runtime.context.user_id` 变为 `rt.server_info.user.identity`。
+- `ctx.state` 没有直接替代项。Namespace info 应该是 read-only，并在一次 run 的生命周期内保持稳定；而 state 是 mutable，会逐 step 改变，从它派生 namespace 可能导致数据落入不一致的 keys 下。如果你的 use case 需要读取 agent state，请 [open an issue](https://github.com/langchain-ai/deepagents/issues)。
 
 :::python
 ```python
@@ -998,64 +996,64 @@ new StoreBackend({
 
 ## Protocol reference
 
-Backends must implement @[`BackendProtocol`].
+Backends 必须实现 @[`BackendProtocol`]。
 
 Required methods:
 - `ls(path: str) -> LsResult`
-  - Return entries with at least `path`. Include `is_dir`, `size`, `modified_at` when available. Sort by `path` for deterministic output.
+  - 返回至少包含 `path` 的 entries。可用时包含 `is_dir`、`size`、`modified_at`。按 `path` 排序以获得 deterministic output。
 - `read(file_path: str, offset: int = 0, limit: int = 2000) -> ReadResult`
-  - Return file data on success. On missing file, return `ReadResult(error="Error: File '/x' not found")`.
+  - 成功时返回 file data。文件缺失时返回 `ReadResult(error="Error: File '/x' not found")`。
 - `grep(pattern: str, path: Optional[str] = None, glob: Optional[str] = None) -> GrepResult`
-  - Return structured matches. On error, return `GrepResult(error="...")` (do not raise).
+  - 返回 structured matches。出错时返回 `GrepResult(error="...")`（不要 raise）。
 - `glob(pattern: str, path: str = "/") -> GlobResult`
-  - Return matched files as `FileInfo` entries (empty list if none).
+  - 以 `FileInfo` entries 返回匹配 files（没有匹配时为空列表）。
 - `write(file_path: str, content: str) -> WriteResult`
-  - Create-only. On conflict, return `WriteResult(error=...)`. On success, set `path` and for state backends set `files_update={...}`; external backends should use `files_update=None`.
+  - Create-only。冲突时返回 `WriteResult(error=...)`。成功时设置 `path`；对于 state backends 设置 `files_update={...}`，external backends 应使用 `files_update=None`。
 - `edit(file_path: str, old_string: str, new_string: str, replace_all: bool = False) -> EditResult`
-  - Enforce uniqueness of `old_string` unless `replace_all=True`. If not found, return error. Include `occurrences` on success.
+  - 除非 `replace_all=True`，否则强制 `old_string` 唯一。如果找不到则返回 error。成功时包含 `occurrences`。
 
 Supporting types:
-- `LsResult(error, entries)` — `entries` is a `list[FileInfo]` on success, `None` on failure.
-- `ReadResult(error, file_data)` — `file_data` is a `FileData` dict on success, `None` on failure.
-- `GrepResult(error, matches)` — `matches` is a `list[GrepMatch]` on success, `None` on failure.
-- `GlobResult(error, matches)` — `matches` is a `list[FileInfo]` on success, `None` on failure.
+- `LsResult(error, entries)` - 成功时 `entries` 是 `list[FileInfo]`，失败时为 `None`。
+- `ReadResult(error, file_data)` - 成功时 `file_data` 是 `FileData` dict，失败时为 `None`。
+- `GrepResult(error, matches)` - 成功时 `matches` 是 `list[GrepMatch]`，失败时为 `None`。
+- `GlobResult(error, matches)` - 成功时 `matches` 是 `list[FileInfo]`，失败时为 `None`。
 - `WriteResult(error, path, files_update)`
 - `EditResult(error, path, files_update, occurrences)`
-- `FileInfo` with fields: `path` (required), optionally `is_dir`, `size`, `modified_at`.
-- `GrepMatch` with fields: `path`, `line`, `text`.
-- `FileData` with fields: `content` (str), `encoding` (`"utf-8"` or `"base64"`), `created_at`, `modified_at`.
+- `FileInfo` fields：`path`（必填），可选 `is_dir`、`size`、`modified_at`。
+- `GrepMatch` fields：`path`、`line`、`text`。
+- `FileData` fields：`content`（str）、`encoding`（`"utf-8"` 或 `"base64"`）、`created_at`、`modified_at`。
 :::
 
 :::js
-Backends implement `BackendProtocolV2`. All query methods return structured Result objects with `{ error?: string, ...data }`.
+Backends 实现 `BackendProtocolV2`。所有 query methods 都返回形如 `{ error?: string, ...data }` 的 structured Result objects。
 
 ### Required methods
 
-- **`ls(path: string) → LsResult`**
-  - List files and directories in the specified directory (non-recursive). Directories have a trailing `/` in their path and `is_dir=true`. Include `is_dir`, `size`, `modified_at` when available.
+- **`ls(path: string) -> LsResult`**
+  - 列出指定 directory 中的 files 和 directories（non-recursive）。Directories 的 path 以 `/` 结尾，并且 `is_dir=true`。可用时包含 `is_dir`、`size`、`modified_at`。
 
-- **`read(filePath: string, offset?: number, limit?: number) → ReadResult`**
-  - Read file content. For text files, content is paginated by line offset/limit (default offset 0, limit 500). For binary files, the full raw `Uint8Array` content is returned with the `mimeType` field set. On missing file, return `{ error: "File '/x' not found" }`.
+- **`read(filePath: string, offset?: number, limit?: number) -> ReadResult`**
+  - 读取 file content。对于 text files，content 按 line offset/limit 分页（默认 offset 0，limit 500）。对于 binary files，返回完整 raw `Uint8Array` content，并设置 `mimeType` field。文件缺失时返回 `{ error: "File '/x' not found" }`。
 
-- **`readRaw(filePath: string) → ReadRawResult`**
-  - Read file content as raw `FileData`. Returns the full file data including timestamps.
+- **`readRaw(filePath: string) -> ReadRawResult`**
+  - 以 raw `FileData` 形式读取 file content。返回包含 timestamps 的完整 file data。
 
-- **`grep(pattern: string, path?: string | null, glob?: string | null) → GrepResult`**
-  - Search file contents for a literal text pattern. Binary files (determined by MIME type) are skipped. On failure, return `{ error: "..." }`.
+- **`grep(pattern: string, path?: string | null, glob?: string | null) -> GrepResult`**
+  - 在 file contents 中搜索 literal text pattern。Binary files（根据 MIME type 判断）会被跳过。失败时返回 `{ error: "..." }`。
 
-- **`glob(pattern: string, path?: string) → GlobResult`**
-  - Return files matching a glob pattern as `FileInfo` entries.
+- **`glob(pattern: string, path?: string) -> GlobResult`**
+  - 以 `FileInfo` entries 返回匹配 glob pattern 的 files。
 
-- **`write(filePath: string, content: string) → WriteResult`**
-  - Create-only semantics. On conflict, return `{ error: "..." }`. On success, set `path` and for state backends set `filesUpdate={...}`; external backends should use `filesUpdate=null`.
+- **`write(filePath: string, content: string) -> WriteResult`**
+  - Create-only semantics。冲突时返回 `{ error: "..." }`。成功时设置 `path`；对于 state backends 设置 `filesUpdate={...}`，external backends 应使用 `filesUpdate=null`。
 
-- **`edit(filePath: string, oldString: string, newString: string, replaceAll?: boolean) → EditResult`**
-  - Enforce uniqueness of `oldString` unless `replaceAll=true`. If not found, return error. Include `occurrences` on success.
+- **`edit(filePath: string, oldString: string, newString: string, replaceAll?: boolean) -> EditResult`**
+  - 除非 `replaceAll=true`，否则强制 `oldString` 唯一。如果找不到则返回 error。成功时包含 `occurrences`。
 
 ### Optional methods
 
-- **`uploadFiles(files: Array<[string, Uint8Array]>) → FileUploadResponse[]`** — Upload multiple files (for sandbox backends).
-- **`downloadFiles(paths: string[]) → FileDownloadResponse[]`** — Download multiple files (for sandbox backends).
+- **`uploadFiles(files: Array<[string, Uint8Array]>) -> FileUploadResponse[]`** - 上传多个 files（用于 sandbox backends）。
+- **`downloadFiles(paths: string[]) -> FileDownloadResponse[]`** - 下载多个 files（用于 sandbox backends）。
 
 ### Result types
 
@@ -1071,16 +1069,16 @@ Backends implement `BackendProtocolV2`. All query methods return structured Resu
 
 ### Supporting types
 
-- **`FileInfo`** — `path` (required), optionally `is_dir`, `size`, `modified_at`.
-- **`GrepMatch`** — `path`, `line` (1-indexed), `text`.
-- **`FileData`** — File content with timestamps. See [FileData format](#filedata-format).
+- **`FileInfo`** - `path`（必填），可选 `is_dir`、`size`、`modified_at`。
+- **`GrepMatch`** - `path`、`line`（1-indexed）、`text`。
+- **`FileData`** - 带 timestamps 的 file content。请参阅 [FileData format](#filedata-format)。
 
 ### Sandbox extension
 
-`SandboxBackendProtocolV2` extends `BackendProtocolV2` with:
+`SandboxBackendProtocolV2` 用以下内容扩展 `BackendProtocolV2`：
 
-- **`execute(command: string) → ExecuteResponse`** — Run a shell command in the sandbox.
-- **`readonly id: string`** — Unique identifier for the sandbox instance.
+- **`execute(command: string) -> ExecuteResponse`** - 在 sandbox 中运行 shell command。
+- **`readonly id: string`** - sandbox instance 的 unique identifier。
 :::
 
 :::js
@@ -1092,13 +1090,13 @@ Backends implement `BackendProtocolV2`. All query methods return structured Resu
 
 | V1 method | V2 method | Return type change |
 |-----------|-----------|-------------------|
-| `lsInfo(path)` | `ls(path)` | `FileInfo[]` → `LsResult` |
-| `read(filePath, offset, limit)` | `read(filePath, offset, limit)` | `string` → `ReadResult` |
-| `readRaw(filePath)` | `readRaw(filePath)` | `FileData` → `ReadRawResult` |
-| `grepRaw(pattern, path, glob)` | `grep(pattern, path, glob)` | `GrepMatch[] \| string` → `GrepResult` |
-| `globInfo(pattern, path)` | `glob(pattern, path)` | `FileInfo[]` → `GlobResult` |
-| `write(...)` | `write(...)` | Unchanged (`WriteResult`) |
-| `edit(...)` | `edit(...)` | Unchanged (`EditResult`) |
+| `lsInfo(path)` | `ls(path)` | `FileInfo[]` -> `LsResult` |
+| `read(filePath, offset, limit)` | `read(filePath, offset, limit)` | `string` -> `ReadResult` |
+| `readRaw(filePath)` | `readRaw(filePath)` | `FileData` -> `ReadRawResult` |
+| `grepRaw(pattern, path, glob)` | `grep(pattern, path, glob)` | `GrepMatch[] \| string` -> `GrepResult` |
+| `globInfo(pattern, path)` | `glob(pattern, path)` | `FileInfo[]` -> `GlobResult` |
+| `write(...)` | `write(...)` | 不变（`WriteResult`） |
+| `edit(...)` | `edit(...)` | 不变（`EditResult`） |
 
 ### Type renames
 
@@ -1109,7 +1107,7 @@ Backends implement `BackendProtocolV2`. All query methods return structured Resu
 
 ### Adaptation utilities
 
-If you have existing V1 backends that you need to use with V2-only code, use the adaptation functions:
+如果你有现有 V1 backends 需要在 V2-only code 中使用，请使用 adaptation functions：
 
 ```typescript
 import { adaptBackendProtocol, adaptSandboxProtocol } from "deepagents";
@@ -1122,7 +1120,7 @@ const v2Sandbox = adaptSandboxProtocol(v1Sandbox);
 ```
 
 <Note>
-The framework auto-adapts V1 backends passed to `createDeepAgent()`. Manual adaptation is only needed when calling protocol methods directly.
+framework 会自动适配传给 `createDeepAgent()` 的 V1 backends。只有直接调用 protocol methods 时才需要手动 adaptation。
 </Note>
 
 </Accordion>

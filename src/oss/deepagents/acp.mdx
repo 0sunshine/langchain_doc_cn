@@ -1,18 +1,18 @@
 ---
 title: Agent Client Protocol (ACP)
-description: Expose Deep Agents over the Agent Client Protocol (ACP) to integrate with code editors and IDEs.
+description: 通过 Agent Client Protocol (ACP) 暴露 Deep Agents，以便与 code editors 和 IDEs 集成。
 ---
 
-[Agent Client Protocol (ACP)](https://agentclientprotocol.com/get-started/introduction) standardizes communication between coding agents and code editors or IDEs.
-With the ACP protocol, you can make use of your custom deep agents with any ACP-compatible client, allowing your code editor to provide project context and receive rich updates.
+[Agent Client Protocol (ACP)](https://agentclientprotocol.com/get-started/introduction) 标准化了 coding agents 与 code editors 或 IDEs 之间的通信。
+通过 ACP protocol，你可以在任何兼容 ACP 的 client 中使用自定义 deep agents，让 code editor 提供 project context，并接收丰富的 updates。
 
 <Note>
-    ACP is designed for agent-editor integrations. If you want your agent to call tools hosted by external servers, see [Model Context Protocol (MCP)](/oss/langchain/mcp/).
+    ACP 是为 agent-editor integrations 设计的。如果你希望 agent 调用由外部 servers 托管的 tools，请参见 [Model Context Protocol (MCP)](/oss/langchain/mcp/)。
 </Note>
 
 ## Quickstart
 
-Install the ACP integration package:
+安装 ACP integration package：
 
 :::python
 <CodeGroup>
@@ -42,9 +42,9 @@ pnpm add deepagents-acp
 </CodeGroup>
 :::
 
-Then expose a deep agent over ACP.
+然后通过 ACP 暴露 deep agent。
 
-This starts an ACP server in stdio mode (it reads requests from stdin and writes responses to stdout). In practice, you usually run this as a command launched by an ACP client (for example, your editor), which then communicates with the server over stdio.
+这会以 stdio mode 启动 ACP server（从 stdin 读取 requests，并向 stdout 写入 responses）。实际使用中，你通常会把它作为由 ACP client（例如你的 editor）启动的命令运行，然后 client 通过 stdio 与 server 通信。
 
 :::python
 
@@ -91,7 +91,7 @@ await startServer({
 });
 ```
 
-You can also use the CLI without writing any code:
+你也可以不写任何代码，直接使用 CLI：
 
 ```bash
 npx deepagents-acp
@@ -101,32 +101,32 @@ npx deepagents-acp
 
 :::python
 <Card title="Example coding agent" icon="brand-github" href="https://github.com/langchain-ai/deepagents/blob/main/libs/acp/examples/demo_agent.py">
-  The `deepagents-acp` package includes an example coding agent with filesystem and shell that you can run out of the box.
+  `deepagents-acp` package 包含一个带 filesystem 和 shell 的示例 coding agent，可以直接运行。
 </Card>
 :::
 
 :::js
 <Card title="Deep Agents ACP on npm" icon="brand-npm" href="https://www.npmjs.com/package/deepagents-acp">
-  The `deepagents-acp` package provides both a CLI and a programmatic API for exposing deep agents over ACP.
+  `deepagents-acp` package 同时提供 CLI 和 programmatic API，可用于通过 ACP 暴露 deep agents。
 </Card>
 :::
 
 ## Clients
 
-Deep agents work anywhere you can run an ACP agent server. Some notable ACP clients include:
+Deep agents 可以在任何能运行 ACP agent server 的地方工作。一些值得关注的 ACP clients 包括：
 
 - [Zed](https://zed.dev/docs/ai/external-agents)
 - [JetBrains IDEs](https://www.jetbrains.com/help/ai-assistant/acp.html)
-- Visual Studio Code (via [vscode-acp](https://github.com/formulahendry/vscode-acp))
-- Neovim (via ACP-compatible plugins)
+- Visual Studio Code（通过 [vscode-acp](https://github.com/formulahendry/vscode-acp)）
+- Neovim（通过 ACP-compatible plugins）
 
 ### Zed
 
 :::python
 
-The `deepagents` repo includes [a demo ACP entrypoint](https://github.com/langchain-ai/deepagents/blob/main/libs/acp/run_demo_agent.sh) you can register with [Zed](https://zed.dev/docs/ai/external-agents):
+`deepagents` repo 包含一个 [demo ACP entrypoint](https://github.com/langchain-ai/deepagents/blob/main/libs/acp/run_demo_agent.sh)，你可以将它注册到 [Zed](https://zed.dev/docs/ai/external-agents)：
 
-1. Clone the `deepagents` repo and install dependencies:
+1. Clone `deepagents` repo 并安装 dependencies：
 
 ```bash
 git clone https://github.com/langchain-ai/deepagents.git
@@ -135,15 +135,15 @@ uv sync --all-groups
 chmod +x run_demo_agent.sh
 ```
 
-2. Configure credentials for the demo agent:
+2. 为 demo agent 配置 credentials：
 
 ```bash
 cp .env.example .env
 ```
 
-Then set `ANTHROPIC_API_KEY` in `.env`.
+然后在 `.env` 中设置 `ANTHROPIC_API_KEY`。
 
-3. Configure your ACP agent server command in Zed's `settings.json`:
+3. 在 Zed 的 `settings.json` 中配置 ACP agent server command：
 
 ```json
 {
@@ -156,15 +156,15 @@ Then set `ANTHROPIC_API_KEY` in `.env`.
 }
 ```
 
-4. Open Zed's Agents panel and start a Deep Agents thread.
+4. 打开 Zed 的 Agents panel，并启动一个 Deep Agents thread。
 
 :::
 
 :::js
 
-Register your deep agent with [Zed](https://zed.dev/docs/ai/external-agents) by adding it to your Zed settings (`~/.config/zed/settings.json` on Linux, `~/Library/Application Support/Zed/settings.json` on macOS):
+通过将 deep agent 加入 Zed settings，将它注册到 [Zed](https://zed.dev/docs/ai/external-agents)（Linux 上是 `~/.config/zed/settings.json`，macOS 上是 `~/Library/Application Support/Zed/settings.json`）：
 
-**Simple setup (no code required):**
+**简单设置（无需代码）：**
 
 ```json
 {
@@ -183,7 +183,7 @@ Register your deep agent with [Zed](https://zed.dev/docs/ai/external-agents) by 
 }
 ```
 
-**With CLI options:**
+**带 CLI options：**
 
 ```json
 {
@@ -207,9 +207,9 @@ Register your deep agent with [Zed](https://zed.dev/docs/ai/external-agents) by 
 }
 ```
 
-**Custom server script:**
+**自定义 server script：**
 
-For more control, create a TypeScript server script:
+如需更多控制，可以创建一个 TypeScript server script：
 
 ```typescript
 // server.ts
@@ -224,7 +224,7 @@ await startServer({
 });
 ```
 
-Then point Zed at it:
+然后让 Zed 指向它：
 
 ```json
 {
@@ -240,14 +240,14 @@ Then point Zed at it:
 }
 ```
 
-Open Zed's Agents panel and start a Deep Agents thread.
+打开 Zed 的 Agents panel，并启动一个 Deep Agents thread。
 
 :::
 
 :::python
 ### Toad
 
-If you want to run an ACP agent server as a local dev tool, you can use [Toad](https://github.com/batrachianai/toad) to manage the process.
+如果你想把 ACP agent server 作为本地 dev tool 运行，可以使用 [Toad](https://github.com/batrachianai/toad) 管理这个进程。
 
 ```bash
 uv tool install -U batrachian-toad
@@ -262,7 +262,7 @@ toad acp "uv run python path/to/your_server.py" .
 
 ### ACP Registry
 
-Deep Agents is available in the [ACP Agent Registry](https://agentclientprotocol.com/registry/index) for one-click installation in Zed and JetBrains IDEs. When an ACP client supports the registry, users can discover and install Deep Agents without any manual configuration.
+Deep Agents 已加入 [ACP Agent Registry](https://agentclientprotocol.com/registry/index)，可在 Zed 和 JetBrains IDEs 中一键安装。当 ACP client 支持 registry 时，用户无需手动配置即可发现并安装 Deep Agents。
 
 :::
 
@@ -270,32 +270,32 @@ Deep Agents is available in the [ACP Agent Registry](https://agentclientprotocol
 
 ## CLI reference
 
-The CLI is the fastest way to start an ACP server. It requires no code — just run `npx deepagents-acp` and connect your editor.
+CLI 是启动 ACP server 的最快方式。它不需要写代码，只需运行 `npx deepagents-acp` 并连接你的 editor。
 
 ```bash
 npx deepagents-acp [options]
 ```
 
-| Option                 | Short | Description                                       |
+| Option | Short | Description |
 | ---------------------- | ----- | ------------------------------------------------- |
-| `--name <name>`        | `-n`  | Agent name (default: `"deepagents"`)              |
-| `--description <desc>` | `-d`  | Agent description                                 |
-| `--model <model>`      | `-m`  | LLM model (default: `"claude-sonnet-4-5-20250929"`) |
-| `--workspace <path>`   | `-w`  | Workspace root directory (default: cwd)           |
-| `--skills <paths>`     | `-s`  | Comma-separated skill paths                       |
-| `--memory <paths>`     |       | Comma-separated AGENTS.md paths                   |
-| `--debug`              |       | Enable debug logging to stderr                    |
-| `--help`               | `-h`  | Show help message                                 |
-| `--version`            | `-v`  | Show version                                      |
+| `--name <name>` | `-n` | Agent name（默认：`"deepagents"`） |
+| `--description <desc>` | `-d` | Agent description |
+| `--model <model>` | `-m` | LLM model（默认：`"claude-sonnet-4-5-20250929"`） |
+| `--workspace <path>` | `-w` | Workspace root directory（默认：cwd） |
+| `--skills <paths>` | `-s` | 逗号分隔的 skill paths |
+| `--memory <paths>` | | 逗号分隔的 AGENTS.md paths |
+| `--debug` | | 启用写入 stderr 的 debug logging |
+| `--help` | `-h` | 显示 help message |
+| `--version` | `-v` | 显示 version |
 
 ### Environment variables
 
-| Variable            | Description                                    |
+| Variable | Description |
 | ------------------- | ---------------------------------------------- |
-| `ANTHROPIC_API_KEY` | API key for Anthropic/Claude models (required) |
-| `OPENAI_API_KEY`    | API key for OpenAI models                      |
-| `DEBUG`             | Set to `"true"` to enable debug logging        |
-| `WORKSPACE_ROOT`    | Alternative to `--workspace` flag              |
+| `ANTHROPIC_API_KEY` | Anthropic/Claude models 的 API key（必需） |
+| `OPENAI_API_KEY` | OpenAI models 的 API key |
+| `DEBUG` | 设置为 `"true"` 以启用 debug logging |
+| `WORKSPACE_ROOT` | `--workspace` flag 的替代方式 |
 
 :::
 
@@ -305,7 +305,7 @@ npx deepagents-acp [options]
 
 ### `startServer`
 
-Convenience function to create and start a server in one call:
+用于一次性创建并启动 server 的 convenience function：
 
 ```typescript
 import { startServer } from "deepagents-acp";
@@ -321,7 +321,7 @@ const server = await startServer({
 
 ### `DeepAgentsServer`
 
-For full control, use the `DeepAgentsServer` class directly:
+如果需要完全控制，请直接使用 `DeepAgentsServer` class：
 
 ```typescript
 import { DeepAgentsServer } from "deepagents-acp";
@@ -352,29 +352,29 @@ await server.start();
 
 #### Server options
 
-| Option          | Type                                   | Default              | Description                          |
+| Option | Type | Default | Description |
 | --------------- | -------------------------------------- | -------------------- | ------------------------------------ |
-| `agents`        | `DeepAgentConfig \| DeepAgentConfig[]` | required             | Agent configuration(s)               |
-| `serverName`    | `string`                               | `"deepagents-acp"`   | Server name for ACP                  |
-| `serverVersion` | `string`                               | `"0.0.1"`            | Server version                       |
-| `workspaceRoot` | `string`                               | `process.cwd()`      | Workspace root directory             |
-| `debug`         | `boolean`                              | `false`              | Enable debug logging                 |
+| `agents` | `DeepAgentConfig \| DeepAgentConfig[]` | required | Agent configuration(s) |
+| `serverName` | `string` | `"deepagents-acp"` | ACP 的 server name |
+| `serverVersion` | `string` | `"0.0.1"` | Server version |
+| `workspaceRoot` | `string` | `process.cwd()` | Workspace root directory |
+| `debug` | `boolean` | `false` | 启用 debug logging |
 
 #### Agent configuration
 
-| Option         | Type                                           | Description                                       |
+| Option | Type | Description |
 | -------------- | ---------------------------------------------- | ------------------------------------------------- |
-| `name`         | `string`                                       | Unique agent name (required)                      |
-| `description`  | `string`                                       | Agent description                                 |
-| `model`        | `string`                                       | LLM model (default: `"claude-sonnet-4-5-20250929"`) |
-| `tools`        | `StructuredTool[]`                             | Custom LangChain tools                            |
-| `systemPrompt` | `string`                                       | Custom system prompt                              |
-| `middleware`    | `AgentMiddleware[]`                            | Custom middleware                                 |
-| `backend`      | `AnyBackendProtocol`                           | Filesystem backend                                |
-| `skills`       | `string[]`                                     | Skill source paths                                |
-| `memory`       | `string[]`                                     | Memory source paths (AGENTS.md)                   |
-| `interruptOn`  | `Record<string, boolean \| InterruptOnConfig>` | Tools requiring user approval (HITL)              |
-| `commands`     | `Array<{ name, description, input? }>`         | Custom slash commands                             |
+| `name` | `string` | 唯一 agent name（必填） |
+| `description` | `string` | Agent description |
+| `model` | `string` | LLM model（默认：`"claude-sonnet-4-5-20250929"`） |
+| `tools` | `StructuredTool[]` | Custom LangChain tools |
+| `systemPrompt` | `string` | Custom system prompt |
+| `middleware` | `AgentMiddleware[]` | Custom middleware |
+| `backend` | `AnyBackendProtocol` | Filesystem backend |
+| `skills` | `string[]` | Skill source paths |
+| `memory` | `string[]` | Memory source paths（AGENTS.md） |
+| `interruptOn` | `Record<string, boolean \| InterruptOnConfig>` | 需要用户审批的 tools（HITL） |
+| `commands` | `Array<{ name, description, input? }>` | Custom slash commands |
 
 :::
 
@@ -384,7 +384,7 @@ await server.start();
 
 ### Multiple agents
 
-You can expose multiple agents from a single server. The ACP client selects which agent to use when creating a session:
+你可以从单个 server 暴露多个 agents。ACP client 会在创建 session 时选择使用哪个 agent：
 
 ```typescript
 const server = new DeepAgentsServer({
@@ -396,12 +396,12 @@ const server = new DeepAgentsServer({
 ```
 
 <Note>
-    Some ACP clients (like Zed) don't currently expose a UI for selecting between agents. In that case, consider running separate server instances with a single agent each.
+    某些 ACP clients（例如 Zed）目前没有提供在 agents 之间选择的 UI。遇到这种情况时，可以考虑为每个 agent 运行单独的 server instance。
 </Note>
 
 ### Slash commands
 
-The server registers built-in slash commands with the IDE: `/plan`, `/agent`, `/ask`, `/clear`, and `/status`. You can also define custom commands per agent:
+server 会向 IDE 注册 built-in slash commands：`/plan`、`/agent`、`/ask`、`/clear` 和 `/status`。你也可以为每个 agent 定义 custom commands：
 
 ```typescript
 const server = new DeepAgentsServer({
@@ -422,7 +422,7 @@ const server = new DeepAgentsServer({
 
 ### Human-in-the-loop
 
-Use `interruptOn` to require user approval in the IDE before the agent runs sensitive tools:
+使用 `interruptOn` 要求 agent 在 IDE 中获得用户审批后，再运行敏感 tools：
 
 ```typescript
 const server = new DeepAgentsServer({
@@ -436,7 +436,7 @@ const server = new DeepAgentsServer({
 });
 ```
 
-When the agent calls a protected tool, the IDE prompts the user to allow or reject the operation, with options to remember the decision for the session.
+当 agent 调用受保护的 tool 时，IDE 会提示用户允许或拒绝该操作，并提供在当前 session 中记住 decision 的选项。
 
 ### Custom tools
 
@@ -509,7 +509,7 @@ await startServer({
 :::
 
 <Info>
-    See the upstream ACP docs for protocol details and editor support:
+    协议细节和 editor 支持请参见 upstream ACP docs：
     - Introduction: https://agentclientprotocol.com/get-started/introduction
     - Clients/editors: https://agentclientprotocol.com/get-started/clients
 </Info>

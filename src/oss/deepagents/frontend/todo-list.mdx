@@ -1,45 +1,33 @@
 ---
 title: Todo list
-description: Track agent progress with a real-time todo list synced from agent state
+description: 用从 agent state 同步的实时 todo list 跟踪 agent progress
 ---
 
-Not every agent interaction is a chat. Sometimes the agent is executing a
-multi-step plan, and the best way to show progress is a **todo list** that
-updates in real time. The deep agent todo list pattern reads a `todos` array
-directly from the agent's state, rendering each item with its current status as
-the agent works through its plan. It's a progress dashboard built on the same
-`useStream` hook you use for chat. It shows that agent state can power any UI,
-not just message bubbles.
+不是每一次 agent interaction 都是 chat。有时 agent 正在执行一个 multi-step plan，而展示进度的最佳方式是一个实时更新的 **todo list**。deep agent todo list pattern 会直接从 agent state 读取 `todos` array，并在 agent 执行计划时用当前 status 渲染每个 item。它是一个建立在你用于 chat 的同一个 `useStream` hook 之上的 progress dashboard。它说明了 agent state 可以驱动任何 UI，而不只是 message bubbles。
 
 import { PatternEmbed } from "/snippets/pattern-embed.jsx"
 
 <PatternEmbed pattern="deep-agent-todo-list" />
 
-## How it works
+## 工作原理
 
-In a LangGraph agent, state isn't limited to messages. You can define **custom
-state keys** that hold arbitrary data. In this case, a `todos` array. As the
-agent executes its plan, it updates each todo's status from `"pending"` to
-`"in_progress"` to `"completed"`. The `useStream` hook exposes these custom
-state values via `stream.values`, and your UI renders them reactively.
+在 LangGraph agent 中，state 不限于 messages。你可以定义 **custom state keys** 来保存任意数据。在这个例子里，就是一个 `todos` array。当 agent 执行计划时，它会将每个 todo 的 status 从 `"pending"` 更新到 `"in_progress"`，再更新到 `"completed"`。`useStream` hook 会通过 `stream.values` 暴露这些 custom state values，你的 UI 会响应式地渲染它们。
 
-The flow looks like this:
+流程如下：
 
-1. User submits a request
-2. Agent creates a plan and populates `todos` in its state
-3. Agent begins executing each todo transitions through `pending` →
-   `in_progress` → `completed`
-4. `stream.values.todos` updates in real time as the agent progresses
-5. Your UI re-renders the todo list with current statuses
+1. 用户提交 request
+2. Agent 创建 plan，并在 state 中填充 `todos`
+3. Agent 开始执行，每个 todo 会从 `pending` 转为 `in_progress`，再转为 `completed`
+4. 随着 agent 推进，`stream.values.todos` 会实时更新
+5. 你的 UI 用当前 statuses 重新渲染 todo list
 
-## Setting up useStream
+## 设置 useStream
 
-No special configuration is needed. Point `useStream` at your agent and
-read the `todos` from `stream.values`.
+不需要特殊配置。让 `useStream` 指向你的 agent，并从 `stream.values` 读取 `todos` 即可。
 
 :::python
 
-Define a TypeScript interface matching your agent's state schema and pass it as a type parameter to `useStream` for type-safe access to state values, including custom state keys like `todos`. In the examples below, replace `typeof myAgent` with your interface name:
+定义一个与你的 agent state schema 匹配的 TypeScript interface，并将它作为 type parameter 传给 `useStream`，从而类型安全地访问 state values，包括 `todos` 这样的 custom state keys。在下面的示例中，请将 `typeof myAgent` 替换为你的 interface 名称：
 
 ```ts
 import type { BaseMessage } from "@langchain/core/messages";
@@ -60,7 +48,7 @@ interface AgentState {
 
 :::js
 
-Import your agent and pass `typeof myAgent` as a type parameter to `useStream` for type-safe access to state values:
+导入你的 agent，并将 `typeof myAgent` 作为 type parameter 传给 `useStream`，从而类型安全地访问 state values：
 
 ```ts
 import type { myAgent } from "./agent";
@@ -170,9 +158,9 @@ export class TodoAgentComponent {
 ```
 </CodeGroup>
 
-## The Todo interface
+## Todo interface
 
-Each todo in the array has a simple structure:
+array 中的每个 todo 都有一个简单结构：
 
 ```ts
 interface Todo {
@@ -183,16 +171,14 @@ interface Todo {
 
 | Property | Description |
 | --- | --- |
-| `status` | The current state of this task. Options: `pending` (not started), `in_progress` (agent is working on it), `completed` (done) |
-| `content` | A human-readable description of what the task involves |
+| `status` | 这个 task 的当前状态。选项：`pending`（尚未开始）、`in_progress`（agent 正在处理）、`completed`（已完成） |
+| `content` | 对 task 内容的人类可读描述 |
 
-The agent populates this array when it creates its plan, then updates individual
-items as it executes each step.
+agent 在创建 plan 时填充这个 array，然后在执行每个步骤时更新单个 items。
 
-## Building the TodoList component
+## 构建 TodoList component
 
-The todo list renders each item with a status icon, color coding, and visual
-styling that reflects the current state:
+todo list 会用 status icon、color coding 和反映当前 state 的 visual styling 渲染每个 item：
 
 ```tsx
 function TodoList({ todos }: { todos: Todo[] }) {
@@ -224,7 +210,7 @@ function TodoList({ todos }: { todos: Todo[] }) {
 
 ## Progress bar
 
-A visual progress bar gives users an at-a-glance summary of overall completion:
+visual progress bar 能让用户一眼看到整体完成情况：
 
 ```tsx
 function ProgressBar({ percentage }: { percentage: number }) {
@@ -245,10 +231,9 @@ function ProgressBar({ percentage }: { percentage: number }) {
 }
 ```
 
-## Individual todo items
+## 单个 todo items
 
-Each item gets a status icon, color-coded text, and strikethrough styling for
-completed tasks:
+每个 item 都会有一个 status icon、按颜色区分的 text，以及 completed tasks 的 strikethrough styling：
 
 ```tsx
 function TodoItem({ todo }: { todo: Todo }) {
@@ -260,7 +245,7 @@ function TodoItem({ todo }: { todo: Todo }) {
       iconClass: "text-gray-400",
     },
     in_progress: {
-      icon: "◉",
+      icon: "●",
       textClass: "text-amber-800",
       bgClass: "bg-amber-50 border-amber-200",
       iconClass: "text-amber-500 animate-pulse",
@@ -288,12 +273,11 @@ function TodoItem({ todo }: { todo: Todo }) {
 }
 ```
 
-The `in_progress` icon uses `animate-pulse` to draw attention to the currently
-active task.
+`in_progress` icon 使用 `animate-pulse`，用来吸引用户注意当前 active task。
 
-## Calculating progress
+## 计算 progress
 
-Derive progress metrics directly from the todos array:
+直接从 todos array 派生 progress metrics：
 
 ```ts
 const todos = stream.values?.todos ?? [];
@@ -306,14 +290,11 @@ const percentage = todos.length
   : 0;
 ```
 
-These values update reactively as the agent modifies its state, keeping the
-progress bar and counters in sync.
+随着 agent 修改 state，这些 values 会响应式更新，让 progress bar 和 counters 保持同步。
 
-## Combining with chat messages
+## 与 chat messages 结合
 
-The todo list works alongside the regular chat interface. A practical layout
-shows the todo list as a persistent sidebar or header panel, with chat messages
-below:
+todo list 可以和常规 chat interface 一起工作。一个实用 layout 会把 todo list 显示为持久 sidebar 或 header panel，并在下方显示 chat messages：
 
 ```tsx
 function TodoAgentLayout() {
@@ -352,23 +333,17 @@ function TodoAgentLayout() {
 ```
 
 <Tip>
-Show the todo list only when `todos.length > 0`. Before the agent creates its
-plan, there's nothing to display. Showing an empty component wastes space.
+只有当 `todos.length > 0` 时才显示 todo list。在 agent 创建 plan 之前，没有任何内容需要显示。显示空 component 会浪费空间。
 </Tip>
 
-## Custom state beyond todos
+## Todos 之外的 custom state
 
-This pattern demonstrates a powerful principle: `stream.values` can expose
-**any custom state** your agent defines, not just messages. The `todos` array is
-just one example. You could use the same approach for:
+这个 pattern 展示了一个强大的原则：`stream.values` 可以暴露 agent 定义的 **任何 custom state**，不只是 messages。`todos` array 只是一个例子。你可以用同样的方法实现：
 
-- **Progress metrics**: `stream.values.progress` with numeric completion data
-- **Generated artifacts**: `stream.values.document` with a structured document
-  the agent is building
-- **Decision logs**: `stream.values.decisions` tracking every choice the agent
-  made
-- **Resource lists**: `stream.values.sources` with links and references the
-  agent found
+- **Progress metrics**：`stream.values.progress`，包含数值化 completion data
+- **Generated artifacts**：`stream.values.document`，包含 agent 正在构建的 structured document
+- **Decision logs**：`stream.values.decisions`，跟踪 agent 做出的每个选择
+- **Resource lists**：`stream.values.sources`，包含 agent 找到的 links 和 references
 
 ```ts
 // Any custom state key your agent defines is accessible
@@ -378,15 +353,12 @@ const confidence = stream.values?.confidence_score;
 ```
 
 <Info>
-Custom state keys are defined in your LangGraph graph's state schema. The
-`useStream` hook automatically includes them in `stream.values` without any additional
-client-side configuration.
+Custom state keys 在你的 LangGraph graph 的 state schema 中定义。`useStream` hook 会自动将它们包含在 `stream.values` 中，不需要额外的 client-side configuration。
 </Info>
 
 ## Animating transitions
 
-Todo status transitions happen in real time, and smooth animations make these
-changes feel polished rather than jarring:
+Todo status transitions 会实时发生，smooth animations 会让这些变化显得精致，而不是突兀：
 
 ```tsx
 function TodoItem({ todo }: { todo: Todo }) {
@@ -419,28 +391,21 @@ function TodoItem({ todo }: { todo: Todo }) {
 }
 ```
 
-The `transition-all duration-300` classes ensure that color changes,
-strikethrough, and opacity shifts all animate smoothly.
+`transition-all duration-300` classes 确保 color changes、strikethrough 和 opacity shifts 都能平滑动画。
 
 ## Use cases
 
-The todo list pattern fits any scenario where an agent executes a structured
-plan:
+todo list pattern 适合任何 agent 执行 structured plan 的场景：
 
-- **Project planning**: agent breaks a project into tasks and works through
-  them sequentially
-- **Research workflows**: each research question becomes a todo that the agent
-  investigates and completes
-- **Data processing**: steps like ingestion, validation, transformation, and
-  export each get their own todo
-- **Onboarding flows**: agent walks through setup steps, checking off each one
-  as it configures services
-- **Report generation**: sections of a report become todos: gather data,
-  analyze trends, write summary, format output
+- **Project planning**：agent 将 project 拆分为 tasks，并按顺序处理
+- **Research workflows**：每个 research question 都成为一个 todo，agent 会调查并完成它
+- **Data processing**：ingestion、validation、transformation 和 export 等步骤各自成为 todo
+- **Onboarding flows**：agent 逐步完成 setup steps，并在配置 services 时逐项勾选
+- **Report generation**：报告的各个 sections 变成 todos：gather data、analyze trends、write summary、format output
 
-## Handling empty and loading states
+## 处理 empty 和 loading states
 
-Handle the initial state before the agent has created its plan:
+在 agent 尚未创建 plan 前处理 initial state：
 
 ```tsx
 function TodoList({ todos, isLoading }: { todos: Todo[]; isLoading: boolean }) {
@@ -452,7 +417,7 @@ function TodoList({ todos, isLoading }: { todos: Todo[]; isLoading: boolean }) {
     return (
       <div className="rounded-lg border bg-white p-4 shadow-sm">
         <div className="flex items-center gap-2 text-sm text-gray-500">
-          <span className="animate-spin">⟳</span>
+          <span className="animate-spin">◌</span>
           Agent is creating a plan...
         </div>
       </div>
@@ -469,19 +434,9 @@ function TodoList({ todos, isLoading }: { todos: Todo[]; isLoading: boolean }) {
 
 ## Best practices
 
-- **Show the todo list prominently**. It's the primary progress indicator for
-  plan-based agents. Don't bury it below the fold.
-- **Animate status transitions**. Smooth transitions make the agent feel more
-  responsive. Use CSS transitions on background color, text decoration, and
-  opacity.
-- **Only highlight one `in_progress` item**. Agents typically work on one task
-  at a time. If multiple items show as `in_progress`, the UI gets noisy.
-  Consider only pulsing the first one.
-- **Collapse or dim completed items**. As the list grows, completed items
-  become less relevant. Reduce their visual weight so users focus on what's
-  still happening.
-- **Show the progress percentage**. A single number like "67% complete" is
-  immediately understandable, even from across the room.
-- **Keep the todo list in sync**. Because `stream.values` updates reactively,
-  the todo list stays current automatically. Don't add manual polling or
-  refresh logic.
+- **突出显示 todo list**。它是 plan-based agents 的主要 progress indicator。不要把它埋到首屏以下。
+- **为 status transitions 添加动画**。平滑 transitions 会让 agent 显得更 responsive。对 background color、text decoration 和 opacity 使用 CSS transitions。
+- **只高亮一个 `in_progress` item**。Agents 通常一次处理一个 task。如果多个 items 都显示为 `in_progress`，UI 会变得嘈杂。可以考虑只让第一个 pulsing。
+- **折叠或弱化 completed items**。随着列表变长，completed items 的相关性会降低。降低它们的 visual weight，让用户关注仍在发生的内容。
+- **显示 progress percentage**。像“67% complete”这样的单个数字非常容易理解。
+- **保持 todo list 同步**。因为 `stream.values` 会响应式更新，todo list 会自动保持最新。不要添加手动 polling 或 refresh logic。

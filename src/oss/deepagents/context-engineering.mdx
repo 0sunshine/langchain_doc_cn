@@ -1,53 +1,53 @@
 ---
-title: Context engineering in Deep Agents
+title: Deep Agents 中的 Context engineering
 sidebarTitle: Context engineering
-description: Control what context your deep agent has access to and how it is managed across long-running tasks
+description: 控制 deep agent 可以访问哪些 context，以及在长时间运行的任务中如何管理这些 context
 ---
 
-Context engineering is providing the right information and tools in the right format so your deep agent can accomplish tasks reliably.
+Context engineering 是指用正确的格式向 deep agent 提供正确的信息和工具，使它能够可靠地完成任务。
 
-Deep agents have access to several kinds of context.
-Some sources are provided to the agent at startup; others become available during runtime, such as user input.
-Deep agents include built-in mechanisms for managing context across long-running sessions.
+Deep agents 可以访问多种 context。
+有些来源会在 agent 启动时提供；有些则会在运行时才出现，例如用户输入。
+Deep agents 内置了若干机制，用于在长时间运行的 session 中管理 context。
 
-This page provides an overview of the different kinds of context your deep agent has access to and manages.
+本页概述你的 deep agent 可以访问并管理的不同类型的 context。
 
 <Tip>
-New to context engineering? See the [conceptual overview](/oss/concepts/context) for the different types of context and when to use them.
+刚接触 context engineering？请参阅[概念概览](/oss/concepts/context)，了解不同 context 类型以及各自适合的使用时机。
 </Tip>
 
 ## Types of context
 
-| Context Type | What You Control | Scope |
+| Context 类型 | 你可以控制什么 | Scope |
 |--------------|------------------|-------|
-| **[Input context](#input-context)** | What goes into the agent's prompt at startup (system prompt, memory, skills) | Static, applied each run |
-| **[Runtime context](#runtime-context)** | Static configuration passed at invoke time (user metadata, API keys, connections) | Per run, propagates to subagents |
-| **[Context compression](#context-compression)** | Built-in offloading and summarization to keep context within window limits | Automatic, when limits approached |
-| **[Context isolation](#context-isolation-with-subagents)** | Use subagents to quarantine heavy work, returning only results to the main agent | Per subagent, when delegated |
-| **[Long-term memory](#long-term-memory)** | Persistent storage across threads using the virtual filesystem | Persistent across conversations |
+| **[Input context](#input-context)** | agent 启动时进入 prompt 的内容（system prompt、memory、skills） | 静态内容，每次运行都会应用 |
+| **[Runtime context](#runtime-context)** | invoke 时传入的静态配置（用户元数据、API keys、连接等） | 每次运行独立，并传播到 subagents |
+| **[Context compression](#context-compression)** | 内置 offloading 和 summarization，让 context 保持在窗口限制内 | 自动执行，在接近限制时触发 |
+| **[Context isolation](#context-isolation-with-subagents)** | 使用 subagents 隔离重型工作，只把结果返回给主 agent | 每个 subagent 独立，在委托时发生 |
+| **[Long-term memory](#long-term-memory)** | 通过 virtual filesystem 在 threads 之间持久化存储 | 跨对话持久存在 |
 
 ## Input context
 
-Input context is information provided to your deep agent at startup that becomes part of its system prompt. The final prompt consists of several sources:
+Input context 是 deep agent 启动时提供的信息，会成为 system prompt 的一部分。最终 prompt 由多个来源组成：
 
 <CardGroup cols={2}>
   <Card title="System prompt" icon="message-2" href="#system-prompt">
-    Custom instructions you provide plus built-in agent guidance.
+    你提供的自定义指令，加上内置 agent 指南。
   </Card>
   <Card title="Memory" icon="database" href="#memory">
-    Persistent `AGENTS.md` files always loaded when configured.
+    配置后始终加载的持久化 `AGENTS.md` 文件。
   </Card>
   <Card title="Skills" icon="tool" href="#skills">
-    On-demand capabilities loaded when relevant (progressive disclosure).
+    在相关时按需加载的能力（progressive disclosure）。
   </Card>
   <Card title="Tool prompts" icon="list" href="#tool-prompts">
-    Instructions for using built-in tools or custom tools.
+    关于如何使用内置 tools 或自定义 tools 的说明。
   </Card>
 </CardGroup>
 
 ### System prompt
 
-Your custom system prompt is prepended to the built-in system prompt, which includes guidance for planning, filesystem tools, and subagents. Use it to define the agent's role, behavior, and knowledge:
+你的自定义 system prompt 会被放在内置 system prompt 之前。内置 system prompt 包含 planning、filesystem tools 和 subagents 的使用指南。你可以用它定义 agent 的角色、行为和知识：
 
 :::python
 ```python
@@ -76,31 +76,31 @@ const agent = await createDeepAgent({
 :::
 
 :::python
-The `system_prompt` parameter is static which means it does not change per invocation.
-For some use cases you may want a dynamic prompt: for example, to tell the model "You have admin access" vs "You have read-only access," or to inject user preferences like "User prefers concise responses" from [long-term memory](#long-term-memory).
-If your prompt depends on context or `runtime.store`, use `@dynamic_prompt` to build context-aware instructions. Your middleware can read `request.runtime.context` and `request.runtime.store`.
-See [Customization](/oss/deepagents/customization#middleware) for adding [custom middleware](/oss/langchain/middleware) and the [LangChain context engineering](/oss/langchain/context-engineering#system-prompt) guide for examples.
+`system_prompt` 参数是静态的，这意味着它不会随每次 invocation 改变。
+在某些场景下，你可能需要动态 prompt：例如告诉模型“你有 admin access”或“你只有 read-only access”，或者从 [long-term memory](#long-term-memory) 注入“User prefers concise responses”这类用户偏好。
+如果你的 prompt 依赖 context 或 `runtime.store`，可以使用 `@dynamic_prompt` 构建能够感知 context 的指令。你的 middleware 可以读取 `request.runtime.context` 和 `request.runtime.store`。
+添加 [custom middleware](/oss/langchain/middleware) 请参阅 [Customization](/oss/deepagents/customization#middleware)，更多示例请参阅 [LangChain context engineering](/oss/langchain/context-engineering#system-prompt) 指南。
 
-You do **not** need middleware when tools alone use context or `runtime.store`; tools receive the @[ToolRuntime] object (including `runtime.context` and `runtime.store`) directly. Add middleware only when tools should be packaged with an update to the system prompt.
+当只有 tools 需要使用 context 或 `runtime.store` 时，你**不需要** middleware；tools 会直接接收 @[ToolRuntime] 对象（包含 `runtime.context` 和 `runtime.store`）。只有当 tools 需要和 system prompt 更新一起打包时，才需要添加 middleware。
 :::
 
 :::js
-The `systemPrompt` parameter is static which means it does not change per invocation.
-For some use cases you may want a dynamic prompt: for example, to tell the model "You have admin access" vs "You have read-only access," or to inject user preferences like "User prefers concise responses" from [long-term memory](#long-term-memory).
-If your prompt depends on context or `runtime.store`, use `dynamicSystemPromptMiddleware` to build context-aware instructions.
-Your middleware can read `request.runtime.context` and `request.runtime.store`.
-See [Customization](/oss/deepagents/customization#middleware) for adding [custom middleware](/oss/langchain/middleware) and the [LangChain context engineering](/oss/langchain/context-engineering#system-prompt) guide for examples.
+`systemPrompt` 参数是静态的，这意味着它不会随每次 invocation 改变。
+在某些场景下，你可能需要动态 prompt：例如告诉模型“你有 admin access”或“你只有 read-only access”，或者从 [long-term memory](#long-term-memory) 注入“User prefers concise responses”这类用户偏好。
+如果你的 prompt 依赖 context 或 `runtime.store`，可以使用 `dynamicSystemPromptMiddleware` 构建能够感知 context 的指令。
+你的 middleware 可以读取 `request.runtime.context` 和 `request.runtime.store`。
+添加 [custom middleware](/oss/langchain/middleware) 请参阅 [Customization](/oss/deepagents/customization#middleware)，更多示例请参阅 [LangChain context engineering](/oss/langchain/context-engineering#system-prompt) 指南。
 
-You do **not** need middleware when tools alone use context or `runtime.store`; tools receive the `runtime` object (including `runtime.context` and `runtime.store`) directly. Add middleware only when the system prompt itself must vary per request.
+当只有 tools 需要使用 context 或 `runtime.store` 时，你**不需要** middleware；tools 会直接接收 `runtime` 对象（包含 `runtime.context` 和 `runtime.store`）。只有当 system prompt 本身必须按 request 变化时，才需要添加 middleware。
 :::
 
 <Tip>
-    To adjust the assembled system prompt for a specific provider or model, use a [harness profile](/oss/deepagents/profiles#harness-profiles): `base_system_prompt` replaces the base prompt outright, and `system_prompt_suffix` appends to it.
+    如果要为特定 provider 或 model 调整组装后的 system prompt，请使用 [harness profile](/oss/deepagents/profiles#harness-profiles)：`base_system_prompt` 会完全替换 base prompt，`system_prompt_suffix` 会追加到 base prompt 之后。
 </Tip>
 
 ### Memory
 
-Memory files ([`AGENTS.md`](https://agents.md/)) provide persistent context that is **always loaded** into the system prompt. Use memory for project conventions, user preferences, and critical guidelines that should apply to every conversation:
+Memory 文件（[`AGENTS.md`](https://agents.md/)）提供持久化 context，并且会**始终加载**到 system prompt 中。可以把 memory 用于项目约定、用户偏好，以及每次对话都应该生效的关键指南：
 
 :::python
 ```python
@@ -120,11 +120,11 @@ const agent = await createDeepAgent({
 ```
 :::
 
-Unlike skills, memory is always injected—there is no progressive disclosure. Keep memory minimal to avoid context overload; use [skills](/oss/deepagents/skills) for detailed workflows and domain-specific content. See [Memory](/oss/deepagents/customization#memory) for configuration details.
+不同于 skills，memory 总是会被注入；这里没有 progressive disclosure。请保持 memory 精简，避免 context 过载；详细 workflow 和特定领域内容应使用 [skills](/oss/deepagents/skills)。配置细节请参阅 [Memory](/oss/deepagents/customization#memory)。
 
 ### Skills
 
-Skills provide **on-demand** capabilities. The agent reads frontmatter from each `SKILL.md` at startup, then loads full skill content only when it determines the skill is relevant. This reduces token usage while still providing specialized workflows:
+Skills 提供**按需加载**的能力。agent 启动时会读取每个 `SKILL.md` 的 frontmatter，然后只在判断 skill 相关时加载完整 skill 内容。这样既能减少 token 使用量，也能提供专门的 workflow：
 
 :::python
 ```python
@@ -144,22 +144,22 @@ const agent = await createDeepAgent({
 ```
 :::
 
-Keep each skill focused on a single workflow or domain; broad or overlapping skills dilute relevance and bloat context when loaded. Within a skill, keep the main content concise and move detailed reference material to separate files that are referenced in the skill file. Put always-relevant conventions in [memory](#memory). See [Skills](/oss/deepagents/skills) for authoring and configuration.
+每个 skill 应聚焦于单个 workflow 或 domain；过宽或彼此重叠的 skills 会削弱相关性，并在加载时膨胀 context。在 skill 内部，主内容应保持简洁，把详细参考材料移到 skill 文件中引用的独立文件里。始终相关的约定请放在 [memory](#memory)。关于编写和配置，请参阅 [Skills](/oss/deepagents/skills)。
 
 ### Tool prompts
 
-[Tool](/oss/langchain/tools) prompts are instructions that shape how the model uses tools. All tools expose metadata the model sees in its prompt—typically a schema and a description. Tools you pass via the `tools` parameter surface that tool metadata (schema and descriptions) to the model. A deep agent's built-in tools are packaged in middleware and typically also update the system prompt with more guidance for those tools.
+[Tool](/oss/langchain/tools) prompts 是会影响模型如何使用 tools 的说明。所有 tools 都会暴露模型在 prompt 中可见的 metadata，通常包括 schema 和 description。你通过 `tools` 参数传入的 tools，会把这些 tool metadata（schema 和 descriptions）呈现给模型。deep agent 的内置 tools 被打包在 middleware 中，通常也会向 system prompt 添加更多关于这些 tools 的指导。
 
-**Built-in tools** – Middleware that adds harness capabilities (planning, filesystem, subagents) automatically appends tool-specific instructions to the system prompt, creating tool prompts that explain how to use those tools effectively:
-- Planning prompt – Instructions for `write_todos` to maintain a structured task list
-- Filesystem prompt – Documentation for `ls`, `read_file`, `write_file`, `edit_file`, `glob`, `grep` (and `execute` when using a sandbox backend)
-- Subagent prompt – Guidance for delegating work with the `task` tool
-- Human-in-the-loop prompt – Usage for pausing at specified tool calls (when `interrupt_on` is set)
-- Local context prompt – Current directory and project info (CLI only)
+**Built-in tools** - 添加 harness 能力（planning、filesystem、subagents）的 middleware 会自动向 system prompt 追加 tool-specific instructions，从而形成 tool prompts，说明如何有效使用这些 tools：
+- Planning prompt - `write_todos` 的说明，用于维护结构化 task list
+- Filesystem prompt - `ls`、`read_file`、`write_file`、`edit_file`、`glob`、`grep` 的文档（使用 sandbox backend 时还包括 `execute`）
+- Subagent prompt - 使用 `task` tool 委托工作的指南
+- Human-in-the-loop prompt - 在指定 tool calls 处暂停的用法（设置 `interrupt_on` 时）
+- Local context prompt - 当前目录和项目信息（仅 CLI）
 
-**Tools you provide** – Tools passed via the `tools` parameter get their descriptions (from the tool schema) sent to the model. You can also add [custom middleware](/oss/langchain/middleware) that adds tools and appends its own system prompt instructions.
+**Tools you provide** - 通过 `tools` 参数传入的 tools 会把它们的 descriptions（来自 tool schema）发送给模型。你也可以添加 [custom middleware](/oss/langchain/middleware)，由它添加 tools 并追加自己的 system prompt instructions。
 
-For tools you provide, make sure to provide a clear name, description, and argument descriptions. These guide the model's reasoning about when and how to use the tool. Include *when* to use the tool in the description and describe what each argument does.
+对于你提供的 tools，请确保提供清晰的名称、description 和 argument descriptions。这些内容会指导模型判断何时以及如何使用该 tool。请在 description 中包含*何时*使用该 tool，并描述每个 argument 的作用。
 
 :::python
 ```python
@@ -205,33 +205,33 @@ order status. Always filter by the provided status.`,
 :::
 
 <Tip>
-    To override a built-in or user-supplied tool's description for a specific provider or model, use a [harness profile](/oss/deepagents/profiles#harness-profiles)'s `tool_description_overrides` keyed by tool name. `excluded_tools` removes a tool from the visible tool set entirely.
+    如果要为特定 provider 或 model 覆盖内置 tool 或用户提供 tool 的 description，请使用 [harness profile](/oss/deepagents/profiles#harness-profiles) 中按 tool 名称设置的 `tool_description_overrides`。`excluded_tools` 会把某个 tool 从可见 tool set 中完全移除。
 </Tip>
 
-See [Harness](/oss/deepagents/harness) for built-in capabilities and [Customization](/oss/deepagents/customization#tools) for passing tools directly.
+内置能力请参阅 [Harness](/oss/deepagents/harness)，直接传入 tools 请参阅 [Customization](/oss/deepagents/customization#tools)。
 
 ### Complete system prompt
 
-The deep agent's system message—the assembled system prompt the model receives at the start of a run—consists of the following parts:
+deep agent 的 system message，也就是模型在 run 开始时接收的组装后 system prompt，由以下部分组成：
 
-1. Custom `system_prompt` (if provided)
+1. 自定义 `system_prompt`（如果提供）
 1. [Base agent prompt](https://github.com/langchain-ai/deepagents/blob/e18e9dcd0e6edc72c0a4a5b76ae752c4bc539752/libs/deepagents/deepagents/graph.py#L37)
-1. To-do list prompt: Instructions for how to plan with to do lists
-1. Memory prompt: `AGENTS.md` + memory usage guidelines (only when `memory` provided)
-1. Skills prompt: Skills locations + list of skills with frontmatter information + usage (only when skills provided)
-1. Virtual filesystem prompt (filesystem + execute tool docs if applicable)
-1. Subagent prompt: Task tool usage
-1. User-provided middleware prompts (if custom middleware is provided)
-1. Human-in-the-loop prompt (when `interrupt_on` is set)
+1. To-do list prompt：说明如何用 to-do lists 进行 planning
+1. Memory prompt：`AGENTS.md` + memory 使用指南（仅在提供 `memory` 时）
+1. Skills prompt：skills 位置 + 带 frontmatter 信息的 skills 列表 + 用法（仅在提供 skills 时）
+1. Virtual filesystem prompt（filesystem + 适用时的 execute tool 文档）
+1. Subagent prompt：Task tool 用法
+1. 用户提供的 middleware prompts（如果提供 custom middleware）
+1. Human-in-the-loop prompt（设置 `interrupt_on` 时）
 
 ## Runtime context
 
-Runtime context is per-run configuration you pass when you invoke the agent. It is not automatically included in the model prompt; the model only sees it if a tool, middleware, or other logic reads it and adds it to messages or the system prompt. Use runtime context for user metadata (IDs, preferences, roles), API keys, database connections, feature flags, or other values your tools and harness need.
+Runtime context 是你 invoke agent 时传入的每次运行配置。它不会自动包含在模型 prompt 中；只有当 tool、middleware 或其他逻辑读取它，并把它加入 messages 或 system prompt 时，模型才会看到。Runtime context 适合放用户元数据（IDs、preferences、roles）、API keys、database connections、feature flags，或你的 tools 和 harness 需要的其他值。
 
 :::python
-Define the shape of that data with `context_schema`: use a `dataclasses.dataclass` or `typing.TypedDict` class. Pass values with the **`context`** argument to `invoke` / `ainvoke`. See [Runtime](/oss/langchain/runtime) and [LangGraph runtime context](/oss/langgraph/graph-api#runtime-context) for full detail.
+使用 `context_schema` 定义数据形状：可以用 `dataclasses.dataclass` 或 `typing.TypedDict` class。通过传给 `invoke` / `ainvoke` 的 **`context`** argument 传入值。完整细节请参阅 [Runtime](/oss/langchain/runtime) 和 [LangGraph runtime context](/oss/langgraph/graph-api#runtime-context)。
 
-Inside tools, read context from the injected @[ToolRuntime]:
+在 tools 内部，从注入的 @[ToolRuntime] 读取 context：
 
 ```python
 from dataclasses import dataclass
@@ -264,9 +264,9 @@ result = agent.invoke(
 :::
 
 :::js
-Define the shape of that data with `contextSchema`, typically a Zod object schema (for example `z.object({ ... })`). Pass runtime values in the **`context`** field of the options object you pass to `invoke` / `ainvoke`. See [Runtime](/oss/langchain/runtime) and [LangGraph runtime context](/oss/langgraph/graph-api#runtime-context) for full detail.
+使用 `contextSchema` 定义数据形状，通常是一个 Zod object schema（例如 `z.object({ ... })`）。通过传给 `invoke` / `ainvoke` 的 options object 中的 **`context`** 字段传入 runtime values。完整细节请参阅 [Runtime](/oss/langchain/runtime) 和 [LangGraph runtime context](/oss/langgraph/graph-api#runtime-context)。
 
-Inside tools, read `runtime.context` from the `ToolRuntime` instance supplied as the tool handler's `runtime` argument:
+在 tools 内部，从作为 tool handler `runtime` argument 提供的 `ToolRuntime` 实例读取 `runtime.context`：
 
 ```typescript
 import { createDeepAgent } from "deepagents";
@@ -304,35 +304,35 @@ const result = await agent.invoke(
 ```
 :::
 
-Runtime context **propagates to all subagents**. When a subagent runs, it receives the same runtime context as the parent. See [Subagents](/oss/deepagents/subagents#context-management) for per-subagent context (namespaced keys).
+Runtime context 会**传播到所有 subagents**。当 subagent 运行时，它会接收和 parent 相同的 runtime context。关于每个 subagent 的 context（namespaced keys），请参阅 [Subagents](/oss/deepagents/subagents#context-management)。
 
 ## Context compression
 
-Long-running tasks produce large tool outputs and long conversation history.
-Context compression reduces the size of information in an agent's working memory while preserving details relevant to the task.
-The following techniques are the built-in mechanisms to ensure the context passed to LLMs stays within its context window limit:
+长时间运行的任务会产生大型 tool outputs 和很长的 conversation history。
+Context compression 会减少 agent working memory 中的信息量，同时保留与任务相关的细节。
+以下技术是内置机制，用于确保传给 LLMs 的 context 始终处于 context window limit 内：
 
 <CardGroup cols={2}>
   <Card title="Offloading" icon="file-export" href="#offloading">
-    Large tool inputs and results are stored in the filesystem and replaced with references.
+    大型 tool inputs 和 results 会存入 filesystem，并被引用替代。
   </Card>
   <Card title="Summarization" icon="article" href="#summarization">
-    Old messages are compressed into an LLM-generated summary when limits are approached.
+    接近限制时，旧 messages 会被压缩成 LLM 生成的 summary。
   </Card>
 </CardGroup>
 
 ### Offloading
 
-Deep Agents use the [built-in filesystem tools](/oss/deepagents/harness#virtual-filesystem-access) to automatically offload content and to search and retrieve that offloaded content as needed.
-Content offloading happens when tool call inputs or results exceed a token threshold (default 20,000):
+Deep Agents 使用[内置 filesystem tools](/oss/deepagents/harness#virtual-filesystem-access) 自动 offload 内容，并在需要时搜索和取回这些 offloaded content。
+当 tool call inputs 或 results 超过 token 阈值（默认 20,000）时，会发生 content offloading：
 
-1. **Tool call inputs exceed 20,000 tokens**: File write and edit operations leave behind tool calls containing the complete file content in the agent's conversation history.
-    Since this content is already persisted to the filesystem, it's often redundant.
-    As the session context crosses 85% of the model's available window, deep agents truncate older tool calls, replacing them with a pointer to the file on disk and reducing the size of the active context.
+1. **Tool call inputs 超过 20,000 tokens**：文件写入和编辑操作会在 agent 的 conversation history 中留下包含完整文件内容的 tool calls。
+    由于这些内容已经持久化到 filesystem，通常是冗余的。
+    当 session context 超过模型可用窗口的 85% 时，deep agents 会截断较早的 tool calls，用指向磁盘文件的 pointer 替换它们，从而减少 active context 的大小。
 
     ![An example of offloading showing a large input which is saved to disk and the truncated version is used for the tool call](/oss/images/deepagents/offloading-inputs.png)
 
-2. **Tool call results exceed 20,000 tokens**: When this occurs, the deep agent offloads the response to the configured backend and substitutes it with a file path reference and a preview of the first 10 lines. Agents can then re-read or search the content as needed.
+2. **Tool call results 超过 20,000 tokens**：发生这种情况时，deep agent 会把 response offload 到配置的 backend，并用 file path reference 和前 10 行 preview 取代它。Agents 之后可以按需重新读取或搜索这些内容。
 
     ![An example of offloading showing a large tool response that is replaced with a message about the location of the offloaded results and the first 10 lines of the result](/oss/images/deepagents/offloading-results.png)
 
@@ -340,31 +340,31 @@ Content offloading happens when tool call inputs or results exceed a token thres
 
 :::js
 <Note>
-The current summarization behavior (in-model summarization via `wrapModelCall`, accurate token counting, and automatic `ContextOverflowError` fallback) requires `deepagents>=1.6.0`.
+当前 summarization 行为（通过 `wrapModelCall` 进行 in-model summarization、准确 token counting，以及自动 `ContextOverflowError` fallback）需要 `deepagents>=1.6.0`。
 </Note>
 :::
 
-When the context size crosses the model's context window limit (for example 85% of `max_input_tokens`), and there is no more context eligible for offloading, the deep agent summarizes the message history.
+当 context size 超过模型的 context window limit（例如达到 `max_input_tokens` 的 85%），并且没有更多 context 可以 offload 时，deep agent 会 summarise message history。
 
-This process has two components:
+这个过程包含两个部分：
 
-- **In-context summary**: An LLM generates a structured summary of the conversation including session intent, artifacts created, and next steps—which replaces the full conversation history in the agent's working memory.
-- **Filesystem preservation**: The complete, original conversation messages are written to the filesystem as a canonical record.
+- **In-context summary**：LLM 会生成 conversation 的结构化 summary，包括 session intent、已创建的 artifacts 和 next steps；该 summary 会替代 agent working memory 中的完整 conversation history。
+- **Filesystem preservation**：完整的原始 conversation messages 会被写入 filesystem，作为 canonical record。
 
-This dual approach ensures the agent maintains awareness of its goals and progress (via the summary) while preserving the ability to recover specific details when needed (via filesystem search).
+这种双轨方式确保 agent 能通过 summary 保持对目标和进度的感知，同时在需要时仍可通过 filesystem search 恢复具体细节。
 
 ![An example of summarization showing an agent's conversation history, where several steps get compacted](/oss/images/deepagents/summarization.png)
 
 **Configuration:**
-- Triggers at 85% of the model's `max_input_tokens` from its [model profile](/oss/langchain/models#model-profiles)
-- Keeps 10% of tokens as recent context
-- Falls back to 170,000-token trigger / 6 messages kept if model profile is unavailable
-- If any model call raises a standard @[ContextOverflowError], the deep agent immediately falls back to summarization and retry with summary + recent preserved messages
-- Older messages are summarized by the model
+- 在达到其 [model profile](/oss/langchain/models#model-profiles) 中 `max_input_tokens` 的 85% 时触发
+- 保留 10% tokens 作为 recent context
+- 如果 model profile 不可用，则 fallback 到 170,000-token trigger / 保留 6 条 messages
+- 如果任何 model call 抛出标准 @[ContextOverflowError]，deep agent 会立即 fallback 到 summarization，并用 summary + recent preserved messages 重试
+- 较旧 messages 会由模型 summarise
 
 :::python
 <Tip>
-[Streaming tokens](/oss/deepagents/streaming#llm-tokens) from the agent will generally include tokens generated by the summarization step. You can filter out these tokens using their associated metadata:
+agent 的 [Streaming tokens](/oss/deepagents/streaming#llm-tokens) 通常会包含 summarization 步骤生成的 tokens。你可以使用它们关联的 metadata 过滤掉这些 tokens：
 ```python
 for chunk in agent.stream(
     {"messages": [...]},
@@ -382,7 +382,7 @@ for chunk in agent.stream(
 
 :::js
 <Tip>
-[Streaming tokens](/oss/deepagents/streaming#llm-tokens) from the agent will generally include tokens generated by the summarization step. You can filter out these tokens using their associated metadata:
+agent 的 [Streaming tokens](/oss/deepagents/streaming#llm-tokens) 通常会包含 summarization 步骤生成的 tokens。你可以使用它们关联的 metadata 过滤掉这些 tokens：
 ```typescript
 for await (const [namespace, chunk] of await agent.stream(
   { messages: [...] },
@@ -402,9 +402,9 @@ for await (const [namespace, chunk] of await agent.stream(
 :::python
 ##### Summarization Tool
 
-Deep agents include an optional [tool](/oss/langchain/tools) for summarization, enabling agents to trigger summarization at opportune times—such as between tasks—instead of at fixed token intervals.
+Deep agents 包含一个可选的 [tool](/oss/langchain/tools) 用于 summarization，让 agents 可以在更合适的时机触发 summarization，例如任务之间，而不是只能按固定 token 间隔触发。
 
-You can enable this tool by appending it to the middleware list:
+你可以把它追加到 middleware list 中来启用该 tool：
 
 ```python
 from deepagents import create_deep_agent
@@ -424,28 +424,28 @@ agent = create_deep_agent(
 )
 ```
 
-Enabling this feature does not disable the default summarization action at 85% of the model's context limit.
+启用此功能不会禁用默认的“达到模型 context limit 85% 时执行 summarization”的行为。
 
-See the @[`SummarizationToolMiddleware`] API reference for details.
+详情请参阅 @[`SummarizationToolMiddleware`] API reference。
 
 :::
 
 ## Context isolation with subagents
 
-Subagents solve the **context bloat problem**. When the main agent uses tools with large outputs (web search, file reads, database queries), the context window fills quickly. Subagents isolate this work—the main agent receives only the final result, not the dozens of tool calls that produced it. You can also configure each subagent separately from the main agent (for example, model, tools, system prompt, and skills).
+Subagents 解决的是 **context bloat problem**。当主 agent 使用会产生大型输出的 tools（web search、file reads、database queries）时，context window 很快会被填满。Subagents 会隔离这些工作：主 agent 只接收最终结果，而不是产生结果的几十个 tool calls。你还可以把每个 subagent 配置得和主 agent 不同（例如 model、tools、system prompt 和 skills）。
 
 **How it works:**
 
-- Main agent has a `task` tool to delegate work
-- Subagent runs with its own fresh context
-- Subagent executes autonomously until completion
-- Subagent returns a single final report to the main agent
-- Main agent's context stays clean
+- 主 agent 拥有一个 `task` tool，用于委托工作
+- Subagent 使用自己的全新 context 运行
+- Subagent 自主执行直到完成
+- Subagent 向主 agent 返回一份最终报告
+- 主 agent 的 context 保持干净
 
 **Best practices:**
 
-1. **Delegate complex tasks**: Use subagents for multi-step work that would clutter the main agent's context.
-2. **Keep subagent responses concise**: Instruct subagents to return summaries, not raw data:
+1. **Delegate complex tasks**：对会污染主 agent context 的 multi-step work 使用 subagents。
+2. **Keep subagent responses concise**：指示 subagents 返回 summaries，而不是 raw data：
 
     :::python
     ```python
@@ -473,18 +473,18 @@ Subagents solve the **context bloat problem**. When the main agent uses tools wi
     ```
     :::
 
-3. **Use the filesystem for large data**: Subagents can write results to files; the main agent reads what it needs.
+3. **Use the filesystem for large data**：Subagents 可以把结果写入文件；主 agent 只读取它需要的内容。
 
-See [Subagents](/oss/deepagents/subagents) for configuration and [context management](/oss/deepagents/subagents#context-management) for runtime context propagation and per-subagent namespacing.
+配置请参阅 [Subagents](/oss/deepagents/subagents)，runtime context propagation 和 per-subagent namespacing 请参阅 [context management](/oss/deepagents/subagents#context-management)。
 
 ## Long-term memory
 
-When using the default filesystem, your deep agent stores its working memory files in agent state, which only persists within a single thread.
-Long-term memory enables your deep agent to persist information across different threads and conversations.
-Deep agents can use long-term memory for storing user preferences, accumulated knowledge, research progress, or any information that should persist beyond a single session.
+使用默认 filesystem 时，deep agent 会把 working memory files 存在 agent state 中，而它只在单个 thread 内持久存在。
+Long-term memory 让 deep agent 能够跨不同 threads 和 conversations 持久化信息。
+Deep agents 可以使用 long-term memory 保存用户偏好、累积知识、研究进度，或任何应该超出单个 session 继续存在的信息。
 
-To use long-term memory, you must use a `CompositeBackend` that routes specific paths (typically `/memories/`) to a LangGraph Store, which provides durable cross-thread persistence.
-The `CompositeBackend` is a hybrid storage system where some files persist indefinitely while others remain scoped to a single thread.
+要使用 long-term memory，必须使用 `CompositeBackend`，把特定路径（通常是 `/memories/`）路由到 LangGraph Store，从而提供 durable cross-thread persistence。
+`CompositeBackend` 是一种 hybrid storage system：有些文件会无限期持久化，有些文件仍然只属于单个 thread。
 
 :::python
 ```python
@@ -525,28 +525,28 @@ const agent = await createDeepAgent({
 ```
 :::
 
-You do not need to pre-populate `/memories/` with files.
-You provide the backend config, store, and system prompt instructions that tell the agent *what* to save and *where*.
-For example, you may prompt the agent to store preferences in `/memories/preferences.txt`.
-The path starts empty and the agent creates files on demand using its filesystem tools (`write_file`, `edit_file`) when users share information worth remembering.
+你不需要预先在 `/memories/` 中放置文件。
+你需要提供 backend config、store，以及告诉 agent *保存什么*、*保存在哪里* 的 system prompt instructions。
+例如，你可以提示 agent 把偏好存入 `/memories/preferences.txt`。
+该路径初始为空；当用户分享值得记住的信息时，agent 会按需使用自己的 filesystem tools（`write_file`、`edit_file`）创建文件。
 
-To pre-seed memories, use the [Store API](/langsmith/custom-store) when deploying on LangSmith.
-See [Long-term memory](/oss/deepagents/memory) for setup and use cases.
+在 LangSmith 上部署时，如需预置 memories，请使用 [Store API](/langsmith/custom-store)。
+设置和 use cases 请参阅 [Long-term memory](/oss/deepagents/memory)。
 
 ## Best practices
 
-1. **Start with the right input context** – Keep memory minimal for always-relevant conventions; use focused skills for task-specific capabilities.
-2. **Leverage subagents for heavy work** – Delegate multi-step, output-heavy tasks to keep the main agent's context clean.
-3. **Adjust subagent outputs in configuration** – If you notice when debugging that subagents generate long output, you can add guidance to the subagent's `system_prompt` to create summaries and synthesized findings.
-4. **Use the filesystem** – Persist large outputs to files (for example subagent writes or [automatic offloading](#offloading)) so the active context stays small; the model can pull in fragments with `read_file` and `grep` when it needs details.
-5. **Document long-term memory structure** – Tell the agent what lives in `/memories/` and how to use it.
-6. **Pass runtime context for tools** – Use `context` for user metadata, API keys, and other static configuration that tools need.
+1. **Start with the right input context** - 对始终相关的约定保持 memory 精简；为 task-specific capabilities 使用聚焦的 skills。
+2. **Leverage subagents for heavy work** - 把 multi-step、output-heavy tasks 委托给 subagents，让主 agent 的 context 保持干净。
+3. **Adjust subagent outputs in configuration** - 如果调试时发现 subagents 生成了很长的输出，可以在 subagent 的 `system_prompt` 中添加指导，让它生成 summaries 和 synthesized findings。
+4. **Use the filesystem** - 把大型输出持久化到文件中（例如 subagent writes 或 [automatic offloading](#offloading)），让 active context 保持较小；模型需要细节时可以用 `read_file` 和 `grep` 拉取片段。
+5. **Document long-term memory structure** - 告诉 agent `/memories/` 中有什么，以及应该如何使用它。
+6. **Pass runtime context for tools** - 对用户元数据、API keys 和 tools 需要的其他静态配置使用 `context`。
 
 ## Related resources
 
-- [Harness](/oss/deepagents/harness) – Context management overview, offloading, summarization
-- [Subagents](/oss/deepagents/subagents) – Context isolation, runtime context propagation
-- [Long-term memory](/oss/deepagents/memory) – Cross-thread persistence
-- [Skills](/oss/deepagents/skills) – Progressive disclosure and skill authoring
-- [Backends](/oss/deepagents/backends) – Filesystem backends and CompositeBackend
-- [Context conceptual overview](/oss/concepts/context) – Context types and lifecycle
+- [Harness](/oss/deepagents/harness) - Context management overview、offloading、summarization
+- [Subagents](/oss/deepagents/subagents) - Context isolation、runtime context propagation
+- [Long-term memory](/oss/deepagents/memory) - Cross-thread persistence
+- [Skills](/oss/deepagents/skills) - Progressive disclosure 和 skill authoring
+- [Backends](/oss/deepagents/backends) - Filesystem backends 和 CompositeBackend
+- [Context conceptual overview](/oss/concepts/context) - Context 类型和 lifecycle

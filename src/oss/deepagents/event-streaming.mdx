@@ -1,13 +1,13 @@
 ---
 title: Event streaming
-description: Stream subagents, messages, tool calls, and final output from Deep Agents.
+description: 从 Deep Agents stream subagents、messages、tool calls 和最终 output。
 ---
 
-This page covers streaming concerns specific to Deep Agents—most importantly, streaming from delegated subagents via `stream.subagents`. For general agent streaming (`stream.messages`, `stream.values`, tool calls, custom updates), see [LangChain Event Streaming](/oss/langchain/event-streaming).
+本页介绍 Deep Agents 特有的 streaming 关注点，最重要的是通过 `stream.subagents` 从被 delegated 的 subagents streaming。关于通用 agent streaming（`stream.messages`、`stream.values`、tool calls、custom updates），请参见 [LangChain Event Streaming](/oss/langchain/event-streaming)。
 
 ## Stream subagents
 
-Deep Agents add a subagent projection on top of LangGraph streaming. Use `stream.subagents` when you want one stream handle per delegated `task` call. The projection is lightweight: it discovers subagent tasks first, and message, tool-call, and value streams are opened only when you access them on a subagent handle.
+Deep Agents 在 LangGraph streaming 之上添加了一个 subagent projection。当你希望每个被 delegated 的 `task` call 都有一个独立 stream handle 时，请使用 `stream.subagents`。这个 projection 很轻量：它会先发现 subagent tasks，只有当你访问某个 subagent handle 上的 messages、tool-call 或 value streams 时，才会打开对应 stream。
 
 :::python
 ```py
@@ -43,34 +43,34 @@ for await (const subagent of stream.subagents) {
 
 ## Subagent stream fields
 
-Each subagent stream exposes the same kinds of projections as the parent run, such as messages, tool calls, nested subagents, and final output. For the general parent-run streaming model, see [LangChain Event Streaming](/oss/langchain/event-streaming).
+每个 subagent stream 都会暴露与 parent run 相同类型的 projections，例如 messages、tool calls、nested subagents 和 final output。关于通用 parent-run streaming model，请参见 [LangChain Event Streaming](/oss/langchain/event-streaming)。
 
 :::python
-Python uses snake_case projection names such as `tool_calls`. Each subagent stream can expose `.messages`, `.tool_calls`, `.values`, `.subagents`, and `.output`.
+Python 使用 snake_case projection names，例如 `tool_calls`。每个 subagent stream 可以暴露 `.messages`、`.tool_calls`、`.values`、`.subagents` 和 `.output`。
 :::
 
 :::js
-TypeScript uses camelCase projection names such as `toolCalls` and `taskInput`. Each subagent stream can expose `.messages`, `.toolCalls`, `.values`, `.subagents`, and `.output`.
+TypeScript 使用 camelCase projection names，例如 `toolCalls` 和 `taskInput`。每个 subagent stream 可以暴露 `.messages`、`.toolCalls`、`.values`、`.subagents` 和 `.output`。
 :::
 
 | Field | Description |
 | ----- | ----------- |
-| `name` | Subagent name. |
-| `messages` | Messages emitted by the subagent. |
-| `subagents` | Nested subagent invocations. |
-| `output` | Final subagent state, or completion signal for the delegated task. |
+| `name` | Subagent name。 |
+| `messages` | subagent 发出的 messages。 |
+| `subagents` | Nested subagent invocations。 |
+| `output` | 最终 subagent state，或 delegated task 的 completion signal。 |
 :::python
-| `path` | Namespace path for the subagent stream. |
-| `status` | Lifecycle status such as `started`, `completed`, `failed`, or `interrupted`. |
-| `tool_calls` | Tool calls scoped to the subagent. |
+| `path` | subagent stream 的 namespace path。 |
+| `status` | lifecycle status，例如 `started`、`completed`、`failed` 或 `interrupted`。 |
+| `tool_calls` | 作用域限定到 subagent 的 tool calls。 |
 ::::::js
-| `taskInput` | Promise for the prompt passed to the task tool. |
-| `toolCalls` | Tool calls scoped to the subagent. |
+| `taskInput` | 传给 task tool 的 prompt 的 Promise。 |
+| `toolCalls` | 作用域限定到 subagent 的 tool calls。 |
 :::
 
-## Track subagent lifecycle
+## 跟踪 subagent lifecycle
 
-Use `stream.subagents` when you only need to show which subagents started and finished. You do not need to subscribe to message or value streams unless you access those projections on an individual subagent.
+当你只需要显示哪些 subagents 已开始和已结束时，请使用 `stream.subagents`。除非你访问某个具体 subagent 上的 message 或 value streams，否则不需要订阅这些 streams。
 
 :::python
 ```py
@@ -133,7 +133,7 @@ console.log({ running, completed, failed });
 
 ## Stream messages
 
-Deep Agents can emit messages from the coordinator agent and from delegated subagents. Use `stream.messages` for top-level messages and `subagent.messages` for each delegated subagent.
+Deep Agents 可以从 coordinator agent 和被 delegated 的 subagents 发出 messages。使用 `stream.messages` 获取 top-level messages，并为每个 delegated subagent 使用 `subagent.messages`。
 
 :::python
 ```py
@@ -166,7 +166,7 @@ for await (const subagent of stream.subagents) {
 
 ## Stream tool calls
 
-Deep Agents expose tool calls at each level of the agent tree. Use the top-level `stream.tool_calls` for coordinator tools and each `subagent.tool_calls` for delegated work.
+Deep Agents 会在 agent tree 的每个层级暴露 tool calls。使用 top-level `stream.tool_calls` 获取 coordinator tools，并为 delegated work 使用每个 `subagent.tool_calls`。
 
 :::python
 ```py
@@ -215,7 +215,7 @@ for await (const subagent of stream.subagents) {
 
 ## Stream nested work
 
-You can recurse into a subagent stream to observe nested subagents, messages, and tool calls.
+你可以递归进入 subagent stream，观察 nested subagents、messages 和 tool calls。
 
 :::python
 ```py
@@ -259,12 +259,12 @@ for await (const subagent of stream.subagents) {
 ```
 :::
 
-## Consume concurrently
+## 并发消费
 
-Coordinator and subagent output often interleave. Consume projections concurrently when you need live UI updates.
+Coordinator 和 subagent output 经常会交错出现。当你需要 live UI updates 时，请并发消费 projections。
 
 :::python
-For concurrent consumption in async code, use `astream_events` with `asyncio.gather`:
+在 async code 中并发消费时，请将 `astream_events` 与 `asyncio.gather` 搭配使用：
 
 ```py
 import asyncio
@@ -283,7 +283,7 @@ async def consume_subagents():
 await asyncio.gather(consume_coordinator(), consume_subagents())
 ```
 
-For synchronous code, use `stream.interleave(...)` instead:
+在 synchronous code 中，请改用 `stream.interleave(...)`：
 
 ```py
 stream = agent.stream_events(input, version="v3")
@@ -298,7 +298,7 @@ for name, item in stream.interleave("messages", "subagents"):
 :::
 
 :::js
-Use concurrent consumers in JavaScript:
+在 JavaScript 中使用 concurrent consumers：
 
 ```ts
 const stream = await agent.streamEvents(input, { version: "v3" });
@@ -322,7 +322,7 @@ await Promise.all([
 ```
 :::
 
-When you need exact arrival order across the coordinator and all subagents, iterate raw protocol events and use `namespace` to identify the source:
+当你需要 coordinator 和所有 subagents 之间的精确 arrival order 时，请迭代 raw protocol events，并用 `namespace` 识别来源：
 
 :::python
 ```py
@@ -365,12 +365,12 @@ for await (const event of stream) {
 ```
 :::
 
-## Subagents versus subgraphs
+## Subagents 与 subgraphs
 
-`stream.subgraphs` shows graph execution structure. `stream.subagents` shows product-level Deep Agents task delegations. Use `stream.subagents` for user-facing UI because it hides internal graph nodes and exposes the subagent concept directly.
+`stream.subgraphs` 显示 graph execution structure。`stream.subagents` 显示产品层面的 Deep Agents task delegations。面向用户的 UI 请使用 `stream.subagents`，因为它会隐藏内部 graph nodes，并直接暴露 subagent 概念。
 
 ## Related
 
-- [LangChain Event Streaming](/oss/langchain/event-streaming) covers general agent message and tool-call streaming concepts.
-- [Subagent frontend streaming](/oss/deepagents/frontend/subagent-streaming) shows UI patterns that separate coordinator messages from subagent cards.
-- [LangGraph Event Streaming](/oss/langgraph/event-streaming) covers the underlying graph streaming model.
+- [LangChain Event Streaming](/oss/langchain/event-streaming) 介绍通用 agent message 和 tool-call streaming 概念。
+- [Subagent frontend streaming](/oss/deepagents/frontend/subagent-streaming) 展示将 coordinator messages 与 subagent cards 分开的 UI patterns。
+- [LangGraph Event Streaming](/oss/langgraph/event-streaming) 介绍底层 graph streaming model。

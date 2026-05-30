@@ -1,33 +1,33 @@
 ---
 title: Use subagents in Deep Agents Code
 sidebarTitle: Subagents
-description: Define custom Deep Agents Code subagents as AGENTS.md files with YAML frontmatter. Covers project and user paths, optional model overrides, and examples.
+description: 将自定义 Deep Agents Code subagents 定义为带 YAML frontmatter 的 AGENTS.md 文件。涵盖 project 和 user paths、可选 model overrides，以及示例。
 ---
 
-Define custom synchronous [subagents](/oss/deepagents/subagents) as markdown files so Deep Agents Code can delegate specialized tasks to them.
+将自定义 synchronous [subagents](/oss/deepagents/subagents) 定义为 markdown files，这样 Deep Agents Code 就可以把 specialized tasks 委派给它们。
 
 <Note>
-    Async subagents are not available in Deep Agents Code at this time.
+    Deep Agents Code 目前不支持 async subagents。
 </Note>
 
-Each subagent lives in its own folder with an `AGENTS.md` file:
+每个 subagent 都位于自己的 folder 中，并包含一个 `AGENTS.md` 文件：
 
 ```text
 .deepagents/agents/{subagent-name}/AGENTS.md   # Project-level
 ~/.deepagents/{agent}/agents/{subagent-name}/AGENTS.md  # User-level
 ```
 
-Project subagents override user subagents with the same name (see [precedence rules](/oss/deepagents/code/data-locations#subagents)).
+同名情况下，project subagents 会覆盖 user subagents（参见 [precedence rules](/oss/deepagents/code/data-locations#subagents)）。
 
-The frontmatter requires `name` and `description` (same as the [`SubAgent` dictionary spec](/oss/deepagents/subagents#subagent-dictionary-based)). The markdown body becomes the subagent's `system_prompt`. In addition to the base spec, `AGENTS.md` files support an optional `model` frontmatter field that overrides the main agent's model for this subagent. Uses the `provider:model-name` format (e.g., `anthropic:claude-opus-4-7`, `openai:gpt-5.5`). Omit to inherit the main agent's model.
+frontmatter 必须包含 `name` 和 `description`（与 [`SubAgent` dictionary spec](/oss/deepagents/subagents#subagent-dictionary-based) 相同）。markdown body 会成为 subagent 的 `system_prompt`。除了基础 spec 之外，`AGENTS.md` files 还支持可选的 `model` frontmatter field，用于为该 subagent 覆盖 main agent 的 model。它使用 `provider:model-name` 格式（例如 `anthropic:claude-opus-4-7`、`openai:gpt-5.5`）。省略该字段则继承 main agent 的 model。
 
 <Note>
-    Other `SubAgent` fields (`tools`, `middleware`, `interrupt_on`, `skills`) are currently not configurable via `AGENTS.md` frontmatter—custom subagents defined this way inherit the main agent's tools. Use the SDK directly for full control.
+    其他 `SubAgent` fields（`tools`、`middleware`、`interrupt_on`、`skills`）目前无法通过 `AGENTS.md` frontmatter 配置。以这种方式定义的 custom subagents 会继承 main agent 的 tools。若需要完整控制，请直接使用 SDK。
 </Note>
 
 ## File format
 
-Subagent `AGENTS.md` files use YAML frontmatter followed by a markdown body:
+Subagent `AGENTS.md` files 使用 YAML frontmatter，后面跟 markdown body：
 
 ```markdown
 ---
@@ -45,7 +45,7 @@ You are a research assistant with access to web search.
 
 ## Example: cost-efficient subagents
 
-Use a cheaper, faster model for simple delegation tasks while keeping the main agent on a more capable model:
+为简单 delegation tasks 使用更便宜、更快的 model，同时让 main agent 继续使用更强的 model：
 
 ```markdown
 ---
@@ -57,4 +57,4 @@ model: anthropic:claude-haiku-4-5-20251001
 You are a general-purpose assistant. Complete the task efficiently and return a concise summary.
 ```
 
-This overrides the built-in general-purpose subagent, routing all delegated tasks to a cheaper model. See [Override the general-purpose subagent](/oss/deepagents/subagents#override-the-general-purpose-subagent) for more.
+这会覆盖 built-in general-purpose subagent，把所有 delegated tasks 路由到更便宜的 model。更多信息请参阅 [Override the general-purpose subagent](/oss/deepagents/subagents#override-the-general-purpose-subagent)。

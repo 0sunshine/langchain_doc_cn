@@ -1,19 +1,19 @@
 ---
 title: Deep Agents Code
 sidebarTitle: Overview
-description: Terminal coding agent built on the Deep Agents SDK
+description: 基于 Deep Agents SDK 构建的 terminal coding agent
 ---
 
-Deep Agents Code (`dcode`) is an open source coding agent built on the [Deep Agents SDK](/oss/deepagents/quickstart).
-It works with any LLM that supports tool calling and allows you to switch LLMs between inputs.
-It retains persistent memory of learnings from conversations, maintains context across sessions, uses customizable skills, and executes code with approval controls.
+Deep Agents Code（`dcode`）是一个基于 [Deep Agents SDK](/oss/deepagents/quickstart) 构建的 open source coding agent。
+它可与任何支持 tool calling 的 LLM 配合使用，并允许你在 inputs 之间切换 LLMs。
+它会保留 conversations 中学到的 persistent memory，跨 sessions 维护 context，使用可自定义的 skills，并通过 approval controls 执行 code。
 
 ## Quickstart
 
 <Steps>
 
     <Step title="Install and launch" icon="terminal">
-        OpenAI, Anthropic, and Google are installed by default. Other providers (Ollama, Groq, xAI, etc.) are available as optional extras—see [Providers](/oss/deepagents/code/providers) for details.
+        OpenAI、Anthropic 和 Google 默认已安装。其他 providers（Ollama、Groq、xAI 等）可作为 optional extras 使用。详情请参阅 [Providers](/oss/deepagents/code/providers)。
 
         <CodeGroup>
             ```bash Script
@@ -47,12 +47,12 @@ It retains persistent memory of learnings from conversations, maintains context 
     </Step>
 
     <Step title="Add provider credentials" icon="key">
-        Deep Agents Code works with any LLM that supports tool calling. Use the `/auth` command to set an API key for your chosen providers — see [Provider credentials](/oss/deepagents/code/configuration#provider-credentials) for the full flow and storage details.
+        Deep Agents Code 可与任何支持 tool calling 的 LLM 配合使用。使用 `/auth` command 为你选择的 providers 设置 API key。完整流程和存储细节请参阅 [Provider credentials](/oss/deepagents/code/configuration#provider-credentials)。
 
-        For additional providers and headless runs, see [Providers](/oss/deepagents/code/providers).
+        其他 providers 和 headless runs 请参阅 [Providers](/oss/deepagents/code/providers)。
 
         <Note>
-            Web search uses [Tavily](https://tavily.com) and is **not** configured through `/auth`. If you see "Web search disabled — `TAVILY_API_KEY` is not set" on startup, add `TAVILY_API_KEY=tvly-...` to `~/.deepagents/.env` and run `/reload` (or restart). See [Enable web search with Tavily](/oss/deepagents/code/configuration#enable-web-search-with-tavily).
+            Web search 使用 [Tavily](https://tavily.com)，且 **不会** 通过 `/auth` 配置。如果 startup 时看到 "Web search disabled - `TAVILY_API_KEY` is not set"，请把 `TAVILY_API_KEY=tvly-...` 添加到 `~/.deepagents/.env`，然后运行 `/reload`（或重启）。参见 [Enable web search with Tavily](/oss/deepagents/code/configuration#enable-web-search-with-tavily)。
         </Note>
     </Step>
 
@@ -61,11 +61,11 @@ It retains persistent memory of learnings from conversations, maintains context 
         Create a Python script that prints "Hello, World!"
         ```
 
-        The agent interprets the query and proposes changes with diffs for your approval before modifying files. If needed, it can run shell commands to test the code, check documentation, or search the web for up-to-date information.
+        agent 会解释 query，并在修改 files 前通过 diffs 提出 changes 供你 approval。必要时，它可以运行 shell commands 来测试 code、检查 documentation，或搜索 web 获取最新信息。
     </Step>
 
     <Step title="Enable tracing (optional)" icon="chart-dots">
-        To log agent operations, tool calls, and decisions in LangSmith, add the following to `~/.deepagents/.env` or export the variables in your shell:
+        要在 LangSmith 中记录 agent operations、tool calls 和 decisions，请把以下内容添加到 `~/.deepagents/.env`，或在 shell 中 export variables：
 
         ```bash title="~/.deepagents/.env"
         LANGSMITH_TRACING=true
@@ -73,54 +73,54 @@ It retains persistent memory of learnings from conversations, maintains context 
         LANGSMITH_PROJECT=optional-project-name  # Specify a project name or default to "deepagents-code"
         ```
 
-        For more details and usage, see [Trace with LangSmith](#trace-with-langsmith).
+        更多详情和用法请参阅 [Trace with LangSmith](#trace-with-langsmith)。
     </Step>
 </Steps>
 
 <Note>
-    Deep Agents Code is not officially supported on Windows. Windows users can try running it under [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/install).
+    Deep Agents Code 未正式支持 Windows。Windows users 可以尝试在 [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/install) 下运行。
 </Note>
 
 ## Capabilities
 
-Deep Agents Code has the following built-in capabilities:
+Deep Agents Code 内置以下 capabilities：
 
-* <Icon icon="file" size={16} /> **File operations** - read, write, and edit files with tools that enable agents to manage and modify code and documentation.
-* <Icon icon="terminal" size={16} /> **Shell execution** - execute commands to run tests, build projects, manage dependencies, and interact with version control.
-* <Icon icon="cloud" size={16} /> **[Remote sandboxes](/oss/deepagents/code/remote-sandboxes)** - run agent tools in LangSmith, Daytona, Modal, Runloop, or AgentCore instead of your local machine. The linked page covers provider installation, credentials, sandbox flags (`--sandbox`, `--sandbox-id`, `--sandbox-setup`), and setup scripts.
-* <Icon icon="search" size={16} /> **Web search** - search the web for up-to-date information and documentation. Requires a Tavily API key in [`TAVILY_API_KEY`](/oss/deepagents/code/configuration#enable-web-search-with-tavily).
-* <Icon icon="globe" size={16} /> **HTTP requests** - make HTTP requests to APIs and external services for data fetching and integration tasks.
-* <Icon icon="list-check" size={16} /> **Task planning and tracking** - break down complex tasks into discrete steps and track progress.
-* <Icon icon="users" size={16} /> **[Subagents](/oss/deepagents/code/subagents)** - delegate work with the `task` tool. In Deep Agents Code, define custom subagents as `AGENTS.md` files; the linked page covers paths, frontmatter, and examples.
-* <Icon icon="brain" size={16} /> **[Memory storage and retrieval](/oss/deepagents/code/memory-and-skills#memory)** - store and retrieve information across sessions, enabling agents to remember project conventions and learned patterns.
-* <Icon icon="arrows-minimize" size={16} /> **Context compaction & offloading** - summarize older conversation messages and offload originals to storage, freeing context window space during long sessions.
-* <Icon icon="user" size={16} /> **Human-in-the-loop** - require human approval for sensitive tool operations.
-* <Icon icon="puzzle" size={16} /> **[Skills](/oss/deepagents/code/memory-and-skills#skills)** - extend agent capabilities with custom expertise and instructions.
-* <Icon icon="plug" size={16} /> **[MCP tools](/oss/deepagents/code/mcp-tools)** - load external tools from [Model Context Protocol](https://modelcontextprotocol.io/) servers.
-* <Icon icon="chart-dots" size={16} /> **[Tracing](/oss/deepagents/code/overview#trace-with-langsmith)** - trace agent operations in LangSmith for observability and debugging.
+* <Icon icon="file" size={16} /> **File operations** - 使用 tools read、write、edit files，让 agents 可以管理并修改 code 和 documentation。
+* <Icon icon="terminal" size={16} /> **Shell execution** - 执行 commands 来运行 tests、build projects、管理 dependencies，并与 version control 交互。
+* <Icon icon="cloud" size={16} /> **[Remote sandboxes](/oss/deepagents/code/remote-sandboxes)** - 在 LangSmith、Daytona、Modal、Runloop 或 AgentCore 中运行 agent tools，而不是在本机运行。链接页面涵盖 provider installation、credentials、sandbox flags（`--sandbox`、`--sandbox-id`、`--sandbox-setup`）和 setup scripts。
+* <Icon icon="search" size={16} /> **Web search** - 搜索 web 获取最新 information 和 documentation。需要在 [`TAVILY_API_KEY`](/oss/deepagents/code/configuration#enable-web-search-with-tavily) 中设置 Tavily API key。
+* <Icon icon="globe" size={16} /> **HTTP requests** - 向 APIs 和 external services 发起 HTTP requests，用于 data fetching 和 integration tasks。
+* <Icon icon="list-check" size={16} /> **Task planning and tracking** - 将复杂 tasks 分解成明确 steps 并跟踪 progress。
+* <Icon icon="users" size={16} /> **[Subagents](/oss/deepagents/code/subagents)** - 使用 `task` tool 委派工作。在 Deep Agents Code 中，可将 custom subagents 定义为 `AGENTS.md` files；链接页面涵盖 paths、frontmatter 和 examples。
+* <Icon icon="brain" size={16} /> **[Memory storage and retrieval](/oss/deepagents/code/memory-and-skills#memory)** - 跨 sessions 存储和检索 information，让 agents 记住 project conventions 和 learned patterns。
+* <Icon icon="arrows-minimize" size={16} /> **Context compaction & offloading** - 总结较早 conversation messages，并把 originals offload 到 storage，在 long sessions 中释放 context window space。
+* <Icon icon="user" size={16} /> **Human-in-the-loop** - 对 sensitive tool operations 要求 human approval。
+* <Icon icon="puzzle" size={16} /> **[Skills](/oss/deepagents/code/memory-and-skills#skills)** - 用 custom expertise 和 instructions 扩展 agent capabilities。
+* <Icon icon="plug" size={16} /> **[MCP tools](/oss/deepagents/code/mcp-tools)** - 从 [Model Context Protocol](https://modelcontextprotocol.io/) servers 加载 external tools。
+* <Icon icon="chart-dots" size={16} /> **[Tracing](/oss/deepagents/code/overview#trace-with-langsmith)** - 在 LangSmith 中 trace agent operations，用于 observability 和 debugging。
 
 <Accordion title="Full list of built-in tools">
     ## Built-in tools
 
-    The agent comes with the following built-in tools which are available without configuration:
+    agent 随附以下 built-in tools，无需配置即可使用：
 
     | Tool | Description | Human-in-the-Loop |
     |------|-------------|-------------------|
-    | `ls` | List files and directories | - |
-    | `read_file` | Read contents of a file; multimodal content for select models | - |
-    | `write_file` | Create or overwrite a file | Required<sup>1</sup> |
-    | `edit_file` | Make targeted edits to existing files | Required<sup>1</sup> |
-    | `glob` | Find files matching a pattern | - |
-    | `grep` | Search for text patterns across files | - |
-    | `execute` | Execute shell commands locally or in a remote sandbox | Required<sup>1</sup> |
-    | `web_search` | Search the web using Tavily (requires `TAVILY_API_KEY` — see [Enable web search](/oss/deepagents/code/configuration#enable-web-search-with-tavily)) | Required<sup>1</sup> |
-    | `fetch_url` | Fetch and convert web pages to markdown | Required<sup>1</sup> |
-    | `task` | Delegate work to subagents for parallel execution | Required<sup>1</sup> |
-    | `ask_user` | Ask the user free-form or multiple-choice questions | - |
-    | `compact_conversation` | Summarize older messages, offload originals to backend storage, and replace them in context with the summary | Mixed<sup>2</sup> |
-    | `write_todos` | Create and manage task lists for complex work | - |
+    | `ls` | 列出 files 和 directories | - |
+    | `read_file` | 读取 file 内容；部分 models 支持 multimodal content | - |
+    | `write_file` | 创建或覆盖 file | Required<sup>1</sup> |
+    | `edit_file` | 对 existing files 做 targeted edits | Required<sup>1</sup> |
+    | `glob` | 查找匹配 pattern 的 files | - |
+    | `grep` | 跨 files 搜索 text patterns | - |
+    | `execute` | 在本地或 remote sandbox 中执行 shell commands | Required<sup>1</sup> |
+    | `web_search` | 使用 Tavily 搜索 web（需要 `TAVILY_API_KEY`，参见 [Enable web search](/oss/deepagents/code/configuration#enable-web-search-with-tavily)） | Required<sup>1</sup> |
+    | `fetch_url` | 获取并将 web pages 转换为 markdown | Required<sup>1</sup> |
+    | `task` | 把工作委派给 subagents 并行执行 | Required<sup>1</sup> |
+    | `ask_user` | 向 user 提出 free-form 或 multiple-choice questions | - |
+    | `compact_conversation` | 总结较早 messages，把 originals offload 到 backend storage，并用 summary 替换 context 中的内容 | Mixed<sup>2</sup> |
+    | `write_todos` | 为复杂 work 创建并管理 task lists | - |
 
-    <sup>1</sup>: Potentially destructive operations require user approval before execution. To bypass human approval, you can toggle auto-approve (shift+tab) or start with the option:
+    <sup>1</sup>：Potentially destructive operations 在执行前需要 user approval。要绕过 human approval，可以 toggle auto-approve（shift+tab），或使用以下 option 启动：
 
     ```bash
     dcode -y
@@ -129,14 +129,14 @@ Deep Agents Code has the following built-in capabilities:
     ```
 
     <Note>
-        When running Deep Agents Code non-interactively (via `-n` or piped stdin), shell execution is disabled by default even with `-y`/`--auto-approve`. Use `-S`/`--shell-allow-list` to allowlist specific commands (e.g., `-S "pytest,git,make"`), `recommended` for safe defaults, or `all` to permit any command. The `DEEPAGENTS_CODE_SHELL_ALLOW_LIST` environment variable is also supported. See [Non-interactive mode and piping](#non-interactive-mode-and-piping) for more details.
+        以 non-interactive 方式运行 Deep Agents Code（通过 `-n` 或 piped stdin）时，即使带 `-y`/`--auto-approve`，shell execution 默认也是 disabled。使用 `-S`/`--shell-allow-list` allowlist specific commands（例如 `-S "pytest,git,make"`），使用 `recommended` 获取 safe defaults，或使用 `all` 允许任何 command。也支持 `DEEPAGENTS_CODE_SHELL_ALLOW_LIST` environment variable。更多详情请参阅 [Non-interactive mode and piping](#non-interactive-mode-and-piping)。
     </Note>
 
-    <sup>2</sup>: Deep Agents Code automatically offloads the conversation in the background when token usage exceeds a model-aware threshold. Offloading summarizes older messages via the LLM, and ejects originals to storage (`/conversation_history/{thread_id}.md`), replacing them in context with the summary. The agent can still retrieve the full history from the offloaded file if needed. The `compact_conversation` tool lets the agent (or you) trigger offloading on demand. When called as a tool, it requires user approval by default.
+    <sup>2</sup>：当 token usage 超过 model-aware threshold 时，Deep Agents Code 会自动在后台 offload conversation。Offloading 会通过 LLM 总结较早 messages，并把 originals eject 到 storage（`/conversation_history/{thread_id}.md`），再用 summary 替换 context 中的内容。必要时，agent 仍可从 offloaded file 中检索 full history。`compact_conversation` tool 允许 agent（或你）按需触发 offloading。作为 tool 调用时，它默认需要 user approval。
 </Accordion>
 
 <Tip>
-    [Watch the demo video](https://youtu.be/IrnacLa9PJc?si=3yUnPbxnm2yaqVQb) to see how Deep Agents Code works.
+    [观看 demo video](https://youtu.be/IrnacLa9PJc?si=3yUnPbxnm2yaqVQb)，了解 Deep Agents Code 如何工作。
 </Tip>
 
 ## Command reference
@@ -152,7 +152,7 @@ dcode --model gpt-5.5
 # Auto-approve tool usage (skip human-in-the-loop prompts)
 dcode -y
 
-# list directory contents, then summarize directory as first prompt — the command runs first, then the prompt is submitted
+# list directory contents, then summarize directory as first prompt - the command runs first, then the prompt is submitted
 # the prompt does NOT have access to the command output
 dcode --startup-cmd "ls -la" -m "Summarize what's in this directory"
 
@@ -165,71 +165,71 @@ dcode --startup-cmd "git diff --stat" -n "Review these changes"
     <Accordion title="Command-line options" icon="flag">
         | Option                 | Description                                                 |
         |------------------------|-------------------------------------------------------------|
-        | `-a`, `--agent NAME`   | Use named agent with separate memory. Overrides `[agents].recent` in `config.toml`. Default: `agent` (or the most recently used agent if `[agents].recent` is set) |
-        | `-M`, `--model MODEL`  | Use a specific model (`provider:model`)                    |
-        | `--model-params JSON`  | Extra kwargs to pass to the model as a JSON string (e.g., `'{"temperature": 0.7}'`) |
-        | `--default-model [MODEL]` | Set the default model |
-        | `--clear-default-model` | Clear the default model |
-        | `-r`, `--resume [ID]`  | Resume a session: `-r` for most recent, `-r <ID>` for a specific thread |
-        | `-m`, `--message TEXT` | Initial prompt to auto-submit when the session starts (interactive mode) |
-        | `--skill NAME`         | Invoke a skill at startup |
-        | `--startup-cmd CMD`    | Shell command to run at startup, before the first prompt. Output is rendered in the transcript for your reference but is **not** added to the agent's message history. To hand command output to the agent, pipe it in via stdin instead (e.g., `git diff \| dcode -n "Review these changes"`). Non-zero exits and timeouts warn but do not abort; non-interactive mode applies a 60s timeout. |
-        | `-n`, `--non-interactive TEXT` | Run a single task non-interactively and exit. Shell is disabled unless `--shell-allow-list` is set |
-        | `--max-turns N`        | Cap agentic turns in non-interactive mode. Exits with code 124 when exceeded. Requires `-n` or piped stdin. See [Cap turn count with `--max-turns`](#non-interactive-mode-and-piping) |
-        | `--timeout SECONDS`    | Hard wall-clock timeout for non-interactive mode. Exits with code 124 when exceeded. Requires `-n` or piped stdin. See [Cap wall-clock time with `--timeout`](#non-interactive-mode-and-piping) |
-        | `-q`, `--quiet`        | Clean output for piping—only the agent's response goes to stdout. Requires `-n` or piped stdin |
-        | `--no-stream`          | Buffer the full response and write to stdout at once instead of streaming. Requires `-n` or piped stdin |
-        | `--stdin`              | Read input from stdin explicitly instead of auto-detection. Errors clearly when stdin is unavailable or is a TTY |
-        | `-y`, `--auto-approve` | Auto-approve all tool calls without prompting (disables human-in-the-loop). Toggle with `Shift+Tab` during an interactive session |
-        | `-S`, `--shell-allow-list LIST` | Comma-separated shell commands to auto-approve, `'recommended'` for safe defaults, or `'all'` to allow any command. Applies to both `-n` and interactive modes |
-        | `--json`               | Emit machine-readable JSON from management subcommands (`agents`, `threads`, `skills`, `update`). Output envelope: `{"schema_version": 1, "command": "...", "data": ...}` |
-        | `--sandbox TYPE`       | Remote sandbox for code execution: `none` (default), `langsmith`, `agentcore`, `modal`, `daytona`, `runloop`. LangSmith is included; AgentCore/Modal/Daytona/Runloop require extras |
-        | `--sandbox-id ID`      | Reuse an existing sandbox (skips creation and cleanup)      |
-        | `--sandbox-setup PATH` | Path to setup script to run in sandbox after creation       |
-        | `--mcp-config PATH`    | Add an explicit MCP config as the highest-precedence source (merged with auto-discovered configs) |
-        | `--no-mcp`             | Disable all MCP tool loading                                |
-        | `--trust-project-mcp`  | Trust project-level MCP configs with stdio servers (skip approval prompt) |
-        | `--profile-override JSON` | Override model profile fields as a JSON string (e.g., `'{"max_input_tokens": 4096}'`). Merged on top of config file profile overrides |
-        | `--acp`                | Run as an ACP server over stdio instead of launching the interactive UI |
-        | `-v`, `--version`      | Display version                                             |
-        | `-h`, `--help`         | Show help                                                   |
+        | `-a`, `--agent NAME`   | 使用带独立 memory 的 named agent。覆盖 `config.toml` 中的 `[agents].recent`。Default：`agent`（如果设置了 `[agents].recent`，则使用最近使用的 agent） |
+        | `-M`, `--model MODEL`  | 使用指定 model（`provider:model`） |
+        | `--model-params JSON`  | 以 JSON string 向 model 传递额外 kwargs（例如 `'{"temperature": 0.7}'`） |
+        | `--default-model [MODEL]` | 设置 default model |
+        | `--clear-default-model` | 清除 default model |
+        | `-r`, `--resume [ID]`  | 恢复 session：`-r` 表示最近 session，`-r <ID>` 表示特定 thread |
+        | `-m`, `--message TEXT` | session starts 时自动提交的 initial prompt（interactive mode） |
+        | `--skill NAME`         | startup 时调用 skill |
+        | `--startup-cmd CMD`    | startup 时、first prompt 前运行的 shell command。输出会显示在 transcript 中供你参考，但 **不会** 添加到 agent message history。要把 command output 交给 agent，请通过 stdin pipe 输入（例如 `git diff \| dcode -n "Review these changes"`）。Non-zero exits 和 timeouts 会 warning 但不会 abort；non-interactive mode 有 60s timeout。 |
+        | `-n`, `--non-interactive TEXT` | 非交互式运行单个 task 并退出。除非设置 `--shell-allow-list`，否则 shell disabled |
+        | `--max-turns N`        | 限制 non-interactive mode 中的 agentic turns。超过时以 code 124 退出。需要 `-n` 或 piped stdin。参见 [Cap turn count with `--max-turns`](#non-interactive-mode-and-piping) |
+        | `--timeout SECONDS`    | 为 non-interactive mode 设置 hard wall-clock timeout。超过时以 code 124 退出。需要 `-n` 或 piped stdin。参见 [Cap wall-clock time with `--timeout`](#non-interactive-mode-and-piping) |
+        | `-q`, `--quiet`        | 适合 piping 的 clean output，只有 agent response 输出到 stdout。需要 `-n` 或 piped stdin |
+        | `--no-stream`          | buffer 完整 response 后一次性写入 stdout，而不是 streaming。需要 `-n` 或 piped stdin |
+        | `--stdin`              | 显式从 stdin 读取 input，而不是 auto-detection。stdin 不可用或是 TTY 时会明确报错 |
+        | `-y`, `--auto-approve` | 不提示，auto-approve 所有 tool calls（禁用 human-in-the-loop）。interactive session 中可用 `Shift+Tab` toggle |
+        | `-S`, `--shell-allow-list LIST` | comma-separated shell commands 自动 approval，`'recommended'` 表示 safe defaults，`'all'` 表示允许任何 command。适用于 `-n` 和 interactive modes |
+        | `--json`               | 从 management subcommands（`agents`、`threads`、`skills`、`update`）输出 machine-readable JSON。Output envelope：`{"schema_version": 1, "command": "...", "data": ...}` |
+        | `--sandbox TYPE`       | 用于 code execution 的 remote sandbox：`none`（default）、`langsmith`、`agentcore`、`modal`、`daytona`、`runloop`。LangSmith 已包含；AgentCore/Modal/Daytona/Runloop 需要 extras |
+        | `--sandbox-id ID`      | 复用 existing sandbox（跳过 creation 和 cleanup） |
+        | `--sandbox-setup PATH` | sandbox 创建后在其中运行的 setup script path |
+        | `--mcp-config PATH`    | 添加 explicit MCP config 作为最高 precedence source（与 auto-discovered configs merge） |
+        | `--no-mcp`             | 禁用所有 MCP tool loading |
+        | `--trust-project-mcp`  | 信任 project-level MCP configs 中的 stdio servers（跳过 approval prompt） |
+        | `--profile-override JSON` | 用 JSON string 覆盖 model profile fields（例如 `'{"max_input_tokens": 4096}'`）。叠加在 config file profile overrides 之上 |
+        | `--acp`                | 作为 ACP server 通过 stdio 运行，而不是启动 interactive UI |
+        | `-v`, `--version`      | 显示 version |
+        | `-h`, `--help`         | 显示 help |
     </Accordion>
 
     <Accordion title="CLI commands" icon="terminal">
         | Command                              | Description                            |
         |--------------------------------------|----------------------------------------|
-        | `dcode help`                    | Show help                              |
-        | `dcode agents list`             | List all agents (alias: `ls`)          |
-        | `dcode agents reset --agent NAME` | Clear agent memory and reset to default. Supports `--dry-run` |
-        | `dcode agents reset --agent NAME --target SOURCE` | Copy memory from another agent |
-        | `dcode update`                  | Check for and install Deep Agents Code updates |
-        | `dcode skills list [--project]`           | List all skills (alias: `ls`) |
-        | `dcode skills create NAME [--project]`    | Create a new skill with template `SKILL.md`. Idempotent — re-creating an existing skill prints an informational message instead of an error |
-        | `dcode skills info NAME [--project]`      | Show detailed information about a skill |
-        | `dcode skills delete NAME [--project] [-f]` | Delete a skill and its contents. Supports `--dry-run` |
-        | `dcode threads list [--agent NAME] [--limit N]` | List sessions (alias: `ls`). Default limit: 20. `-n` is a short flag for `--limit`. Additional flags: `--sort {created,updated}`, `--branch TEXT` (filter by git branch), `-v`/`--verbose` (show all columns including branch, created time, and initial prompt), `-r`/`--relative` (relative timestamps) |
-        | `dcode threads delete ID`       | Delete a session. Supports `--dry-run` |
-        | `dcode mcp login NAME [--config PATH]` | Run the OAuth login flow for an MCP server marked `auth: "oauth"`. See [MCP tools](/oss/deepagents/code/mcp-tools#oauth-login) |
+        | `dcode help`                    | 显示 help                              |
+        | `dcode agents list`             | 列出所有 agents（alias：`ls`）          |
+        | `dcode agents reset --agent NAME` | 清除 agent memory 并重置为 default。支持 `--dry-run` |
+        | `dcode agents reset --agent NAME --target SOURCE` | 从另一个 agent 复制 memory |
+        | `dcode update`                  | 检查并安装 Deep Agents Code updates |
+        | `dcode skills list [--project]`           | 列出所有 skills（alias：`ls`） |
+        | `dcode skills create NAME [--project]`    | 使用 template `SKILL.md` 创建新 skill。Idempotent；重新创建 existing skill 会打印 informational message，而不是 error |
+        | `dcode skills info NAME [--project]`      | 显示 skill 的详细信息 |
+        | `dcode skills delete NAME [--project] [-f]` | 删除 skill 及其内容。支持 `--dry-run` |
+        | `dcode threads list [--agent NAME] [--limit N]` | 列出 sessions（alias：`ls`）。Default limit：20。`-n` 是 `--limit` 的 short flag。额外 flags：`--sort {created,updated}`、`--branch TEXT`（按 git branch 过滤）、`-v`/`--verbose`（显示所有 columns，包括 branch、created time 和 initial prompt）、`-r`/`--relative`（relative timestamps） |
+        | `dcode threads delete ID`       | 删除 session。支持 `--dry-run` |
+        | `dcode mcp login NAME [--config PATH]` | 为标记为 `auth: "oauth"` 的 MCP server 运行 OAuth login flow。参见 [MCP tools](/oss/deepagents/code/mcp-tools#oauth-login) |
 
-        All management subcommands support `--json` for machine-readable output. See [command-line options](#command-line-options) for details.
+        所有 management subcommands 都支持 `--json` 以输出 machine-readable 内容。详情请参阅 [command-line options](#command-line-options)。
 
-        Destructive commands (`agents reset`, `skills delete`, `threads delete`) support `--dry-run` to preview what would happen without making changes. In JSON mode, `--dry-run` returns the same envelope with a `dry_run: true` field.
+        Destructive commands（`agents reset`、`skills delete`、`threads delete`）支持 `--dry-run`，可以预览将发生什么而不做修改。在 JSON mode 中，`--dry-run` 会返回带 `dry_run: true` field 的相同 envelope。
     </Accordion>
 </AccordionGroup>
 
 ## Configuration
 
-For the full reference — including `config.toml` schema, provider parameters, profile overrides, and hook configuration — see [Configuration](/oss/deepagents/code/configuration).
+完整 reference（包括 `config.toml` schema、provider parameters、profile overrides 和 hook configuration）请参阅 [Configuration](/oss/deepagents/code/configuration)。
 
-Deep Agents Code stores all configuration under `~/.deepagents/`. Within that directory, each agent gets its own subdirectory (default: `agent`):
+Deep Agents Code 会把所有 configuration 存在 `~/.deepagents/` 下。在该 directory 内，每个 agent 都有自己的 subdirectory（default：`agent`）：
 
 | Path | Purpose |
 |------|---------|
-| `~/.deepagents/config.toml` | Model and agent defaults, provider settings, constructor params, profile overrides, themes, update settings, MCP trust store |
-| `~/.deepagents/.env` | Global API keys and secrets. See [configuration](/oss/deepagents/code/configuration#environment-variables) |
-| `~/.deepagents/hooks.json` | Lifecycle event hooks (session start/end, task complete, etc.) |
-| `~/.deepagents/<agent_name>/` | Per-agent memory, skills, and conversation threads |
-| `.deepagents/` (project root) | Project-specific memory and skills, loaded when running inside a git repo |
+| `~/.deepagents/config.toml` | Model 和 agent defaults、provider settings、constructor params、profile overrides、themes、update settings、MCP trust store |
+| `~/.deepagents/.env` | Global API keys 和 secrets。参见 [configuration](/oss/deepagents/code/configuration#environment-variables) |
+| `~/.deepagents/hooks.json` | Lifecycle event hooks（session start/end、task complete 等） |
+| `~/.deepagents/<agent_name>/` | Per-agent memory、skills 和 conversation threads |
+| `.deepagents/` (project root) | Project-specific memory 和 skills，在 git repo 内运行时加载 |
 
 ```bash
 # List all configured agents
@@ -238,40 +238,40 @@ dcode agents list
 
 ## Interactive mode
 
-Type naturally as you would in a chat interface.
-The agent will use its built-in tools, skills, and memory to help you with tasks.
+像在 chat interface 中一样自然输入。
+agent 会使用其 built-in tools、skills 和 memory 来帮助你完成 tasks。
 
 <AccordionGroup>
     <Accordion title="Slash commands" icon="slash">
-        Use these commands within a Deep Agents Code session:
+        在 Deep Agents Code session 中使用这些 commands：
 
-        - `/model` - Switch models or open the interactive model selector.
-        - `/agents` - Hot-swap between pre-configured agents without relaunching. See [Command reference](/oss/deepagents/code/overview#command-reference) for details
-        - `/auth` - Manage stored API keys for model providers. See [Provider credentials](/oss/deepagents/code/configuration#provider-credentials) for details
-        - `/remember [context]` - Review conversation and update memory and skills. Optionally pass additional context
-        - `/skill:<name> [args]` - Directly invoke a skill by name. The skill's `SKILL.md` instructions are injected into the prompt along with any arguments you provide
-        - `/skill-creator [args]` - Guide for creating effective agent skills
-        - `/offload` (alias `/compact`) - Free up context window space by offloading messages to storage with a summary placeholder. The agent can retrieve the full history from the offloaded file if needed
-        - `/tokens` - Display current context window token usage breakdown
-        - `/clear` - Clear conversation history and start a new thread
-        - `/threads` - Browse and resume previous conversation threads
-        - `/mcp` - Show active MCP servers and tools
-        - `/reload` - Re-read `.env` files, refresh configuration, and re-discover skills without restarting. Conversation state is preserved. See [`DEEPAGENTS_CODE_` prefix](/oss/deepagents/code/configuration#deepagents_code_-prefix) for override behavior
-        - `/theme` - Open the interactive theme selector to switch color themes. Built-in themes are available plus any [user-defined themes](/oss/deepagents/code/configuration#themes)
-        - `/update` - Check for and install Deep Agents Code updates inline. Detects your install method (uv, Homebrew, pip) and runs the appropriate upgrade command
-        - `/auto-update` - Toggle automatic updates on or off
-        - `/trace` - Open the current thread in LangSmith (requires `LANGSMITH_API_KEY`)
-        - `/editor` - Open the current prompt in your external editor (`$VISUAL` / `$EDITOR`). See [External editor](/oss/deepagents/code/configuration#external-editor)
-        - `/changelog` - Open Deep Agents Code changelog in your browser
-        - `/docs` - Open the documentation in your browser
-        - `/feedback` - Open the GitHub issues page to file a bug report or feature request
-        - `/version` - Show installed `deepagents-code` and SDK versions
-        - `/help` - Show help and available commands
-        - `/quit` - Exit Deep Agents Code
+        - `/model` - 切换 models 或打开 interactive model selector。
+        - `/agents` - 不重启即可 hot-swap 预配置 agents。详情请参阅 [Command reference](/oss/deepagents/code/overview#command-reference)
+        - `/auth` - 管理 model providers 的 stored API keys。详情请参阅 [Provider credentials](/oss/deepagents/code/configuration#provider-credentials)
+        - `/remember [context]` - Review conversation 并更新 memory 和 skills。可选地传入 additional context
+        - `/skill:<name> [args]` - 通过 name 直接调用 skill。skill 的 `SKILL.md` instructions 会连同你提供的 arguments 一起注入 prompt
+        - `/skill-creator [args]` - 创建 effective agent skills 的指南
+        - `/offload`（alias `/compact`）- 将 messages offload 到 storage，并用 summary placeholder 释放 context window space。必要时 agent 可以从 offloaded file 检索 full history
+        - `/tokens` - 显示当前 context window token usage breakdown
+        - `/clear` - 清除 conversation history 并开始 new thread
+        - `/threads` - 浏览并恢复 previous conversation threads
+        - `/mcp` - 显示 active MCP servers 和 tools
+        - `/reload` - 重新读取 `.env` files、刷新 configuration，并重新发现 skills，无需重启。Conversation state 会保留。override behavior 参见 [`DEEPAGENTS_CODE_` prefix](/oss/deepagents/code/configuration#deepagents_code_-prefix)
+        - `/theme` - 打开 interactive theme selector 切换 color themes。可使用 built-in themes 和任意 [user-defined themes](/oss/deepagents/code/configuration#themes)
+        - `/update` - inline 检查并安装 Deep Agents Code updates。会检测 install method（uv、Homebrew、pip）并运行相应 upgrade command
+        - `/auto-update` - Toggle automatic updates on/off
+        - `/trace` - 在 LangSmith 中打开当前 thread（需要 `LANGSMITH_API_KEY`）
+        - `/editor` - 在 external editor（`$VISUAL` / `$EDITOR`）中打开当前 prompt。参见 [External editor](/oss/deepagents/code/configuration#external-editor)
+        - `/changelog` - 在 browser 中打开 Deep Agents Code changelog
+        - `/docs` - 在 browser 中打开 documentation
+        - `/feedback` - 打开 GitHub issues page 提交 bug report 或 feature request
+        - `/version` - 显示已安装的 `deepagents-code` 和 SDK versions
+        - `/help` - 显示 help 和 available commands
+        - `/quit` - 退出 Deep Agents Code
     </Accordion>
 
     <Accordion title="Shell commands" icon="prompt">
-        Type `!` to enter shell mode, then type your command.
+        输入 `!` 进入 shell mode，然后输入 command。
 
         ```bash
         git status
@@ -285,29 +285,29 @@ The agent will use its built-in tools, skills, and memory to help you with tasks
 
         | Shortcut | Action |
         |-|-|
-        | `Enter` | Submit prompt |
-        | `Shift+Enter`, `Ctrl+J`, `Alt+Enter`, or `Ctrl+Enter` | Insert newline |
-        | `Ctrl+A` | Select all text in input |
-        | `@filename` | Auto-complete files and inject content |
+        | `Enter` | 提交 prompt |
+        | `Shift+Enter`, `Ctrl+J`, `Alt+Enter`, or `Ctrl+Enter` | 插入 newline |
+        | `Ctrl+A` | 选择 input 中所有 text |
+        | `@filename` | Auto-complete files 并 inject content |
         | `Shift+Tab` or `Ctrl+T` | Toggle auto-approve |
-        | `Ctrl+U` | Delete to start of line |
-        | `Ctrl+X` | Open prompt in external editor |
-        | `Ctrl+O` | Expand/collapse the most recent tool output |
-        | `Escape` | Interrupt current operation |
-        | `Ctrl+C` | Interrupt or quit |
+        | `Ctrl+U` | 删除到 line start |
+        | `Ctrl+X` | 在 external editor 中打开 prompt |
+        | `Ctrl+O` | 展开/折叠最近的 tool output |
+        | `Escape` | Interrupt 当前 operation |
+        | `Ctrl+C` | Interrupt 或 quit |
         | `Ctrl+D` | Exit |
     </Accordion>
 </AccordionGroup>
 
 ## Non-interactive mode and piping
 
-Use `-n` to run a single task without launching the interactive UI:
+使用 `-n` 运行单个 task，而不启动 interactive UI：
 
 ```bash
 dcode -n "Write a Python script that prints hello world"
 ```
 
-You can also pipe input via stdin. When input is piped, Deep Agents Code automatically runs non-interactively:
+你也可以通过 stdin pipe 输入。input 被 pipe 时，Deep Agents Code 会自动以 non-interactive 方式运行：
 
 ```bash
 echo "Explain this code" | dcode
@@ -316,50 +316,50 @@ git diff | dcode -n "Review these changes"
 git diff | dcode --skill code-review -n 'summarize changes'
 ```
 
-When you combine piped input with `-n` or `-m`, the piped content appears first, followed by the text you pass to the flag.
+当你将 piped input 与 `-n` 或 `-m` 组合时，piped content 会先出现，然后是你传给 flag 的 text。
 
 <Note>
-    The maximum piped input size is 10 MiB.
+    最大 piped input size 是 10 MiB。
 </Note>
 
-Shell execution is disabled by default in non-interactive mode. Use `-S`/`--shell-allow-list` to enable specific commands (e.g., `-S "pytest,git,make"`), `recommended` for safe defaults, or `all` to permit any command.
+non-interactive mode 中 shell execution 默认 disabled。使用 `-S`/`--shell-allow-list` 启用特定 commands（例如 `-S "pytest,git,make"`），使用 `recommended` 获取 safe defaults，或使用 `all` 允许任意 command。
 
 <AccordionGroup>
     <Accordion title="Cap turn count with `--max-turns`" icon="gauge">
-        Long-running or misbehaving agents in CI/CD pipelines can loop indefinitely. `--max-turns N` gives operators a hard upper bound without having to touch SDK internals:
+        CI/CD pipelines 中 long-running 或 misbehaving agents 可能无限循环。`--max-turns N` 为 operators 提供 hard upper bound，而不必触碰 SDK internals：
 
         ```bash
         dcode -n "fix the failing tests" --max-turns 10
         ```
 
-        `N` must be a positive integer, and overrides the internal safety default that otherwise caps runaway loops. Exits with code 124 (matching GNU `timeout`) when the budget is exceeded, so CI can distinguish a budget hit from a generic failure. Requires `-n` or piped stdin; otherwise exits with code 2.
+        `N` 必须是 positive integer，并覆盖内部 safety default。budget exceeded 时以 code 124 退出（匹配 GNU `timeout`），因此 CI 可以区分 budget hit 和 generic failure。需要 `-n` 或 piped stdin；否则以 code 2 退出。
 
-        For a time-based limit instead of (or in addition to) a turn-count limit, see [Cap wall-clock time with `--timeout`](#non-interactive-mode-and-piping).
+        如果想使用 time-based limit 而不是（或同时使用）turn-count limit，请参阅 [Cap wall-clock time with `--timeout`](#non-interactive-mode-and-piping)。
     </Accordion>
 
     <Accordion title="Cap wall-clock time with `--timeout`" icon="clock">
-        `--timeout SECONDS` enforces a hard wall-clock limit on a non-interactive run. It complements `--max-turns` (turn count) with a time-based budget—whichever limit is hit first cancels the agent.
+        `--timeout SECONDS` 为 non-interactive run 强制 hard wall-clock limit。它用 time-based budget 补充 `--max-turns`（turn count），哪个 limit 先命中就取消 agent。
 
         ```bash
         # Fail fast in CI if the task takes more than 2 minutes
         dcode -n "run the test suite and summarise failures" --timeout 120
 
-        # Combine with --max-turns—whichever limit is hit first stops the agent
+        # Combine with --max-turns - whichever limit is hit first stops the agent
         dcode -n "refactor auth module" --timeout 300 --max-turns 20
         ```
 
-        On expiry the agent is cancelled and the process exits with code 124, the same code used by `--max-turns`, so CI can treat both budget hits uniformly. Requires `-n` or piped stdin; otherwise exits with code 2.
+        到期时 agent 会被 cancelled，process 以 code 124 退出，与 `--max-turns` 使用同一 code，因此 CI 可以统一处理两种 budget hits。需要 `-n` 或 piped stdin；否则以 code 2 退出。
     </Accordion>
 
     <Accordion title="Clean output and buffering" icon="buffer">
-        Use `-q` for clean output suitable for piping into other commands, and `--no-stream` to buffer the full response (instead of streaming) before writing to stdout:
+        使用 `-q` 生成适合 pipe 到其他 commands 的 clean output，并使用 `--no-stream` 在写入 stdout 前 buffer 完整 response（而不是 streaming）：
 
         ```bash
         dcode -n "Generate a .gitignore for Python" -q > .gitignore
         dcode -n "List dependencies" -q --no-stream | sort
         ```
 
-        In non-interactive mode, the agent is instructed to make reasonable assumptions and proceed autonomously rather than ask clarifying questions. It also favors non-interactive command variants (e.g., `npm init -y`, `apt-get install -y`).
+        non-interactive mode 中，agent 会被指示做合理假设并自主推进，而不是提出 clarifying questions。它也会偏好 non-interactive command variants（例如 `npm init -y`、`apt-get install -y`）。
     </Accordion>
 
     <Accordion title="Shell execution examples" icon="shield-check">
@@ -379,14 +379,14 @@ Shell execution is disabled by default in non-interactive mode. Use `-S`/`--shel
 <Warning>
     **Use with caution.**
 
-    `-S all` (or `--shell-allow-list all`) lets the agent execute arbitrary shell commands with no human confirmation.
+    `-S all`（或 `--shell-allow-list all`）允许 agent 在没有 human confirmation 的情况下执行 arbitrary shell commands。
 </Warning>
 
 ## Trace with LangSmith
 
-Enable [LangSmith](https://smith.langchain.com) tracing to see agent operations, tool calls, and decisions in a LangSmith project.
+启用 [LangSmith](https://smith.langchain.com) tracing，可以在 LangSmith project 中查看 agent operations、tool calls 和 decisions。
 
-Add your tracing keys to `~/.deepagents/.env` so tracing is enabled in every session without per-shell exports:
+把 tracing keys 添加到 `~/.deepagents/.env`，这样每个 session 都会启用 tracing，而不需要每个 shell 单独 export：
 
 ```bash title="~/.deepagents/.env"
 LANGSMITH_TRACING=true
@@ -394,36 +394,36 @@ LANGSMITH_API_KEY=lsv2_...
 LANGSMITH_PROJECT=optional-project-name  # Specify a project name or default to "deepagents-code"
 ```
 
-To override for a specific project, add the same keys to a `.env` in the project directory. See [environment variables](/oss/deepagents/code/configuration#environment-variables) for the full loading order.
+如果要为特定 project override，请把相同 keys 添加到 project directory 中的 `.env`。完整 loading order 请参阅 [environment variables](/oss/deepagents/code/configuration#environment-variables)。
 
-You can also set these as shell environment variables if you prefer. Shell exports always take precedence over `.env` values, so this is a good option for temporary overrides or testing:
+如果你更喜欢，也可以把这些设置为 shell environment variables。Shell exports 总是优先于 `.env` values，因此很适合 temporary overrides 或 testing：
 
 ```bash
 export LANGSMITH_TRACING=false
 ```
 
 <Accordion title="Separate agent traces from app traces">
-    When invoking Deep Agents Code programmatically from a LangChain application (e.g., as a subprocess in [non-interactive mode](#non-interactive-mode-and-piping)), both your app and Deep Agents Code produce LangSmith traces. By default, these all land in the same project.
+    以编程方式从 LangChain application 调用 Deep Agents Code 时（例如在 [non-interactive mode](#non-interactive-mode-and-piping) 中作为 subprocess），你的 app 和 Deep Agents Code 都会生成 LangSmith traces。默认情况下，它们都会进入同一个 project。
 
-    To send Deep Agents Code traces to a dedicated project, set `DEEPAGENTS_CODE_LANGSMITH_PROJECT`:
+    要把 Deep Agents Code traces 发送到 dedicated project，请设置 `DEEPAGENTS_CODE_LANGSMITH_PROJECT`：
 
     ```bash title="~/.deepagents/.env"
     DEEPAGENTS_CODE_LANGSMITH_PROJECT=my-deep-agent-execution
     ```
 
-    Then configure `LANGSMITH_PROJECT` for your parent application's traces:
+    然后为 parent application 的 traces 配置 `LANGSMITH_PROJECT`：
 
     ```bash title="~/.deepagents/.env"
     LANGSMITH_PROJECT=my-app-traces
     ```
 
-    This keeps your app-level observability clean while still capturing the agent's internal execution in a separate project.
+    这样可以保持 app-level observability 清爽，同时仍在 separate project 中捕获 agent 的 internal execution。
 
-    You can also scope LangSmith credentials to Deep Agents Code using the [`DEEPAGENTS_CODE_` prefix](/oss/deepagents/code/configuration#deepagents_code_-prefix) (e.g., `DEEPAGENTS_CODE_LANGSMITH_API_KEY`).
+    你也可以使用 [`DEEPAGENTS_CODE_` prefix](/oss/deepagents/code/configuration#deepagents_code_-prefix) 将 LangSmith credentials scoped 到 Deep Agents Code（例如 `DEEPAGENTS_CODE_LANGSMITH_API_KEY`）。
 </Accordion>
 
-When configured, Deep Agents Code displays a status line with a link to the LangSmith project. In supported terminals, click the link to open it directly. You can also use `/trace` to print the URL and open it in your browser.
+配置完成后，Deep Agents Code 会显示带 LangSmith project link 的 status line。在支持的 terminals 中，点击 link 即可直接打开。也可以使用 `/trace` 打印 URL 并在 browser 中打开。
 
 ```sh
-✓ LangSmith tracing: 'my-project'
+LangSmith tracing: 'my-project'
 ```

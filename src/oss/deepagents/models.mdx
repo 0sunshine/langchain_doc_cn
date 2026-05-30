@@ -1,21 +1,21 @@
 ---
 title: Models
-description: Configure model providers and parameters for Deep Agents
+description: 为 Deep Agents 配置 model providers 和 parameters
 ---
 
 import EvalCategoryMatrix from '/snippets/deepagents-eval-category-matrix.mdx';
 
-Deep Agents work with any [LangChain chat model](/oss/langchain/models) that supports [tool calling](/oss/langchain/models#tool-calling).
+Deep Agents 可与任何支持 [tool calling](/oss/langchain/models#tool-calling) 的 [LangChain chat model](/oss/langchain/models) 配合使用。
 
 ## Supported models
 
-Specify models in `provider:model` format (for example, `google_genai:gemini-3.5-flash`, `openai:gpt-5.4`, or `anthropic:claude-sonnet-4-6`). The provider prefix selects the LangChain integration, and everything after the colon is passed through to that provider as the model identifier. For valid provider strings, see the `model_provider` parameter of @[`init_chat_model`]. For provider-specific configuration, see [chat model integrations](/oss/integrations/chat).
+用 `provider:model` 格式指定 models（例如 `google_genai:gemini-3.5-flash`、`openai:gpt-5.4` 或 `anthropic:claude-sonnet-4-6`）。provider prefix 会选择 LangChain integration，冒号后面的所有内容会作为 model identifier 传递给该 provider。有效 provider strings 请参阅 @[`init_chat_model`] 的 `model_provider` 参数。provider-specific configuration 请参阅 [chat model integrations](/oss/integrations/chat)。
 
-The model identifier must match the format expected by the provider. Some providers use simple names like `gpt-5.4`; others use namespaced IDs or deployment paths like `zai-org/GLM-5.1`, so the full Deep Agents string would be `baseten:zai-org/GLM-5.1`. Check the provider's model catalog or integration docs for the current identifiers.
+model identifier 必须匹配 provider 期望的格式。有些 providers 使用 `gpt-5.4` 这样的简单名称；有些使用 namespaced IDs 或 deployment paths，例如 `zai-org/GLM-5.1`，因此完整的 Deep Agents 字符串会是 `baseten:zai-org/GLM-5.1`。请查看 provider 的 model catalog 或 integration docs 获取当前 identifiers。
 
 ### Suggested models
 
-These models perform well on the [Deep Agents eval suite](https://github.com/langchain-ai/deepagents/tree/main/libs/evals#readme), which tests basic agent operations. Passing these evals is necessary but not sufficient for strong performance on longer, more complex tasks.
+这些 models 在 [Deep Agents eval suite](https://github.com/langchain-ai/deepagents/tree/main/libs/evals#readme) 上表现良好；该 suite 测试基础 agent operations。通过这些 evals 是在更长、更复杂任务上取得强表现的必要条件，但并不充分。
 
 | Provider | Models |
 |----------|--------|
@@ -25,16 +25,16 @@ These models perform well on the [Deep Agents eval suite](https://github.com/lan
 | Open-weight | `GLM-5`, `Kimi-K2.5`, `MiniMax-M2.5`, `qwen3.5-397B-A17B`, `devstral-2-123B` |
 
 :::python
-Open-weight models are available through providers like [Baseten](/oss/integrations/providers/baseten), [Fireworks](/oss/integrations/providers/fireworks), [OpenRouter](/oss/integrations/providers/openrouter), and [Ollama](/oss/integrations/providers/ollama).
+Open-weight models 可通过 [Baseten](/oss/integrations/providers/baseten)、[Fireworks](/oss/integrations/providers/fireworks)、[OpenRouter](/oss/integrations/providers/openrouter) 和 [Ollama](/oss/integrations/providers/ollama) 等 providers 使用。
 :::
 
 :::js
-Open-weight models are available through providers like [OpenRouter](/oss/integrations/chat/openrouter), [Fireworks](/oss/integrations/chat/fireworks) or [Ollama](/oss/integrations/chat/ollama).
+Open-weight models 可通过 [OpenRouter](/oss/integrations/chat/openrouter)、[Fireworks](/oss/integrations/chat/fireworks) 或 [Ollama](/oss/integrations/chat/ollama) 等 providers 使用。
 :::
 
 ### Model evaluations
 
-The [Deep Agents eval suite](https://github.com/langchain-ai/deepagents/tree/main/libs/evals#readme) tests popular models:
+[Deep Agents eval suite](https://github.com/langchain-ai/deepagents/tree/main/libs/evals#readme) 会测试热门 models：
 
 <div className="deepagents-eval-category-matrix">
 
@@ -42,19 +42,19 @@ The [Deep Agents eval suite](https://github.com/langchain-ai/deepagents/tree/mai
 
 </div>
 
-For more information, see the [Eval runs](https://github.com/langchain-ai/deepagents/actions/workflows/evals.yml).
+更多信息请参阅 [Eval runs](https://github.com/langchain-ai/deepagents/actions/workflows/evals.yml)。
 
-## Configure model parameters
+## 配置 model parameters
 
 :::python
-Pass a model string to @[`create_deep_agent`] in `provider:model` format, or pass a configured model instance for full control. Under the hood, model strings are resolved via @[`init_chat_model`].
+以 `provider:model` 格式向 @[`create_deep_agent`] 传入 model string，或传入 configured model instance 以获得完全控制。底层会通过 @[`init_chat_model`] 解析 model strings。
 :::
 
 :::js
-Pass a model string to @[`createDeepAgent`] in `provider:model` format, or pass a configured model instance for full control. Under the hood, model strings are resolved via @[`init_chat_model`].
+以 `provider:model` 格式向 @[`createDeepAgent`] 传入 model string，或传入 configured model instance 以获得完全控制。底层会通过 @[`init_chat_model`] 解析 model strings。
 :::
 
-To configure model-specific parameters, use @[`init_chat_model`] or instantiate a provider model class directly:
+要配置 model-specific parameters，请使用 @[`init_chat_model`]，或直接实例化 provider model class：
 
 :::python
 <CodeGroup>
@@ -108,17 +108,17 @@ To configure model-specific parameters, use @[`init_chat_model`] or instantiate 
 :::
 
 <Note>
-    Available parameters vary by provider. See the [chat model integrations](/oss/integrations/chat) page for provider-specific configuration options.
+    可用 parameters 会因 provider 而异。provider-specific configuration options 请参阅 [chat model integrations](/oss/integrations/chat) 页面。
 </Note>
 
 ### Provider profiles
 
-A [`ProviderProfile`](/oss/deepagents/profiles#provider-profiles) packages initialization parameters that apply when you provide a `provider:model` string when creating the deep agent. It does not apply when you pass a preconfigured model with @[`init_chat_model`].
+[`ProviderProfile`](/oss/deepagents/profiles#provider-profiles) 会打包 initialization parameters；当你在创建 deep agent 时提供 `provider:model` 字符串，它们会被应用。若你通过 @[`init_chat_model`] 传入 preconfigured model，则不会应用。
 
-You can register at two levels, and both can coexist:
+你可以在两个层级注册，二者可共存：
 
-- **Provider level** — a bare provider key like `"openai"` applies to every model from the `openai` provider.
-- **Model level** — a `provider:model` key like `"openai:gpt-5.4"` applies only to that specific model, and merges on top of any matching provider-level profile.
+- **Provider level**：裸 provider key，例如 `"openai"`，适用于 `openai` provider 的每个 model。
+- **Model level**：`provider:model` key，例如 `"openai:gpt-5.4"`，只适用于该具体 model，并会 merge 在任何匹配 provider-level profile 之上。
 
 ```python
 from deepagents import ProviderProfile, register_provider_profile
@@ -137,19 +137,19 @@ register_provider_profile(
 )
 ```
 
-See [Profiles](/oss/deepagents/profiles) for the full field list, merge semantics, and plugin packaging.
+完整 field list、merge semantics 和 plugin packaging 请参阅 [Profiles](/oss/deepagents/profiles)。
 
 <Tip>
-    For shaping how the *agent* behaves once the model is built, use a [harness profile](/oss/deepagents/profiles#harness-profiles).
+    若要塑造 model 构建完成后 *agent* 的行为，请使用 [harness profile](/oss/deepagents/profiles#harness-profiles)。
 </Tip>
 
-## Select a model at runtime
+## 在 runtime 选择 model
 
-If your application lets users choose a model (for example using a dropdown in the UI), use [middleware](/oss/langchain/middleware) to swap the model at runtime without rebuilding the agent.
+如果你的应用允许用户选择 model（例如在 UI 中使用 dropdown），请使用 [middleware](/oss/langchain/middleware) 在 runtime 替换 model，而无需重建 agent。
 
 :::python
 
-Pass the user's model selection through [runtime context](/oss/langchain/models#dynamic-model-selection), then use a `wrap_model_call` middleware to override the model on each invocation using the @[`@wrap_model_call`] decorator:
+通过 [runtime context](/oss/langchain/models#dynamic-model-selection) 传入用户的 model selection，然后使用 `wrap_model_call` middleware，通过 @[`@wrap_model_call`] decorator 在每次 invocation 时 override model：
 
 ```python
 from dataclasses import dataclass
@@ -220,9 +220,9 @@ const result = await agent.invoke(
 :::
 
 <Tip>
-    For more dynamic model patterns (for example routing based on conversation complexity or cost optimization), see [Dynamic model](/oss/langchain/models#dynamic-model-selection) in the LangChain agents guide.
+    关于更多 dynamic model patterns（例如基于 conversation complexity 或 cost optimization 路由），请参阅 LangChain agents guide 中的 [Dynamic model](/oss/langchain/models#dynamic-model-selection)。
 </Tip>
 
-## Learn more
+## 了解更多
 
-- [Models in LangChain](/oss/langchain/models): chat model features including tool calling, structured output, and multimodality
+- [Models in LangChain](/oss/langchain/models)：chat model features，包括 tool calling、structured output 和 multimodality

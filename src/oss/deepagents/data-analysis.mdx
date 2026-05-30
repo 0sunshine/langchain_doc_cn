@@ -1,35 +1,35 @@
 ---
 title: Build a data analysis agent
 sidebarTitle: Data Analysis
-description: Build an agent that analyzes data files, generates visualizations, and shares results
+description: 构建一个可以分析数据文件、生成可视化并分享结果的 agent
 ---
 
 ## Overview
 
-This guide demonstrates how to build a data analysis agent using a [deep agent](/oss/deepagents). Data analysis tasks typically require planning, code execution, and working with artifacts such as scripts, reports, and plots—capabilities that deep agents are designed to handle.
+本指南演示如何使用 [deep agent](/oss/deepagents) 构建一个 data analysis agent。Data analysis 任务通常需要 planning、code execution，以及处理 scripts、reports、plots 等 artifacts，这正是 deep agents 被设计来处理的能力。
 
-The agent we'll build will:
+我们将构建的 agent 会：
 
-1. Accept a CSV file for analysis
-2. Perform exploratory data analysis and generate visualizations
-3. Share results to a Slack channel
+1. 接收一个 CSV 文件用于分析
+2. 执行 exploratory data analysis 并生成 visualizations
+3. 将结果分享到 Slack channel
 
 <Tip>
-The Slack integration is optional. The agent can be modified to save artifacts locally or share results through other channels.
+Slack integration 是可选的。你也可以修改 agent，让它把 artifacts 保存到本地，或通过其他 channel 分享结果。
 </Tip>
 
 ### Key concepts
 
-This tutorial covers:
+本教程会覆盖：
 
-- [Backends](/oss/deepagents/backends) for sandboxed code execution
-- Custom [tools](/oss/langchain/tools) for external integrations
+- 用于 sandboxed code execution 的 [Backends](/oss/deepagents/backends)
+- 用于外部 integrations 的自定义 [tools](/oss/langchain/tools)
 
 ## Setup
 
 ### Installation
 
-Install the core dependencies:
+安装 core dependencies：
 
 :::python
 ```bash pip
@@ -39,9 +39,9 @@ pip install deepagents
 
 ### Optional dependencies
 
-For this tutorial, we'll use:
-- [Slack Python SDK](https://docs.slack.dev/tools/python-slack-sdk/) for sharing results ([token setup](https://docs.slack.dev/authentication/tokens/))
-- A [sandbox](/oss/deepagents/sandboxes) environment for code execution. See [available providers](/oss/deepagents/sandboxes#available-providers) for setup details
+本教程会使用：
+- 用于分享结果的 [Slack Python SDK](https://docs.slack.dev/tools/python-slack-sdk/)（[token setup](https://docs.slack.dev/authentication/tokens/)）
+- 用于 code execution 的 [sandbox](/oss/deepagents/sandboxes) environment。设置详情请参阅 [available providers](/oss/deepagents/sandboxes#available-providers)
 
 :::python
 ```bash pip
@@ -50,14 +50,14 @@ pip install slack-sdk
 :::
 
 <Note>
-These services are optional, though a sandboxed environment is highly recommended for any production use. You can alternatively use the local shell backend (with important [security considerations](/oss/deepagents/backends#localshellbackend-local-shell)) or download artifacts directly from the backend.
+这些 services 是可选的，不过对于任何 production use，都强烈建议使用 sandboxed environment。你也可以改用 local shell backend（需要注意重要的 [security considerations](/oss/deepagents/backends#localshellbackend-local-shell)），或者直接从 backend 下载 artifacts。
 </Note>
 
 ### LangSmith
 
-Many of the applications you build with LangChain will contain multiple steps with multiple invocations of LLM calls. As these applications get more complex, it becomes crucial to be able to inspect what exactly is going on inside your chain or agent. The best way to do this is with [LangSmith](https://smith.langchain.com).
+你用 LangChain 构建的很多应用都会包含多个步骤，并多次调用 LLM。随着这些应用变得更复杂，能够检查 chain 或 agent 内部到底发生了什么会变得至关重要。做到这一点的最佳方式是使用 [LangSmith](https://smith.langchain.com)。
 
-After you sign up at the link above, make sure to set your environment variables to start logging traces:
+在上面的链接注册后，请确保设置环境变量以开始记录 traces：
 
 ```shell
 export LANGSMITH_TRACING="true"
@@ -65,7 +65,7 @@ export LANGSMITH_API_KEY="..."
 ```
 
 :::python
-Or, set them in Python:
+或者，在 Python 中设置：
 
 ```python
 import getpass
@@ -78,9 +78,9 @@ os.environ["LANGSMITH_API_KEY"] = getpass.getpass()
 
 ## Set up the backend
 
-Deep Agents use [backends](/oss/deepagents/backends) to execute code in sandboxed environments.
+Deep Agents 使用 [backends](/oss/deepagents/backends) 在 sandboxed environments 中执行代码。
 
-See [available providers](/oss/deepagents/sandboxes#available-providers) for setup details.
+设置详情请参阅 [available providers](/oss/deepagents/sandboxes#available-providers)。
 
 <Tabs>
   <Tab title="Daytona">
@@ -103,7 +103,7 @@ from langchain_daytona import DaytonaSandbox
 sandbox = Daytona().create()
 backend = DaytonaSandbox(sandbox=sandbox)
 ```
-Verify the sandbox is ready:
+验证 sandbox 已准备就绪：
 ```python
 result = backend.execute("echo ready")
 print(result)
@@ -172,7 +172,7 @@ backend = RunloopSandbox(devbox=devbox)
   </Tab>
 <Tab title="Local shell">
 <Warning>
-This backend provides unrestricted filesystem and shell access. Use only in controlled environments for development and testing. See the [security considerations](/oss/deepagents/backends#localshellbackend-local-shell) for more details.
+此 backend 会提供不受限制的 filesystem 和 shell access。请仅在受控环境中用于 development 和 testing。更多详情请参阅 [security considerations](/oss/deepagents/backends#localshellbackend-local-shell)。
 </Warning>
 
 ```python
@@ -185,7 +185,7 @@ backend = LocalShellBackend(root_dir=".", env={"PATH": "/usr/bin:/bin"})
 
 ### Upload sample data
 
-Create and upload sample sales data to the backend:
+创建并上传示例 sales data 到 backend：
 ```python
 import csv
 import io
@@ -213,9 +213,9 @@ backend.upload_files([("/home/daytona/data/sales_data.csv", csv_bytes)])
 
 ## Implement custom tools
 
-Data analysis tasks might produce artefacts, like reports or plots.
-The following simple [tool](/oss/langchain/tools) downloads them with `backend.download_files` and then uploads them using the Slack SDK.
-We could also ask our agent to list the relevant file paths instead of uploading them, so interested parties can obtain them separately as needed.
+Data analysis 任务可能会生成 artifacts，例如 reports 或 plots。
+下面这个简单的 [tool](/oss/langchain/tools) 会使用 `backend.download_files` 下载它们，然后用 Slack SDK 上传。
+我们也可以让 agent 列出相关 file paths，而不是直接上传，这样相关人员可以按需单独获取。
 
 ```python
 from langchain.tools import tool
@@ -247,12 +247,12 @@ def slack_send_message(text: str, file_path: str | None = None) -> str:
     return "Message sent."
 ```
 <Note>
-It is generally good practice to avoid adding credentials and other secrets to the sandbox. Here we manage the Slack token outside the sandbox in a tool.
+通常最好避免把 credentials 和其他 secrets 放进 sandbox。这里我们在 sandbox 外部的 tool 中管理 Slack token。
 </Note>
 
 ## Run the agent
 
-Let's instantiate an agent:
+现在实例化一个 agent：
 
 ```python
 from langchain_core.utils.uuid import uuid7
@@ -274,13 +274,13 @@ thread_id = str(uuid7())
 config={"configurable": {"thread_id": thread_id}}
 ```
 
-We include:
-- A choice of [model](/oss/deepagents/customization#model)
-- Our custom [tool](/oss/deepagents/customization#tools)
-- The [backend](/oss/deepagents/backends)
-- A [checkpointer](/oss/langchain/short-term-memory) to support multi-turn conversations
+这里包含：
+- 一个 [model](/oss/deepagents/customization#model) 选择
+- 我们自定义的 [tool](/oss/deepagents/customization#tools)
+- [backend](/oss/deepagents/backends)
+- 用于支持 multi-turn conversations 的 [checkpointer](/oss/langchain/short-term-memory)
 
-Let's now invoke our agent.
+现在调用 agent。
 ```python
 input_message = {
     "role": "user",
@@ -569,49 +569,49 @@ Plot saved as: sales_analysis_plot.png
 [Command succeeded with exit code 0]
 ================================== Ai Message ==================================
 
-[{'text': 'Perfect! The analysis is complete and the plot has been generated. Now let me send both the analysis and the plot to Slack:', 'type': 'text'}, {'id': 'toolu_01Qust5a8DECKPZuU9pBBvkz', 'input': {'text': '📊 **SALES DATA ANALYSIS REPORT** 📊\n\n**1. DATA OVERVIEW**\n• Date Range: August 1-5, 2025 (5 days)\n• Products Analyzed: Widget A, Widget B, Widget C\n\n**2. KEY METRICS**\n💰 Total Revenue: $840.00\n📦 Total Units Sold: 33 units\n📈 Average Daily Revenue: $168.00\n📊 Average Units per Sale: 6.60\n\n**3. PRODUCT PERFORMANCE**\n🏆 Widget A (Top Performer)\n   - Total Revenue: $425 (50.6% of total)\n   - Total Units Sold: 17 (avg 8.5 per transaction)\n\n🥈 Widget B\n   - Total Revenue: $325 (38.7% of total)\n   - Total Units Sold: 13 (avg 6.5 per transaction)\n\n🥉 Widget C\n   - Total Revenue: $90 (10.7% of total)\n   - Total Units Sold: 3 (avg 3.0 per transaction)\n\n**4. BEST PERFORMING DAY**\n🌟 August 1, 2025\n   - Product: Widget A\n   - Revenue: $250.00\n   - Units Sold: 10\n\n**KEY INSIGHTS:**\n✅ Widget A is the clear leader, generating over 50% of total revenue\n✅ Widget B shows strong performance with consistent sales\n⚠️ Widget C has potential for improvement - lowest sales and revenue\n📊 Daily revenue ranges from $90 to $250\n\nSee attached visualization dashboard for detailed charts! 📈', 'file_path': '/home/daytona/sales_analysis_plot.png'}, 'name': 'slack_send_message', 'type': 'tool_use'}]
+[{'text': 'Perfect! The analysis is complete and the plot has been generated. Now let me send both the analysis and the plot to Slack:', 'type': 'text'}, {'id': 'toolu_01Qust5a8DECKPZuU9pBBvkz', 'input': {'text': '**SALES DATA ANALYSIS REPORT**\n\n**1. DATA OVERVIEW**\n- Date Range: August 1-5, 2025 (5 days)\n- Products Analyzed: Widget A, Widget B, Widget C\n\n**2. KEY METRICS**\n- Total Revenue: $840.00\n- Total Units Sold: 33 units\n- Average Daily Revenue: $168.00\n- Average Units per Sale: 6.60\n\n**3. PRODUCT PERFORMANCE**\nWidget A (Top Performer)\n   - Total Revenue: $425 (50.6% of total)\n   - Total Units Sold: 17 (avg 8.5 per transaction)\n\nWidget B\n   - Total Revenue: $325 (38.7% of total)\n   - Total Units Sold: 13 (avg 6.5 per transaction)\n\nWidget C\n   - Total Revenue: $90 (10.7% of total)\n   - Total Units Sold: 3 (avg 3.0 per transaction)\n\n**4. BEST PERFORMING DAY**\nAugust 1, 2025\n   - Product: Widget A\n   - Revenue: $250.00\n   - Units Sold: 10\n\n**KEY INSIGHTS:**\n- Widget A is the clear leader, generating over 50% of total revenue\n- Widget B shows strong performance with consistent sales\n- Widget C has potential for improvement - lowest sales and revenue\n- Daily revenue ranges from $90 to $250\n\nSee attached visualization dashboard for detailed charts!', 'file_path': '/home/daytona/sales_analysis_plot.png'}, 'name': 'slack_send_message', 'type': 'tool_use'}]
 Tool Calls:
   slack_send_message (toolu_01Qust5a8DECKPZuU9pBBvkz)
  Call ID: toolu_01Qust5a8DECKPZuU9pBBvkz
   Args:
-    text: 📊 **SALES DATA ANALYSIS REPORT** 📊
+    text: **SALES DATA ANALYSIS REPORT**
 
 **1. DATA OVERVIEW**
-• Date Range: August 1-5, 2025 (5 days)
-• Products Analyzed: Widget A, Widget B, Widget C
+- Date Range: August 1-5, 2025 (5 days)
+- Products Analyzed: Widget A, Widget B, Widget C
 
 **2. KEY METRICS**
-💰 Total Revenue: $840.00
-📦 Total Units Sold: 33 units
-📈 Average Daily Revenue: $168.00
-📊 Average Units per Sale: 6.60
+- Total Revenue: $840.00
+- Total Units Sold: 33 units
+- Average Daily Revenue: $168.00
+- Average Units per Sale: 6.60
 
 **3. PRODUCT PERFORMANCE**
-🏆 Widget A (Top Performer)
+Widget A (Top Performer)
    - Total Revenue: $425 (50.6% of total)
    - Total Units Sold: 17 (avg 8.5 per transaction)
 
-🥈 Widget B
+Widget B
    - Total Revenue: $325 (38.7% of total)
    - Total Units Sold: 13 (avg 6.5 per transaction)
 
-🥉 Widget C
+Widget C
    - Total Revenue: $90 (10.7% of total)
    - Total Units Sold: 3 (avg 3.0 per transaction)
 
 **4. BEST PERFORMING DAY**
-🌟 August 1, 2025
+August 1, 2025
    - Product: Widget A
    - Revenue: $250.00
    - Units Sold: 10
 
 **KEY INSIGHTS:**
-✅ Widget A is the clear leader, generating over 50% of total revenue
-✅ Widget B shows strong performance with consistent sales
-⚠️ Widget C has potential for improvement - lowest sales and revenue
-📊 Daily revenue ranges from $90 to $250
+- Widget A is the clear leader, generating over 50% of total revenue
+- Widget B shows strong performance with consistent sales
+- Widget C has potential for improvement - lowest sales and revenue
+- Daily revenue ranges from $90 to $250
 
-See attached visualization dashboard for detailed charts! 📈
+See attached visualization dashboard for detailed charts!
     file_path: /home/daytona/sales_analysis_plot.png
 ================================= Tool Message =================================
 Name: slack_send_message
@@ -644,40 +644,40 @@ A beautiful 6-panel dashboard featuring:
 - Sales transactions distribution (pie chart)
 
 **Delivered to Slack:**
-✅ Comprehensive analysis report with key metrics and insights
-✅ High-resolution visualization dashboard (saved as PNG)
+- Comprehensive analysis report with key metrics and insights
+- High-resolution visualization dashboard (saved as PNG)
 
 The analysis reveals that Widget A is the top performer, while Widget C shows room for improvement. All results have been sent to your Slack workspace!
 ```
 
-View the full [LangSmith trace](https://smith.langchain.com/public/ac2443a8-16ad-4e00-8f02-afde6a737534/r) for this execution.
+查看本次执行的完整 [LangSmith trace](https://smith.langchain.com/public/ac2443a8-16ad-4e00-8f02-afde6a737534/r)。
 
 ## Results
 
-The agent successfully analyzes the data and shares a comprehensive report with visualizations to Slack:
+agent 成功分析数据，并把包含 visualizations 的综合 report 分享到 Slack：
 
-<Frame caption="Agent-generated analysis report and visualization dashboard delivered to Slack">
-  ![Sales analysis results in Slack](/images/data_analysis_slack_response.png)
+<Frame caption="Agent 生成的 analysis report 和 visualization dashboard 已发送到 Slack">
+  ![Slack 中的 sales analysis results](/images/data_analysis_slack_response.png)
 </Frame>
 
 <Tip>
-You can download artifacts directly from the backend without using external tools:
+你可以不使用外部 tools，直接从 backend 下载 artifacts：
 ```python
 backend.download_files(list_of_filepaths)
 ```
 </Tip>
 
 <Note>
-See [provider guides](/oss/deepagents/sandboxes#available-providers) for how to clean up the sandbox once finished.
+完成后如何清理 sandbox，请参阅 [provider guides](/oss/deepagents/sandboxes#available-providers)。
 </Note>
 
 ## Next steps
 
-Now that you've built a data analysis agent, explore these resources to extend its capabilities:
+现在你已经构建了一个 data analysis agent，可以继续探索这些资源来扩展它的能力：
 
-- [Backends](/oss/deepagents/backends): Learn about the Deep Agents backend system
-- [Sandboxes](/oss/deepagents/sandboxes): Review backends for sandboxed code execution, including security considerations and advanced configurations
-- [Customization](/oss/deepagents/customization): Discover how to customize your agent with different models, tools, prompts, and planning strategies
-- [Code](/oss/deepagents/code/overview): Try Deep Agents Code as a terminal coding agent to assist with data analysis and other agentic tasks locally
-- [Skills](/oss/deepagents/skills): Equip your agent with reusable skills for common workflows
-- [Human-in-the-loop](/oss/deepagents/human-in-the-loop): Add interactive approval steps for critical operations in your data analysis workflow
+- [Backends](/oss/deepagents/backends)：了解 Deep Agents backend system
+- [Sandboxes](/oss/deepagents/sandboxes)：查看用于 sandboxed code execution 的 backends，包括 security considerations 和 advanced configurations
+- [Customization](/oss/deepagents/customization)：了解如何用不同的 models、tools、prompts 和 planning strategies 自定义你的 agent
+- [Code](/oss/deepagents/code/overview)：尝试 Deep Agents Code，这是一个 terminal coding agent，可在本地辅助 data analysis 和其他 agentic tasks
+- [Skills](/oss/deepagents/skills)：为你的 agent 配备常见 workflows 的 reusable skills
+- [Human-in-the-loop](/oss/deepagents/human-in-the-loop)：为 data analysis workflow 中的关键操作添加 interactive approval steps

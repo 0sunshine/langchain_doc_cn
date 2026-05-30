@@ -1,58 +1,58 @@
 ---
-title: Deep Agents overview
-sidebarTitle: Overview
-description: Build agents that can plan, use subagents, and leverage file systems for complex tasks
+title: Deep Agents 概览
+sidebarTitle: 概览
+description: 构建能够规划、使用 subagents，并利用文件系统处理复杂任务的 agents
 ---
 
-The easiest way to start building agents and applications powered by LLMs—with built-in capabilities for task planning, file systems for context management, subagent-spawning, and long-term memory.
-You can use deep agents for any task, including complex, multi-step tasks.
+这是开始构建由 LLM 驱动的 agents 和应用的最简单方式：内置任务规划、用于 context management 的文件系统、subagent-spawning，以及 long-term memory。
+你可以将 deep agents 用于任何任务，包括复杂的多步骤任务。
 
-Deep Agents is an ["agent harness"](/oss/concepts/products#agent-harnesses-like-the-deep-agents-sdk). It is the same core tool calling loop as other agent frameworks, but with built-in capabilities that make agents reliable for real tasks:
+Deep Agents 是一种 ["agent harness"](/oss/concepts/products#agent-harnesses-like-the-deep-agents-sdk)。它与其他 agent frameworks 使用相同的核心 tool calling loop，但内置了一组能力，让 agents 在真实任务中更加可靠：
 
 <CardGroup cols={2}>
-  <Card title="Take actions in an environment" icon="bolt">
-    Take actions via tools, read and write files, execute code
+  <Card title="在环境中执行操作" icon="bolt">
+    通过 tools 执行操作、读写文件、执行代码
   </Card>
-  <Card title="Connect to your data" icon="database">
-    Load memories, skills, and domain knowledge at the right moment
+  <Card title="连接你的数据" icon="database">
+    在合适的时机加载 memories、skills 和 domain knowledge
   </Card>
-  <Card title="Manage growing context" icon="scissors">
-    Summarize history and offload large results across long runs
+  <Card title="管理不断增长的 context" icon="scissors">
+    在长时间运行过程中总结历史，并将大型结果转存到外部
   </Card>
-  <Card title="Parallelize tasks" icon="sitemap">
-    Delegate to general or specialized subagents running in isolated context windows
+  <Card title="并行化任务" icon="sitemap">
+    将工作委派给运行在隔离 context windows 中的通用或专用 subagents
   </Card>
-  <Card title="Stay in the loop" icon="user">
-    Pause for human approval at critical decision points
+  <Card title="保持人在环中" icon="user">
+    在关键决策点暂停，等待人工审批
   </Card>
-  <Card title="Improve over time" icon="rocket">
-    Update memory, skills, and prompts based on real usage
+  <Card title="随使用不断改进" icon="rocket">
+    根据真实使用情况更新 memory、skills 和 prompts
   </Card>
 </CardGroup>
 
-See [Harness capabilities](/oss/deepagents/harness) for a full breakdown of each component.
+查看 [Harness capabilities](/oss/deepagents/harness)，了解每个组件的完整拆解。
 
 <Tip>
-  The [LangSmith Engine](/langsmith/engine) detects issues in your Deep Agents traces and proposes fixes. You can open a pull request with the proposed fix directly from the Engine tab.
+  [LangSmith Engine](/langsmith/engine) 会检测 Deep Agents traces 中的问题并提出修复建议。你可以直接从 Engine 标签页用建议的修复打开 pull request。
 </Tip>
 
 :::python
-[`deepagents`](https://pypi.org/project/deepagents/) is a standalone library built on top of [LangChain](/oss/langchain/)'s core building blocks for agents. It uses the [LangGraph](/oss/langgraph/) runtime for durable execution, streaming, human-in-the-loop, and other features.
+[`deepagents`](https://pypi.org/project/deepagents/) 是一个独立库，构建在 [LangChain](/oss/langchain/) 的 agent 核心 building blocks 之上。它使用 [LangGraph](/oss/langgraph/) runtime 来提供 durable execution、streaming、human-in-the-loop 等功能。
 :::
 
 :::js
-[`deepagents`](https://www.npmjs.com/package/deepagents) is a standalone library built on top of [LangChain](/oss/langchain/)'s core building blocks for agents and using [LangGraph](/oss/langgraph/)'s tooling for running agents in production.
+[`deepagents`](https://www.npmjs.com/package/deepagents) 是一个独立库，构建在 [LangChain](/oss/langchain/) 的 agent 核心 building blocks 之上，并使用 [LangGraph](/oss/langgraph/) 的 tooling 在生产环境中运行 agents。
 :::
 
-The [`deepagents` repository](https://github.com/langchain-ai/deepagents) contains:
-- **Deep Agents SDK**: A package for building agents that can handle any task
-- [**Deep Agents Code**](/oss/deepagents/code): A terminal coding agent built on the Deep Agents SDK
-- [**ACP integration**](/oss/deepagents/acp): An Agent Client Protocol connector for using deep agents in code editors like Zed
+[`deepagents` repository](https://github.com/langchain-ai/deepagents) 包含：
+- **Deep Agents SDK**：用于构建可处理任意任务的 agents 的 package
+- [**Deep Agents Code**](/oss/deepagents/code)：基于 Deep Agents SDK 构建的 terminal coding agent
+- [**ACP integration**](/oss/deepagents/acp)：一个 Agent Client Protocol connector，可在 Zed 等 code editors 中使用 deep agents
 
-[LangChain](/oss/langchain/) is the framework that provides the core building blocks for your agents.
-To learn more about the differences between LangChain, LangGraph, and Deep Agents, see [Frameworks, runtimes, and harnesses](/oss/concepts/products). For a side-by-side comparison with Anthropic's harness, see [Deep Agents vs. Claude Agent SDK](/oss/deepagents/comparison).
+[LangChain](/oss/langchain/) 是为你的 agents 提供核心 building blocks 的 framework。
+要进一步了解 LangChain、LangGraph 和 Deep Agents 之间的区别，请参阅 [Frameworks, runtimes, and harnesses](/oss/concepts/products)。如果想和 Anthropic 的 harness 做并排比较，请参阅 [Deep Agents vs. Claude Agent SDK](/oss/deepagents/comparison)。
 
-## <Icon icon="wand" /> Create a deep agent
+## <Icon icon="wand" /> 创建 deep agent
 
 :::python
 <Tabs>
@@ -237,94 +237,94 @@ console.log(
 ```
 :::
 
-See the [Quickstart](/oss/deepagents/quickstart/) and [Customization guide](/oss/deepagents/customization/) to get started building your own agents and applications with Deep Agents.
+请阅读 [Quickstart](/oss/deepagents/quickstart/) 和 [Customization guide](/oss/deepagents/customization/)，开始使用 Deep Agents 构建你自己的 agents 和应用。
 
 <Tip>
-Trace requests, debug agent behavior, and evaluate outputs with [LangSmith](https://smith.langchain.com). Follow the [tracing quickstart](/langsmith/trace-with-langchain) to get set up. When ready for production, [deploy to LangSmith Cloud](/langsmith/deploy-to-cloud) for managed hosting.
+使用 [LangSmith](https://smith.langchain.com) trace requests、debug agent behavior，并 evaluate outputs。按照 [tracing quickstart](/langsmith/trace-with-langchain) 完成设置。当准备进入生产环境时，可以 [deploy to LangSmith Cloud](/langsmith/deploy-to-cloud) 使用托管 hosting。
 </Tip>
 
-## When to use Deep Agents
+## 何时使用 Deep Agents
 
-Use the **Deep Agents SDK** when you want to build agents that can:
+当你想构建具备以下能力的 agents 时，可以使用 **Deep Agents SDK**：
 
-- **Handle complex, multi-step tasks** that require planning and decomposition
-- **Manage large amounts of context** through file system tools and [summarization](/oss/deepagents/context-engineering#summarization)
-- **Swap filesystem backends** to use in-memory state, local disk, durable stores, [sandboxes](/oss/deepagents/sandboxes), or [your own custom backend](/oss/deepagents/backends)
-- **Execute shell commands** via the `execute` tool when using a [sandbox backend](/oss/deepagents/sandboxes)
-- **Run interpreter code** with [interpreters](/oss/deepagents/interpreters) for tool composition, subagent orchestration, and structured data transformations
-- **Delegate work** to specialized subagents for context isolation
-- **Persist memory** across conversations and threads
-- **Control filesystem access** with declarative [permission rules](/oss/deepagents/permissions) that restrict which files agents can read or write
-- **Require human approval** for sensitive operations with [human-in-the-loop](/oss/deepagents/human-in-the-loop) workflows
-- **Use any model** through [provider-agnostic model support](/oss/deepagents/models)
+- **处理复杂的多步骤任务**，这些任务需要 planning 和 decomposition
+- **管理大量 context**，通过 file system tools 和 [summarization](/oss/deepagents/context-engineering#summarization) 实现
+- **切换 filesystem backends**，使用 in-memory state、local disk、durable stores、[sandboxes](/oss/deepagents/sandboxes)，或 [你自己的 custom backend](/oss/deepagents/backends)
+- **执行 shell commands**，在使用 [sandbox backend](/oss/deepagents/sandboxes) 时通过 `execute` tool 完成
+- **运行 interpreter code**，通过 [interpreters](/oss/deepagents/interpreters) 实现 tool composition、subagent orchestration 和 structured data transformations
+- **将工作委派** 给专用 subagents，以实现 context isolation
+- **跨 conversations 和 threads 持久化 memory**
+- **控制 filesystem access**，用声明式 [permission rules](/oss/deepagents/permissions) 限制 agents 可读写哪些文件
+- **对敏感操作要求人工审批**，通过 [human-in-the-loop](/oss/deepagents/human-in-the-loop) workflows 实现
+- **使用任意 model**，通过 [provider-agnostic model support](/oss/deepagents/models) 实现
 
 :::python
-For building simpler agents, consider using LangChain's [`create_agent`](/oss/langchain/agents) or building a custom [LangGraph](/oss/langgraph/overview) workflow.
+如果要构建更简单的 agents，可以考虑使用 LangChain 的 [`create_agent`](/oss/langchain/agents)，或构建自定义 [LangGraph](/oss/langgraph/overview) workflow。
 :::
 
 :::js
-For building simpler agents, consider using LangChain's [`createAgent`](/oss/langchain/agents) or building a custom [LangGraph](/oss/langgraph/overview) workflow.
+如果要构建更简单的 agents，可以考虑使用 LangChain 的 [`createAgent`](/oss/langchain/agents)，或构建自定义 [LangGraph](/oss/langgraph/overview) workflow。
 :::
 
-## Core capabilities
+## 核心能力
 
-Deep Agents gives an agent the scaffolding it needs to work across long-running, multi-step tasks. The capabilities fall into a few categories:
+Deep Agents 为 agent 提供处理长时间运行、多步骤任务所需的 scaffolding。这些能力可以分为几类：
 
-| Question | Capability | What it gives the agent |
+| 问题 | 能力 | 它为 agent 提供什么 |
 | --- | --- | --- |
-| What should happen next? | Planning | Break a request into steps, track progress, and revise the plan as new information appears. |
-| Where does the work go? | Context management | Store files, intermediate outputs, and large tool results outside the model context window. |
-| How does work get done? | Tool use, shell execution, and interpreters | Call your tools, run shell commands in sandboxes, and execute small programs for data transformation or orchestration. |
-| How does the agent go deeper without losing focus? | Subagents | Delegate focused work to isolated agents and return only the result to the main agent. |
-| How does the agent learn over time? | Memory and skills | Persist useful information across threads and load reusable procedures when they match the task. |
-| How do you control risk? | Backends, permissions, and human approval | Choose where files live, limit what the agent can read or write, and pause sensitive actions for review. |
+| 接下来应该发生什么？ | Planning | 将请求拆解为步骤、跟踪进度，并在出现新信息时修订计划。 |
+| 工作放在哪里？ | Context management | 将文件、中间输出和大型 tool results 存储在 model context window 之外。 |
+| 工作如何完成？ | Tool use、shell execution 和 interpreters | 调用你的 tools，在 sandboxes 中运行 shell commands，并执行小程序来做 data transformation 或 orchestration。 |
+| agent 如何深入工作而不失焦？ | Subagents | 将聚焦的工作委派给隔离的 agents，并只把结果返回给 main agent。 |
+| agent 如何随时间学习？ | Memory 和 skills | 跨 threads 持久化有用信息，并在匹配任务时加载可复用流程。 |
+| 如何控制风险？ | Backends、permissions 和 human approval | 选择文件存放位置，限制 agent 可读写内容，并暂停敏感操作以供 review。 |
 
-These pieces work together as a harness around the model:
+这些部分共同组成围绕 model 的 harness：
 
-- **Plan work:** A built-in [`write_todos`](/oss/langchain/middleware/built-in#to-do-list) tool helps agents decompose complex tasks, track progress, and adapt their plan.
-- **Manage context:** File system tools ([`ls`](/oss/deepagents/harness#virtual-filesystem-access), [`read_file`](/oss/deepagents/harness#virtual-filesystem-access), [`write_file`](/oss/deepagents/harness#virtual-filesystem-access), [`edit_file`](/oss/deepagents/harness#virtual-filesystem-access)) let agents move large results into files. [Summarization](/oss/deepagents/context-engineering#summarization) compacts older conversation history during long runs.
-- **Run code and commands:** [Sandbox backends](/oss/deepagents/sandboxes) provide an `execute` tool for tests, builds, git operations, and system tasks. [Interpreters](/oss/deepagents/interpreters) run JavaScript in an in-memory runtime for tool composition, subagent orchestration, and structured data transformations.
-- **Delegate focused work:** A built-in `task` tool lets agents spawn [subagents](/oss/deepagents/subagents) for isolated subtasks, keeping the main agent focused on coordination.
-- **Remember and reuse knowledge:** [Long-term memory](/oss/deepagents/memory) persists information across threads, and [skills](/oss/deepagents/skills) package reusable workflows, domain knowledge, and instructions.
-- **Control execution:** [Pluggable backends](/oss/deepagents/backends) determine where files are stored. [Permission rules](/oss/deepagents/permissions) restrict filesystem access, and [human-in-the-loop](/oss/deepagents/human-in-the-loop) workflows require approval for sensitive tool operations.
-- **Start from useful defaults:** Deep Agents includes system prompts that guide models to plan before acting, verify work, and manage context. You can customize or replace the defaults.
+- **规划工作：** 内置的 [`write_todos`](/oss/langchain/middleware/built-in#to-do-list) tool 帮助 agents 分解复杂任务、跟踪进度并调整计划。
+- **管理 context：** File system tools（[`ls`](/oss/deepagents/harness#virtual-filesystem-access)、[`read_file`](/oss/deepagents/harness#virtual-filesystem-access)、[`write_file`](/oss/deepagents/harness#virtual-filesystem-access)、[`edit_file`](/oss/deepagents/harness#virtual-filesystem-access)）让 agents 将大型结果移动到文件中。[Summarization](/oss/deepagents/context-engineering#summarization) 会在长时间运行期间压缩较早的 conversation history。
+- **运行代码和命令：** [Sandbox backends](/oss/deepagents/sandboxes) 为 tests、builds、git operations 和 system tasks 提供 `execute` tool。[Interpreters](/oss/deepagents/interpreters) 在 in-memory runtime 中运行 JavaScript，用于 tool composition、subagent orchestration 和 structured data transformations。
+- **委派聚焦工作：** 内置的 `task` tool 让 agents 能够 spawn [subagents](/oss/deepagents/subagents) 来处理隔离的 subtasks，使 main agent 专注于 coordination。
+- **记住并复用知识：** [Long-term memory](/oss/deepagents/memory) 跨 threads 持久化信息，[skills](/oss/deepagents/skills) 将可复用 workflows、domain knowledge 和 instructions 打包起来。
+- **控制执行：** [Pluggable backends](/oss/deepagents/backends) 决定文件存储位置。[Permission rules](/oss/deepagents/permissions) 限制 filesystem access，[human-in-the-loop](/oss/deepagents/human-in-the-loop) workflows 要求对敏感 tool operations 进行审批。
+- **从有用默认值开始：** Deep Agents 包含 system prompts，引导 models 在行动前规划、验证工作并管理 context。你可以自定义或替换这些默认值。
 
-## Get started
+## 开始使用
 
 :::python
 <CardGroup cols={2}>
     <Card title="Quickstart" icon="rocket" href="/oss/deepagents/quickstart">
-        Build your first deep agent
+        构建你的第一个 deep agent
     </Card>
     <Card title="Customization" icon="adjustments" href="/oss/deepagents/customization">
-        Learn about customization options
+        了解 customization options
     </Card>
     <Card title="Models" icon="cpu" href="/oss/deepagents/models">
-        Configure models and providers
+        配置 models 和 providers
     </Card>
     <Card title="Backends" icon="plug" href="/oss/deepagents/backends">
-        Choose and configure pluggable filesystem backends
+        选择并配置 pluggable filesystem backends
     </Card>
     <Card title="Sandboxes" icon="cube" href="/oss/deepagents/sandboxes">
-        Execute code in isolated environments
+        在隔离环境中执行代码
     </Card>
     <Card title="Interpreters" icon="code" href="/oss/deepagents/interpreters">
-        Compose tools and transform data in QuickJS
+        在 QuickJS 中组合 tools 并转换数据
     </Card>
     <Card title="Permissions" icon="lock" href="/oss/deepagents/permissions">
-        Control filesystem access with permission rules
+        使用 permission rules 控制 filesystem access
     </Card>
     <Card title="Human-in-the-loop" icon="user-check" href="/oss/deepagents/human-in-the-loop">
-        Configure approval for sensitive operations
+        为敏感操作配置审批
     </Card>
     <Card title="Code" icon="terminal" href="/oss/deepagents/code/overview">
-        Use Deep Agents Code
+        使用 Deep Agents Code
     </Card>
     <Card title="ACP" icon="plug-connected" href="/oss/deepagents/acp">
-        Use deep agents in code editors via ACP
+        通过 ACP 在 code editors 中使用 deep agents
     </Card>
     <Card title="Reference" icon="external-link" href="https://reference.langchain.com/python/deepagents/">
-        See the `deepagents` API reference
+        查看 `deepagents` API reference
     </Card>
 </CardGroup>
 :::
@@ -332,31 +332,31 @@ These pieces work together as a harness around the model:
 :::js
 <CardGroup cols={2}>
     <Card title="Quickstart" icon="rocket" href="/oss/deepagents/quickstart">
-        Build your first deep agent
+        构建你的第一个 deep agent
     </Card>
     <Card title="Customization" icon="adjustments" href="/oss/deepagents/customization">
-        Learn about customization options
+        了解 customization options
     </Card>
     <Card title="Models" icon="cpu" href="/oss/deepagents/models">
-        Configure models and providers
+        配置 models 和 providers
     </Card>
     <Card title="Backends" icon="plug" href="/oss/deepagents/backends">
-        Choose and configure pluggable filesystem backends
+        选择并配置 pluggable filesystem backends
     </Card>
     <Card title="Interpreters" icon="code" href="/oss/deepagents/interpreters">
-        Compose tools and transform data in QuickJS
+        在 QuickJS 中组合 tools 并转换数据
     </Card>
     <Card title="Permissions" icon="lock" href="/oss/deepagents/permissions">
-        Control filesystem access with permission rules
+        使用 permission rules 控制 filesystem access
     </Card>
     <Card title="Human-in-the-loop" icon="user-check" href="/oss/deepagents/human-in-the-loop">
-        Configure approval for sensitive operations
+        为敏感操作配置审批
     </Card>
     <Card title="Code" icon="terminal" href="/oss/deepagents/code/overview">
-        Use Deep Agents Code
+        使用 Deep Agents Code
     </Card>
     <Card title="Reference" icon="external-link" href="https://reference.langchain.com/javascript/modules/deepagents.html">
-        See the `deepagents` API reference
+        查看 `deepagents` API reference
     </Card>
 </CardGroup>
 :::

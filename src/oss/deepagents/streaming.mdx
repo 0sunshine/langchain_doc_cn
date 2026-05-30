@@ -1,24 +1,24 @@
 ---
 title: Streaming
-description: Stream real-time updates from deep agent runs and subagent execution
+description: 从 deep agent runs 和 subagent execution stream 实时 updates
 ---
 
 <Tip>
-For new applications, we recommend [event streaming](/oss/deepagents/event-streaming)—the typed-projection API introduced in Deep Agents v0.6. Event streaming gives you separate iterators per projection (subagents, messages, tool calls, values) so you can consume them independently instead of branching on `stream_mode` chunks.
+对于新应用，我们推荐使用 [event streaming](/oss/deepagents/event-streaming)，也就是 Deep Agents v0.6 引入的 typed-projection API。Event streaming 会为每个 projection（subagents、messages、tool calls、values）提供独立 iterators，让你可以分别消费它们，而不必基于 `stream_mode` chunks 分支处理。
 </Tip>
 
-Deep Agents build on LangGraph's streaming infrastructure with first-class support for subagent streams. When a deep agent delegates work to subagents, you can stream updates from each subagent independently—tracking progress, LLM tokens, and tool calls in real time.
+Deep Agents 构建在 LangGraph 的 streaming infrastructure 之上，并对 subagent streams 提供 first-class support。当 deep agent 将工作 delegate 给 subagents 时，你可以独立 stream 每个 subagent 的 updates，实时跟踪 progress、LLM tokens 和 tool calls。
 
-What's possible with deep agent streaming:
+deep agent streaming 可以做到：
 
-* <Icon icon="diagram-subtask" size={16} /> [**Stream subagent progress**](#subagent-progress)—track each subagent's execution as it runs in parallel.
-* <Icon icon="square-binary" size={16} /> [**Stream LLM tokens**](#llm-tokens)—stream tokens from the main agent and each subagent.
-* <Icon icon="screwdriver-wrench" size={16} /> [**Stream tool calls**](#tool-calls)—see tool calls and results from within subagent execution.
-* <Icon icon="table" size={16} /> [**Stream custom updates**](#custom-updates)—emit user-defined signals from inside subagent nodes.
+* <Icon icon="diagram-subtask" size={16} /> [**Stream subagent progress**](#subagent-progress)：跟踪每个 subagent 并行运行时的 execution。
+* <Icon icon="square-binary" size={16} /> [**Stream LLM tokens**](#llm-tokens)：从 main agent 和每个 subagent stream tokens。
+* <Icon icon="screwdriver-wrench" size={16} /> [**Stream tool calls**](#tool-calls)：查看 subagent execution 中的 tool calls 和 results。
+* <Icon icon="table" size={16} /> [**Stream custom updates**](#custom-updates)：从 subagent nodes 内部发出 user-defined signals。
 
-## Enable subgraph streaming
+## 启用 subgraph streaming
 
-Deep Agents use LangGraph's subgraph streaming to surface events from subagent execution. To receive subagent events, enable `stream_subgraphs` when streaming.
+Deep Agents 使用 LangGraph 的 subgraph streaming 暴露来自 subagent execution 的 events。要接收 subagent events，请在 streaming 时启用 `stream_subgraphs`。
 
 :::python
 ```python
@@ -89,15 +89,15 @@ for await (const [namespace, chunk] of await agent.stream(
 
 ## Namespaces
 
-When `subgraphs` is enabled, each streaming event includes a **namespace** that identifies which agent produced it. The namespace is a path of node names and task IDs that represents the agent hierarchy.
+启用 `subgraphs` 后，每个 streaming event 都会包含一个 **namespace**，用于标识该 event 由哪个 agent 产生。namespace 是由 node names 和 task IDs 组成的 path，表示 agent hierarchy。
 
 | Namespace | Source |
 | --------- | ------ |
-| `()` (empty) | Main agent |
-| `("tools:abc123",)` | A subagent spawned by the main agent's `task` tool call `abc123` |
-| `("tools:abc123", "model_request:def456")` | The model request node inside a subagent |
+| `()`（空） | Main agent |
+| `("tools:abc123",)` | main agent 的 `task` tool call `abc123` 生成的 subagent |
+| `("tools:abc123", "model_request:def456")` | subagent 内部的 model request node |
 
-Use namespaces to route events to the correct UI component:
+使用 namespaces 将 events 路由到正确的 UI component：
 
 :::python
 ```python
@@ -150,7 +150,7 @@ for await (const [namespace, chunk] of await agent.stream(
 
 ## Subagent progress
 
-Use `stream_mode="updates"` to track subagent progress as each step completes. This is useful for showing which subagents are active and what work they've completed.
+使用 `stream_mode="updates"` 跟踪每个 step 完成时的 subagent progress。这对于显示哪些 subagents 处于 active 状态，以及它们完成了哪些工作很有用。
 
 :::python
 ```python
@@ -281,7 +281,7 @@ Main agent step: model_request
 
 ## LLM tokens
 
-Use `stream_mode="messages"` to stream individual tokens from both the main agent and subagents. Each message event includes metadata that identifies the source agent.
+使用 `stream_mode="messages"` 从 main agent 和 subagents stream 单个 tokens。每个 message event 都包含用于识别 source agent 的 metadata。
 
 :::python
 ```python
@@ -367,7 +367,7 @@ process.stdout.write("\n");
 
 ## Tool calls
 
-When subagents use tools, you can stream tool call events to display what each subagent is doing. Tool call chunks appear in the `messages` stream mode.
+当 subagents 使用 tools 时，你可以 stream tool call events，以展示每个 subagent 正在做什么。Tool call chunks 会出现在 `messages` stream mode 中。
 
 :::python
 ```python
@@ -465,11 +465,11 @@ process.stdout.write("\n");
 ## Custom updates
 
 :::python
-Use @[`get_stream_writer`] inside your subagent tools to emit custom progress events:
+在 subagent tools 内部使用 @[`get_stream_writer`] 发出 custom progress events：
 :::
 
 :::js
-Use `config.writer` inside your subagent tools to emit custom progress events:
+在 subagent tools 内部使用 `config.writer` 发出 custom progress events：
 :::
 
 :::python
@@ -628,7 +628,7 @@ for await (const [namespace, chunk] of await agent.stream(
 
 ## Stream multiple modes
 
-Combine multiple stream modes to get a complete picture of agent execution:
+组合多个 stream modes，以获得 agent execution 的完整视图：
 
 :::python
 ```python
@@ -740,9 +740,9 @@ process.stdout.write("\n");
 
 ## Common patterns
 
-### Track subagent lifecycle
+### 跟踪 subagent lifecycle
 
-Monitor when subagents start, run, and complete:
+监控 subagents 何时 start、run 和 complete：
 
 :::python
 ```python
@@ -756,7 +756,7 @@ for chunk in agent.stream(
 ):
     if chunk["type"] == "updates":
         for node_name, data in chunk["data"].items():
-            # ─── Phase 1: Detect subagent starting ────────────────────────
+            # --- Phase 1: Detect subagent starting ---
             # When the main agent's model_request contains task tool calls,
             # a subagent has been spawned.
             if not chunk["ns"] and node_name == "model_request":
@@ -769,11 +769,11 @@ for chunk in agent.stream(
                                 "status": "pending",
                             }
                             print(
-                                f'[lifecycle] PENDING  → subagent "{tc["args"].get("subagent_type")}" '
+                                f'[lifecycle] PENDING  -> subagent "{tc["args"].get("subagent_type")}" '
                                 f'({tc["id"]})'
                             )
 
-            # ─── Phase 2: Detect subagent running ─────────────────────────
+            # --- Phase 2: Detect subagent running ---
             # When we receive events from a tools:UUID namespace, that
             # subagent is actively executing.
             if chunk["ns"] and chunk["ns"][0].startswith("tools:"):
@@ -785,12 +785,12 @@ for chunk in agent.stream(
                     if sub["status"] == "pending":
                         sub["status"] = "running"
                         print(
-                            f'[lifecycle] RUNNING  → subagent "{sub["type"]}" '
+                            f'[lifecycle] RUNNING  -> subagent "{sub["type"]}" '
                             f"(pregel: {pregel_id})"
                         )
                         break
 
-            # ─── Phase 3: Detect subagent completing ──────────────────────
+            # --- Phase 3: Detect subagent completing ---
             # When the main agent's tools node returns a tool message,
             # the subagent has completed and returned its result.
             if not chunk["ns"] and node_name == "tools":
@@ -800,7 +800,7 @@ for chunk in agent.stream(
                         if sub:
                             sub["status"] = "complete"
                             print(
-                                f'[lifecycle] COMPLETE → subagent "{sub["type"]}" '
+                                f'[lifecycle] COMPLETE -> subagent "{sub["type"]}" '
                                 f"({msg.tool_call_id})"
                             )
                             print(f"  Result preview: {str(msg.content)[:120]}...")
@@ -823,7 +823,7 @@ for await (const [namespace, chunk] of await agent.stream(
   { streamMode: "updates", subgraphs: true },
 )) {
   for (const [nodeName, data] of Object.entries(chunk)) {
-    // ─── Phase 1: Detect subagent starting ────────────────────────
+    // --- Phase 1: Detect subagent starting ---
     // When the main agent's model_request contains task tool calls,
     // a subagent has been spawned.
     if (namespace.length === 0 && nodeName === "model_request") {
@@ -836,14 +836,14 @@ for await (const [namespace, chunk] of await agent.stream(
               status: "pending",
             });
             console.log(
-              `[lifecycle] PENDING  → subagent "${tc.args?.subagent_type}" (${tc.id})`,
+              `[lifecycle] PENDING  -> subagent "${tc.args?.subagent_type}" (${tc.id})`,
             );
           }
         }
       }
     }
 
-    // ─── Phase 2: Detect subagent running ─────────────────────────
+    // --- Phase 2: Detect subagent running ---
     // When we receive events from a tools:UUID namespace, that
     // subagent is actively executing.
     if (namespace.length > 0 && namespace[0].startsWith("tools:")) {
@@ -855,14 +855,14 @@ for await (const [namespace, chunk] of await agent.stream(
         if (sub.status === "pending") {
           sub.status = "running";
           console.log(
-            `[lifecycle] RUNNING  → subagent "${sub.type}" (pregel: ${pregelId})`,
+            `[lifecycle] RUNNING  -> subagent "${sub.type}" (pregel: ${pregelId})`,
           );
           break;
         }
       }
     }
 
-    // ─── Phase 3: Detect subagent completing ──────────────────────
+    // --- Phase 3: Detect subagent completing ---
     // When the main agent's tools node returns a tool message,
     // the subagent has completed and returned its result.
     if (namespace.length === 0 && nodeName === "tools") {
@@ -872,7 +872,7 @@ for await (const [namespace, chunk] of await agent.stream(
           if (subagent) {
             subagent.status = "complete";
             console.log(
-              `[lifecycle] COMPLETE → subagent "${subagent.type}" (${msg.tool_call_id})`,
+              `[lifecycle] COMPLETE -> subagent "${subagent.type}" (${msg.tool_call_id})`,
             );
             console.log(
               `  Result preview: ${String(msg.content).slice(0, 120)}...`,
@@ -896,16 +896,16 @@ for (const [id, sub] of activeSubagents) {
 ## v2 streaming format
 
 <Note>
-Requires LangGraph >= 1.1.
+需要 LangGraph >= 1.1。
 </Note>
 
-All examples on this page use the v2 streaming format (`version="v2"`), which is the recommended approach. Every chunk is a `StreamPart` dict with `type`, `ns`, and `data` keys — the same shape regardless of stream mode, number of modes, or subgraph settings.
+本页所有示例都使用 v2 streaming format（`version="v2"`），这是推荐方式。无论 stream mode、mode 数量或 subgraph settings 如何，每个 chunk 都是一个带有 `type`、`ns` 和 `data` keys 的 `StreamPart` dict。
 
-The v2 format eliminates nested tuple unpacking, making it straightforward to handle subgraph streaming in Deep Agents. Compare the two formats:
+v2 format 消除了 nested tuple unpacking，使 Deep Agents 中的 subgraph streaming 更容易处理。对比两种格式：
 
 <CodeGroup>
 ```python v2 (recommended)
-# Unified format — no nested tuple unpacking
+# Unified format - no nested tuple unpacking
 for chunk in agent.stream(
     {"messages": [{"role": "user", "content": "Research quantum computing"}]},
     stream_mode=["updates", "messages", "custom"],
@@ -930,11 +930,11 @@ for namespace, chunk in agent.stream(
 ```
 </CodeGroup>
 
-See the [LangGraph streaming docs](/oss/langgraph/streaming#stream-output-format-v2) for more details on the v2 format, including type narrowing and Pydantic/dataclass coercion.
+关于 v2 format 的更多细节，包括 type narrowing 和 Pydantic/dataclass coercion，请参见 [LangGraph streaming docs](/oss/langgraph/streaming#stream-output-format-v2)。
 :::
 
 ## Related
 
-- [Subagents](/oss/deepagents/subagents)—Configure and use subagents with Deep Agents
-- [Frontend streaming](/oss/deepagents/streaming/frontend)—Build React UIs with `useStream` for Deep Agents
-- [LangChain Event Streaming](/oss/langchain/event-streaming)—General streaming concepts with LangChain agents
+- [Subagents](/oss/deepagents/subagents)：配置并使用 Deep Agents 的 subagents
+- [Frontend streaming](/oss/deepagents/streaming/frontend)：使用 `useStream` 为 Deep Agents 构建 React UIs
+- [LangChain Event Streaming](/oss/langchain/event-streaming)：LangChain agents 的通用 streaming concepts

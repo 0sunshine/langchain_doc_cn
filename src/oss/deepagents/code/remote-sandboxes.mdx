@@ -1,18 +1,18 @@
 ---
 title: Use remote sandboxes
 sidebarTitle: Remote sandboxes
-description: Run Deep Agents Code tool execution in LangSmith, Daytona, Modal, Runloop, or AgentCore sandboxes. Install provider extras, set credentials, and use flags and setup scripts.
+description: 在 LangSmith、Daytona、Modal、Runloop 或 AgentCore sandboxes 中运行 Deep Agents Code tool execution。安装 provider extras、设置 credentials，并使用 flags 和 setup scripts。
 ---
 
-Deep Agents Code uses the [sandbox as tool](/oss/deepagents/sandboxes#sandbox-as-tool-pattern) pattern: the `dcode` process (LLM loop, memory, tool dispatch) runs on your machine, but agent tool calls (`read_file`, `write_file`, `execute`, etc.) target the remote sandbox, not your local filesystem. To get files into the sandbox, use a [setup script](#setup-scripts) or the provider's file transfer APIs (see [Working with files](/oss/deepagents/sandboxes#working-with-files)).
+Deep Agents Code 使用 [sandbox as tool](/oss/deepagents/sandboxes#sandbox-as-tool-pattern) pattern：`dcode` process（LLM loop、memory、tool dispatch）运行在你的机器上，但 agent tool calls（`read_file`、`write_file`、`execute` 等）会指向 remote sandbox，而不是你的 local filesystem。要把 files 放进 sandbox，请使用 [setup script](#setup-scripts) 或 provider 的 file transfer APIs（参见 [Working with files](/oss/deepagents/sandboxes#working-with-files)）。
 
-For a deeper look at sandbox architecture, integration patterns, and security best practices, see [Sandboxes](/oss/deepagents/sandboxes).
+如需更深入了解 sandbox architecture、integration patterns 和 security best practices，请参阅 [Sandboxes](/oss/deepagents/sandboxes)。
 
 <Steps>
     <Step title="Install provider dependency" icon="download">
         <Tabs>
             <Tab title="LangSmith">
-                Included by default when installing `deepagents-code`. No extra installation needed.
+                安装 `deepagents-code` 时默认包含。不需要额外安装。
             </Tab>
             <Tab title="Daytona">
                 ```bash
@@ -105,11 +105,11 @@ For a deeper look at sandbox architecture, integration patterns, and security be
 
 | Flag | Description |
 |------|-------------|
-| `--sandbox TYPE` | Sandbox provider to use: `langsmith`, `agentcore`, `modal`, `daytona`, or `runloop` (default: `none`) |
-| `--sandbox-id ID` | Reuse an existing sandbox by ID instead of creating a new one. Skips creation and cleanup. Refer to your sandbox documentation for more |
-| `--sandbox-setup PATH` | Path to a setup script to run inside the sandbox upon creation |
+| `--sandbox TYPE` | 要使用的 sandbox provider：`langsmith`、`agentcore`、`modal`、`daytona` 或 `runloop`（default：`none`） |
+| `--sandbox-id ID` | 通过 ID 复用 existing sandbox，而不是创建新 sandbox。会跳过 creation 和 cleanup。更多信息请参阅你的 sandbox documentation |
+| `--sandbox-setup PATH` | sandbox 创建后在其中运行的 setup script path |
 
-Examples:
+Examples：
 
 ```bash
 # Create a new Daytona sandbox
@@ -124,7 +124,7 @@ dcode --sandbox modal --sandbox-setup ./setup.sh
 
 ## Setup scripts
 
-Use `--sandbox-setup` to run a shell script inside the sandbox after creation. This is useful for cloning repos, installing dependencies, and configuring environment variables.
+使用 `--sandbox-setup` 在 sandbox 创建后运行 shell script。这对于 cloning repos、installing dependencies 和 configuring environment variables 很有用。
 
 ```bash title="setup.sh"
 #!/bin/bash
@@ -143,8 +143,8 @@ EOF
 source ~/.bashrc
 ```
 
-Deep Agents Code expands `${VAR}` references in setup scripts using your local environment variables. Store secrets in a local `.env` file for the setup script to access.
+Deep Agents Code 会使用你的 local environment variables 展开 setup scripts 中的 `${VAR}` references。把 secrets 存在 local `.env` file 中，供 setup script 访问。
 
 <Warning>
-    Sandboxes isolate code execution, but agents remain vulnerable to prompt injection with untrusted inputs. Use human-in-the-loop approval, short-lived secrets, and trusted setup scripts only. See [Security considerations](/oss/deepagents/sandboxes#security-considerations) for details.
+    Sandboxes 会隔离 code execution，但 agents 面对 untrusted inputs 时仍然容易受到 prompt injection 影响。请使用 human-in-the-loop approval、short-lived secrets，并且只使用 trusted setup scripts。详情请参阅 [Security considerations](/oss/deepagents/sandboxes#security-considerations)。
 </Warning>
