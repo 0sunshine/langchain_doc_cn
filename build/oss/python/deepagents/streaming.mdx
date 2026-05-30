@@ -1,0 +1,506 @@
+---
+title: Streaming
+description: 从 deep agent runs 和 subagent execution stream 实时 updates
+---
+
+<Tip>
+对于新应用，我们推荐使用 [event streaming](/oss/python/deepagents/event-streaming)，也就是 Deep Agents v0.6 引入的 typed-projection API。Event streaming 会为每个 projection（subagents、messages、tool calls、values）提供独立 iterators，让你可以分别消费它们，而不必基于 `stream_mode` chunks 分支处理。
+</Tip>
+
+Deep Agents 构建在 LangGraph 的 streaming infrastructure 之上，并对 subagent streams 提供 first-class support。当 deep agent 将工作 delegate 给 subagents 时，你可以独立 stream 每个 subagent 的 updates，实时跟踪 progress、LLM tokens 和 tool calls。
+
+deep agent streaming 可以做到：
+
+* <Icon icon="diagram-subtask" size={16} /> [**Stream subagent progress**](#subagent-progress)：跟踪每个 subagent 并行运行时的 execution。
+* <Icon icon="square-binary" size={16} /> [**Stream LLM tokens**](#llm-tokens)：从 main agent 和每个 subagent stream tokens。
+* <Icon icon="screwdriver-wrench" size={16} /> [**Stream tool calls**](#tool-calls)：查看 subagent execution 中的 tool calls 和 results。
+* <Icon icon="table" size={16} /> [**Stream custom updates**](#custom-updates)：从 subagent nodes 内部发出 user-defined signals。
+
+## 启用 subgraph streaming
+
+Deep Agents 使用 LangGraph 的 subgraph streaming 暴露来自 subagent execution 的 events。要接收 subagent events，请在 streaming 时启用 `stream_subgraphs`。
+
+```python
+from deepagents import create_deep_agent
+
+agent = create_deep_agent(
+    model="google_genai:gemini-3.5-flash",
+    system_prompt="You are a helpful research assistant",
+    subagents=[
+        {
+            "name": "researcher",
+            "description": "Researches a topic in depth",
+            "system_prompt": "You are a thorough researcher.",
+        },
+    ],
+)
+
+for chunk in agent.stream(
+    {"messages": [{"role": "user", "content": "Research quantum computing advances"}]},
+    stream_mode="updates",
+    subgraphs=True,  # [!code highlight]
+    version="v2",  # [!code highlight]
+):
+    if chunk["type"] == "updates":
+        if chunk["ns"]:
+            # Subagent event - namespace identifies the source
+            print(f"[subagent: {chunk['ns']}]")
+        else:
+            # Main agent event
+            print("[main agent]")
+        print(chunk["data"])
+```
+
+
+
+
+## Namespaces
+
+启用 `subgraphs` 后，每个 streaming event 都会包含一个 **namespace**，用于标识该 event 由哪个 agent 产生。namespace 是由 node names 和 task IDs 组成的 path，表示 agent hierarchy。
+
+| Namespace | Source |
+| --------- | ------ |
+| `()`（空） | Main agent |
+| `("tools:abc123",)` | main agent 的 `task` tool call `abc123` 生成的 subagent |
+| `("tools:abc123", "model_request:def456")` | subagent 内部的 model request node |
+
+使用 namespaces 将 events 路由到正确的 UI component：
+
+```python
+for chunk in agent.stream(
+    {"messages": [{"role": "user", "content": "Plan my vacation"}]},
+    stream_mode="updates",
+    subgraphs=True,
+    version="v2",
+):
+    if chunk["type"] == "updates":
+        # Check if this event came from a subagent
+        is_subagent = any(
+            segment.startswith("tools:") for segment in chunk["ns"]
+        )
+
+        if is_subagent:
+            # Extract the tool call ID from the namespace
+            tool_call_id = next(
+                s.split(":")[1] for s in chunk["ns"] if s.startswith("tools:")
+            )
+            print(f"Subagent {tool_call_id}: {chunk['data']}")
+        else:
+            print(f"Main agent: {chunk['data']}")
+```
+
+
+
+
+## Subagent progress
+
+使用 `stream_mode="updates"` 跟踪每个 step 完成时的 subagent progress。这对于显示哪些 subagents 处于 active 状态，以及它们完成了哪些工作很有用。
+
+```python
+from deepagents import create_deep_agent
+
+agent = create_deep_agent(
+    model="google_genai:gemini-3.5-flash",
+    system_prompt=(
+        "You are a project coordinator. Always delegate research tasks "
+        "to your researcher subagent using the task tool. Keep your final response to one sentence."
+    ),
+    subagents=[
+        {
+            "name": "researcher",
+            "description": "Researches topics thoroughly",
+            "system_prompt": (
+                "You are a thorough researcher. Research the given topic "
+                "and provide a concise summary in 2-3 sentences."
+            ),
+        },
+    ],
+)
+
+for chunk in agent.stream(
+    {"messages": [{"role": "user", "content": "Write a short summary about AI safety"}]},
+    stream_mode="updates",
+    subgraphs=True,
+    version="v2",
+):
+    if chunk["type"] == "updates":
+        # Main agent updates (empty namespace)
+        if not chunk["ns"]:
+            for node_name, data in chunk["data"].items():
+                if node_name == "tools":
+                    # Subagent results returned to main agent
+                    for msg in data.get("messages", []):
+                        if msg.type == "tool":
+                            print(f"\nSubagent complete: {msg.name}")
+                            print(f"  Result: {str(msg.content)[:200]}...")
+                else:
+                    print(f"[main agent] step: {node_name}")
+
+        # Subagent updates (non-empty namespace)
+        else:
+            for node_name, data in chunk["data"].items():
+                print(f"  [{chunk['ns'][0]}] step: {node_name}")
+```
+
+```shell title="Output"
+[main agent] step: model_request
+  [tools:call_abc123] step: model_request
+  [tools:call_abc123] step: tools
+  [tools:call_abc123] step: model_request
+
+Subagent complete: task
+  Result: ## AI Safety Report...
+[main agent] step: model_request
+```
+
+
+
+
+## LLM tokens
+
+使用 `stream_mode="messages"` 从 main agent 和 subagents stream 单个 tokens。每个 message event 都包含用于识别 source agent 的 metadata。
+
+```python
+current_source = ""
+
+for chunk in agent.stream(
+    {"messages": [{"role": "user", "content": "Research quantum computing advances"}]},
+    stream_mode="messages",
+    subgraphs=True,
+    version="v2",
+):
+    if chunk["type"] == "messages":
+        token, metadata = chunk["data"]
+
+        # Check if this event came from a subagent (namespace contains "tools:")
+        is_subagent = any(s.startswith("tools:") for s in chunk["ns"])
+
+        if is_subagent:
+            # Token from a subagent
+            subagent_ns = next(s for s in chunk["ns"] if s.startswith("tools:"))
+            if subagent_ns != current_source:
+                print(f"\n\n--- [subagent: {subagent_ns}] ---")
+                current_source = subagent_ns
+            if token.content:
+                print(token.content, end="", flush=True)
+        else:
+            # Token from the main agent
+            if "main" != current_source:
+                print("\n\n--- [main agent] ---")
+                current_source = "main"
+            if token.content:
+                print(token.content, end="", flush=True)
+
+print()
+```
+
+
+
+
+## Tool calls
+
+当 subagents 使用 tools 时，你可以 stream tool call events，以展示每个 subagent 正在做什么。Tool call chunks 会出现在 `messages` stream mode 中。
+
+```python
+for chunk in agent.stream(
+    {"messages": [{"role": "user", "content": "Research recent quantum computing advances"}]},
+    stream_mode="messages",
+    subgraphs=True,
+    version="v2",
+):
+    if chunk["type"] == "messages":
+        token, metadata = chunk["data"]
+
+        # Identify source: "main" or the subagent namespace segment
+        is_subagent = any(s.startswith("tools:") for s in chunk["ns"])
+        source = next((s for s in chunk["ns"] if s.startswith("tools:")), "main") if is_subagent else "main"
+
+        # Tool call chunks (streaming tool invocations)
+        if token.tool_call_chunks:
+            for tc in token.tool_call_chunks:
+                if tc.get("name"):
+                    print(f"\n[{source}] Tool call: {tc['name']}")
+                # Args stream in chunks - write them incrementally
+                if tc.get("args"):
+                    print(tc["args"], end="", flush=True)
+
+        # Tool results
+        if token.type == "tool":
+            print(f"\n[{source}] Tool result [{token.name}]: {str(token.content)[:150]}")
+
+        # Regular AI content (skip tool call messages)
+        if token.type == "ai" and token.content and not token.tool_call_chunks:
+            print(token.content, end="", flush=True)
+
+print()
+```
+
+
+
+
+## Custom updates
+
+在 subagent tools 内部使用 [`get_stream_writer`](https://reference.langchain.com/python/langgraph/config/get_stream_writer) 发出 custom progress events：
+
+
+
+
+```python
+import time
+from langchain.tools import tool
+from langgraph.config import get_stream_writer
+from deepagents import create_deep_agent
+
+
+@tool
+def analyze_data(topic: str) -> str:
+    """Run a data analysis on a given topic.
+
+    This tool performs the actual analysis and emits progress updates.
+    You MUST call this tool for any analysis request.
+    """
+    writer = get_stream_writer()
+
+    writer({"status": "starting", "topic": topic, "progress": 0})
+    time.sleep(0.5)
+
+    writer({"status": "analyzing", "progress": 50})
+    time.sleep(0.5)
+
+    writer({"status": "complete", "progress": 100})
+    return (
+        f'Analysis of "{topic}": Customer sentiment is 85% positive, '
+        "driven by product quality and support response times."
+    )
+
+
+agent = create_deep_agent(
+    model="google_genai:gemini-3.5-flash",
+    system_prompt=(
+        "You are a coordinator. For any analysis request, you MUST delegate "
+        "to the analyst subagent using the task tool. Never try to answer directly. "
+        "After receiving the result, summarize it in one sentence."
+    ),
+    subagents=[
+        {
+            "name": "analyst",
+            "description": "Performs data analysis with real-time progress tracking",
+            "system_prompt": (
+                "You are a data analyst. You MUST call the analyze_data tool "
+                "for every analysis request. Do not use any other tools. "
+                "After the analysis completes, report the result."
+            ),
+            "tools": [analyze_data],
+        },
+    ],
+)
+
+for chunk in agent.stream(
+    {"messages": [{"role": "user", "content": "Analyze customer satisfaction trends"}]},
+    stream_mode="custom",
+    subgraphs=True,
+    version="v2",
+):
+    if chunk["type"] == "custom":
+        is_subagent = any(s.startswith("tools:") for s in chunk["ns"])
+        if is_subagent:
+            subagent_ns = next(s for s in chunk["ns"] if s.startswith("tools:"))
+            print(f"[{subagent_ns}]", chunk["data"])
+        else:
+            print("[main]", chunk["data"])
+```
+
+```shell title="Output"
+[tools:call_abc123] {'status': 'starting', 'topic': 'customer satisfaction trends', 'progress': 0}
+[tools:call_abc123] {'status': 'analyzing', 'progress': 50}
+[tools:call_abc123] {'status': 'complete', 'progress': 100}
+```
+
+
+
+
+## Stream multiple modes
+
+组合多个 stream modes，以获得 agent execution 的完整视图：
+
+```python
+# Skip internal middleware steps - only show meaningful node names
+INTERESTING_NODES = {"model_request", "tools"}
+
+last_source = ""
+mid_line = False  # True when we've written tokens without a trailing newline
+
+for chunk in agent.stream(
+    {"messages": [{"role": "user", "content": "Analyze the impact of remote work on team productivity"}]},
+    stream_mode=["updates", "messages", "custom"],
+    subgraphs=True,
+    version="v2",
+):
+    is_subagent = any(s.startswith("tools:") for s in chunk["ns"])
+    source = "subagent" if is_subagent else "main"
+
+    if chunk["type"] == "updates":
+        for node_name in chunk["data"]:
+            if node_name not in INTERESTING_NODES:
+                continue
+            if mid_line:
+                print()
+                mid_line = False
+            print(f"[{source}] step: {node_name}")
+
+    elif chunk["type"] == "messages":
+        token, metadata = chunk["data"]
+        if token.content:
+            # Print a header when the source changes
+            if source != last_source:
+                if mid_line:
+                    print()
+                    mid_line = False
+                print(f"\n[{source}] ", end="")
+                last_source = source
+            print(token.content, end="", flush=True)
+            mid_line = True
+
+    elif chunk["type"] == "custom":
+        if mid_line:
+            print()
+            mid_line = False
+        print(f"[{source}] custom event:", chunk["data"])
+
+print()
+```
+
+
+
+
+## Common patterns
+
+### 跟踪 subagent lifecycle
+
+监控 subagents 何时 start、run 和 complete：
+
+```python
+active_subagents = {}
+
+for chunk in agent.stream(
+    {"messages": [{"role": "user", "content": "Research the latest AI safety developments"}]},
+    stream_mode="updates",
+    subgraphs=True,
+    version="v2",
+):
+    if chunk["type"] == "updates":
+        for node_name, data in chunk["data"].items():
+            # --- Phase 1: Detect subagent starting ---
+            # When the main agent's model_request contains task tool calls,
+            # a subagent has been spawned.
+            if not chunk["ns"] and node_name == "model_request":
+                for msg in data.get("messages", []):
+                    for tc in getattr(msg, "tool_calls", []):
+                        if tc["name"] == "task":
+                            active_subagents[tc["id"]] = {
+                                "type": tc["args"].get("subagent_type"),
+                                "description": tc["args"].get("description", "")[:80],
+                                "status": "pending",
+                            }
+                            print(
+                                f'[lifecycle] PENDING  -> subagent "{tc["args"].get("subagent_type")}" '
+                                f'({tc["id"]})'
+                            )
+
+            # --- Phase 2: Detect subagent running ---
+            # When we receive events from a tools:UUID namespace, that
+            # subagent is actively executing.
+            if chunk["ns"] and chunk["ns"][0].startswith("tools:"):
+                pregel_id = chunk["ns"][0].split(":")[1]
+                # Check if any pending subagent needs to be marked running.
+                # Note: the pregel task ID differs from the tool_call_id,
+                # so we mark any pending subagent as running on first subagent event.
+                for sub_id, sub in active_subagents.items():
+                    if sub["status"] == "pending":
+                        sub["status"] = "running"
+                        print(
+                            f'[lifecycle] RUNNING  -> subagent "{sub["type"]}" '
+                            f"(pregel: {pregel_id})"
+                        )
+                        break
+
+            # --- Phase 3: Detect subagent completing ---
+            # When the main agent's tools node returns a tool message,
+            # the subagent has completed and returned its result.
+            if not chunk["ns"] and node_name == "tools":
+                for msg in data.get("messages", []):
+                    if msg.type == "tool":
+                        sub = active_subagents.get(msg.tool_call_id)
+                        if sub:
+                            sub["status"] = "complete"
+                            print(
+                                f'[lifecycle] COMPLETE -> subagent "{sub["type"]}" '
+                                f"({msg.tool_call_id})"
+                            )
+                            print(f"  Result preview: {str(msg.content)[:120]}...")
+
+# Print final state
+print("\n--- Final subagent states ---")
+for sub_id, sub in active_subagents.items():
+    print(f"  {sub['type']}: {sub['status']}")
+```
+
+
+
+
+## v2 streaming format
+
+<Note>
+需要 LangGraph >= 1.1。
+</Note>
+
+本页所有示例都使用 v2 streaming format（`version="v2"`），这是推荐方式。无论 stream mode、mode 数量或 subgraph settings 如何，每个 chunk 都是一个带有 `type`、`ns` 和 `data` keys 的 `StreamPart` dict。
+
+v2 format 消除了 nested tuple unpacking，使 Deep Agents 中的 subgraph streaming 更容易处理。对比两种格式：
+
+<CodeGroup>
+```python v2 (recommended)
+# Unified format - no nested tuple unpacking
+for chunk in agent.stream(
+    {"messages": [{"role": "user", "content": "Research quantum computing"}]},
+    stream_mode=["updates", "messages", "custom"],
+    subgraphs=True,
+    version="v2",
+):
+    print(chunk["type"])  # "updates", "messages", or "custom"
+    print(chunk["ns"])    # () for main agent, ("tools:<id>",) for subagent
+    print(chunk["data"])  # payload
+```
+```python v1 (legacy)
+# Must handle (namespace, (mode, data)) nested tuples
+for namespace, chunk in agent.stream(
+    {"messages": [{"role": "user", "content": "Research quantum computing"}]},
+    stream_mode=["updates", "messages", "custom"],
+    subgraphs=True,
+):
+    mode, data = chunk[0], chunk[1]
+    print(mode)       # "updates", "messages", or "custom"
+    print(namespace)  # () for main agent, ("tools:<id>",) for subagent
+    print(data)       # payload
+```
+</CodeGroup>
+
+关于 v2 format 的更多细节，包括 type narrowing 和 Pydantic/dataclass coercion，请参见 [LangGraph streaming docs](/oss/python/langgraph/streaming#stream-output-format-v2)。
+
+
+## Related
+
+- [Subagents](/oss/python/deepagents/subagents)：配置并使用 Deep Agents 的 subagents
+- [Frontend streaming](/oss/python/deepagents/streaming/frontend)：使用 `useStream` 为 Deep Agents 构建 React UIs
+- [LangChain Event Streaming](/oss/python/langchain/event-streaming)：LangChain agents 的通用 streaming concepts
+
+---
+
+<div className="source-links">
+<Callout icon="terminal-2">
+    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+</Callout>
+<Callout icon="edit">
+    [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/deepagents/streaming.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
+</Callout>
+</div>

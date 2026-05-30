@@ -1,0 +1,484 @@
+---
+title: MCP tools
+sidebarTitle: MCP tools
+description: 从 MCP (Model Context Protocol) servers 加载额外 tools
+---
+
+[MCP (Model Context Protocol)](https://modelcontextprotocol.io/) 让你可以用 external servers 提供的 tools 扩展 Deep Agents Code，例如 file systems、APIs、databases 等，而无需修改 agent 本身。Deep Agents Code 会在 startup 时连接 MCP servers，发现它们的 tools，并把这些 tools 与 built-in tools 一起提供给 agent。
+
+你可以通过向 project 添加 `.mcp.json` config file 来配置 project-level MCP servers，也可以在 user-level 配置，让它应用到所有 projects。
+
+## Quickstart
+
+这个 quickstart 会把 [LangChain documentation MCP server](https://docs.langchain.com/mcp) 添加到你机器上的每个 Deep Agents Code session。你也可以按相同结构换成任意其他 MCP server 的 URL 或 stdio command。
+
+<Steps>
+    <Step title="Create the config file" icon="file">
+
+        如果还没有 config file，请在 user-level 创建 `.mcp.json`，让 server 对机器上的每个 project 可用；也可以在 project-level 创建。
+
+        <Tabs>
+            <Tab title="User">
+
+                ```bash
+                mkdir -p ~/.deepagents
+                touch ~/.deepagents/.mcp.json
+                ```
+
+                这个 file（`~/.deepagents/.mcp.json`）中的 servers 会在这台机器上的每个 project 中可用。
+            </Tab>
+            <Tab title="Project">
+
+                ```bash
+                touch .mcp.json
+                ```
+
+                这个 file（`<project>/.mcp.json`）中的 servers 只对该 project 可用。
+            </Tab>
+            <Tab title="Project (hidden)">
+
+                ```bash
+                mkdir -p .deepagents
+                touch .deepagents/.mcp.json
+                ```
+
+                这个 file（`<project>/.deepagents/.mcp.json`）中的 servers 对该 project 可用，但会避开 repo root。
+            </Tab>
+        </Tabs>
+
+        完整 precedence rules 请参阅 [Discovery locations](#discovery-locations)。
+
+
+    </Step>
+
+    <Step title="Add the MCP server" icon="plug">
+
+        ```json title="~/.deepagents/.mcp.json"
+        {
+            "mcpServers": {
+                "docs-langchain": {
+                    "type": "http",
+                    "url": "https://docs.langchain.com/mcp"
+                }
+            }
+        }
+        ```
+
+        要添加更多 servers，请继续向 `mcpServers` 添加 entries。OAuth、stdio、SSE、HTTP server fields、environment variables 和 headers 请参阅 [Configuration format](#configuration-format)。
+    </Step>
+
+    <Step title="Launch Deep Agents Code" icon="terminal">
+        ```bash
+        dcode
+        ```
+
+        startup 时，Deep Agents Code 会 auto-discover config，连接到每个 server，发现其 tools，并打印确认信息：
+
+        ```
+        Loaded 3 MCP tools
+        ```
+
+        在 interactive session 中运行 `/mcp`，可以查看 per-server status、transport 和 loaded tool list。agent 现在可以在该 session 期间使用这些 tools；stdio servers 会在 tool calls 之间保持 alive。
+    </Step>
+</Steps>
+
+## Auto-discovery
+
+Deep Agents Code 会自动在 standard locations 搜索 `.mcp.json` files。不需要 flags，只需放置 config file，它就会被拾取。
+
+### Discovery locations
+
+Configs 会按以下顺序检查（从低到高 precedence）：
+
+| Priority | Location | Scope |
+|----------|----------|-------|
+| 1 (lowest) | `~/.deepagents/.mcp.json` | User-level，应用于所有 projects |
+| 2 | `<project>/.deepagents/.mcp.json` | Project-level，`.deepagents` subdirectory |
+| 3 (highest) | `<project>/.mcp.json` | Project-level，root（Claude Code compatible） |
+
+project root 是最近的包含 `.git` folder 的 parent directory；如果找不到，则 fallback 到 current working directory。
+
+当存在多个 config files 时，它们的 `mcpServers` entries 会被 merged。如果同一个 server name 出现在多个 file 中，higher-precedence config 会胜出。这让 project-level config 可以覆盖 user-level entry（例如固定同一 server 的不同 version），且不会影响其他 projects。
+
+### Flags
+
+| Flag | Behavior |
+|------|----------|
+| `--mcp-config PATH` | 添加一个 explicit config，作为最高 precedence source（叠加到 auto-discovered configs 上） |
+| `--no-mcp` | 完全禁用 MCP，不加载任何 servers |
+
+<Note>
+    `--mcp-config` 和 `--no-mcp` 互斥。
+</Note>
+
+### Claude Code compatibility
+
+如果你的 project root 已经有用于 Claude Code 的 `.mcp.json`，Deep Agents Code 会自动拾取它，不需要额外设置。
+
+## Configuration format
+
+`mcpServers` 下的每个 key 都是一个 server name。server 的 fields 决定 Deep Agents Code 如何连接它。
+
+### stdio servers (default)
+
+stdio servers 会作为 child processes 启动。Deep Agents Code 通过 stdin/stdout 与它们通信。
+
+```json title="mcp-config.json"
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"],
+      "env": {}
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": { "GITHUB_TOKEN": "your-token" }
+    }
+  }
+}
+```
+
+### SSE and HTTP servers
+
+对于 remote MCP servers，将 `type` 设置为 `"sse"` 或 `"http"`，并提供 `url`：
+
+```json title="mcp-config.json"
+{
+  "mcpServers": {
+    "remote-api": {
+      "type": "sse",
+      "url": "https://api.example.com/mcp",
+      "headers": { "Authorization": "Bearer your-token" }
+    }
+  }
+}
+```
+
+### Field reference
+
+<AccordionGroup>
+    <Accordion title="stdio (default)">
+        **Required:** `command`。**Optional:** `args`、`env`，以及共享的 [tool-filter fields](#tool-filtering)。
+
+        <ResponseField name="command" type="string" required>
+            要运行的 executable。
+        </ResponseField>
+
+        <ResponseField name="args" type="string[]">
+            传给 command 的 arguments。
+        </ResponseField>
+
+        <ResponseField name="env" type="object">
+            为 subprocess 设置的 environment variables。可用它传递 API keys 和其他 credentials，避免暴露在 shell history 中。
+        </ResponseField>
+    </Accordion>
+
+    <Accordion title="sse">
+        **Required:** `type: "sse"`、`url`。**Optional:** `headers`、`auth`，以及共享的 [tool-filter fields](#tool-filtering)。
+
+        <ResponseField name="type" type='"sse"' required>
+            Transport type。使用 `"sse"` 表示 Server-Sent Events。
+        </ResponseField>
+
+        <ResponseField name="url" type="string" required>
+            server endpoint URL。
+        </ResponseField>
+
+        <ResponseField name="headers" type="object">
+            每个 request 都会发送的 HTTP headers。通常用于 authentication。Values 支持 `${VAR}` references，会解析 parent-shell environment variables（server activated 时解析）。
+        </ResponseField>
+
+        <ResponseField name="auth" type='"oauth"'>
+            设置为 `"oauth"`，用 `dcode mcp login` 驱动 OAuth login flow，而不是提供 `Authorization` header。不能与 `Authorization` header 同时使用。参见 [OAuth login](#oauth-login)。
+        </ResponseField>
+    </Accordion>
+
+    <Accordion title="http">
+        **Required:** `type: "http"`、`url`。**Optional:** `headers`、`auth`，以及共享的 [tool-filter fields](#tool-filtering)。
+
+        <ResponseField name="type" type='"http"' required>
+            Transport type。使用 `"http"` 表示 streamable HTTP。`streamable_http` 和 `streamable-http` 也可作为 aliases。
+        </ResponseField>
+
+        <ResponseField name="url" type="string" required>
+            server endpoint URL。
+        </ResponseField>
+
+        <ResponseField name="headers" type="object">
+            每个 request 都会发送的 HTTP headers。通常用于 authentication。Values 支持 `${VAR}` references，会解析 parent-shell environment variables（server activated 时解析）。
+        </ResponseField>
+
+        <ResponseField name="auth" type='"oauth"'>
+            设置为 `"oauth"`，用 `dcode mcp login` 驱动 OAuth login flow，而不是提供 `Authorization` header。不能与 `Authorization` header 同时使用。参见 [OAuth login](#oauth-login)。
+        </ResponseField>
+    </Accordion>
+</AccordionGroup>
+
+<Note>
+    为了兼容其他 MCP clients，`type` field 也可以写成 `transport`。
+</Note>
+
+<Note>
+    Server names 必须匹配 `[A-Za-z0-9_-]+`。Names 会被用作 OAuth token files 的 on-disk basenames，因此 config load 时会拒绝 path separators 和其他 shell metacharacters。
+</Note>
+
+### Header environment variables
+
+Header values 支持从 parent shell 进行 `${VAR}` substitution，并在 server activation 时解析，而不是 config load 时解析。某个 unset variable 只会让需要它的 server 失败，其余 servers 仍会启动。
+
+```json title=".mcp.json"
+{
+    "mcpServers": {
+        "internal-api": {
+            "type": "http",
+            "url": "https://api.example.com/mcp",
+            "headers": { "Authorization": "Bearer ${INTERNAL_API_TOKEN}" }
+        }
+    }
+}
+```
+
+## Multiple servers
+
+你可以配置任意数量的 servers。来自所有 servers 的 tools 会 merged，并对 agent 可用：
+
+```json title="mcp-config.json"
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/user/projects"]
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": { "GITHUB_TOKEN": "ghp_..." }
+    },
+    "database": {
+      "type": "sse",
+      "url": "https://db-mcp.internal:8080/mcp",
+      "headers": { "Authorization": "Bearer ..." }
+    }
+  }
+}
+```
+
+## Tool filtering
+
+每个 server 可以用两个 optional fields 之一缩小暴露给 agent 的 tools：
+
+- `allowedTools`：只保留列出的 tools，丢弃其他所有 tools。
+- `disabledTools`：丢弃列出的 tools，保留其他所有 tools。
+
+Filtering 同样适用于 stdio、HTTP 和 SSE servers。以下两种情况会在 config load 时被拒绝：
+
+- 在同一个 server 上同时设置 `allowedTools` 和 `disabledTools`。
+- 将任一 field 设置为空列表（这会静默移除所有 tools，或成为 no-op）。请省略该 field。
+
+```json title=".mcp.json"
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"],
+      "allowedTools": ["read_file", "list_directory"]
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "disabledTools": ["delete_repository", "delete_*_branch"]
+    }
+  }
+}
+```
+
+### Match rules
+
+每个 entry 可以是 literal tool name，也可以是 [`fnmatch`](https://docs.python.org/3/library/fnmatch.html)-style glob（任何包含 `*`、`?` 或 `[` 的 entry 都会被视为 pattern）。Entries 会同时匹配 bare MCP tool name 和 server-prefixed form（`{server}_{tool}`），因此两种形式都可以：
+
+```json
+{
+  "allowedTools": ["read_file", "fs_list_*"]
+}
+```
+
+<Note>
+    匹配不到任何 loaded tool 的 entries 会记录为 warning，而不是 error。这允许 underlying MCP server 在版本演进中改变 tool list，而不会破坏你的 config。
+</Note>
+
+<ResponseField name="allowedTools" type="string[]">
+    要保留的 tool names 或 `fnmatch` glob patterns。该 server 的其他所有 tools 都会被丢弃。与 `disabledTools` 互斥。
+</ResponseField>
+
+<ResponseField name="disabledTools" type="string[]">
+    要丢弃的 tool names 或 `fnmatch` glob patterns。该 server 的其他所有 tools 都会保留。与 `allowedTools` 互斥。
+</ResponseField>
+
+## OAuth login
+
+对于需要 OAuth 的 remote MCP servers（Slack、GitHub、Notion、Linear 和其他 hosted MCP endpoints），在 server entry 上设置 `"auth": "oauth"`，并运行一次 login subcommand。Tokens 会持久化到 disk，并自动刷新。
+
+### Configure the server
+
+```json title=".mcp.json"
+{
+    "mcpServers": {
+        "linear": {
+            "type": "http",
+            "url": "https://mcp.linear.app/mcp",
+            "auth": "oauth"
+        }
+    }
+}
+```
+
+`auth: "oauth"` 与同一 entry 上的 `Authorization` header 互斥，并且不能设置在 stdio server 上。
+
+### Run the login flow
+
+```bash
+dcode mcp login linear
+```
+
+实际流程取决于 server host：
+
+- **Spec-compliant servers**（默认）：Deep Agents Code 会执行 Dynamic Client Registration，在浏览器中打开 Authorization Code + PKCE flow，并要求你把 redirected URL 粘贴回 terminal。
+- **Slack**（`slack.com`、`*.slack.com`）：同样是 paste-back flow，但会预置 Slack public client。系统会提示输入可选 team ID（例如 `T01234567`），让 app 安装到正确 workspace。
+- **GitHub**（`api.githubcopilot.com`）：RFC 8628 Device Authorization Grant。Deep Agents Code 会打印 verification URL 和 user code；你在浏览器中输入 code，Deep Agents Code 会轮询完成状态。
+
+默认情况下，`dcode mcp login` 会读取 Deep Agents Code runtime 使用的同一批 auto-discovered configs（受 project-level trust gating 影响）。传入 `--config <path>` 可使用特定 file：
+
+```bash
+dcode mcp login linear --config ./mcp-config.json
+```
+
+<Warning>
+    未被 trusted 的 project-level configs（参见 [Project-level trust](#project-level-trust)）会在 `mcp login` 期间被跳过，防止 attacker-controlled `headers` entries 通过 `${VAR}` interpolation 外泄 local secrets。请先在该 project 中运行一次 `dcode` 来 approve config，或显式传入 `--config <path>`。
+</Warning>
+
+### Token storage
+
+Tokens 会写入：
+
+```text
+~/.deepagents/.state/mcp-tokens/<server>-<sha256-16(url)>.json
+```
+
+`<sha256-16(url)>` segment 是 server URL 的 SHA-256 前 16 个 hex characters。directory 会锁定为 mode `0700`，每个 token file 为 mode `0600`。Files 包含 OAuth access token、refresh token 和 dynamically registered client info，并以 schema-versioned payload 形式 atomic write（write-to-temp + `rename`）。
+
+<Note>
+    将 URL hash 到 filename 意味着同名 server 指向不同 URLs（例如 dev vs. prod）时会获得独立 token files，不会相互覆盖。
+</Note>
+
+### Re-authentication
+
+runtime 中 refresh 失败时（refresh token expired 或 revoked），Deep Agents Code 会把 server 标记为 `unauthenticated`，而不是让 agent 崩溃。welcome banner 会显示 unauthenticated servers 的数量，`/mcp` 会显示每个 server 的原因。重新运行 `dcode mcp login <server>` 即可刷新 credentials；你的 conversation 会继续，无需重启。
+
+## Server status
+
+每个 configured server 在 startup 后会进入三种状态之一：
+
+| Status | Meaning |
+|--------|---------|
+| `ok` | 已连接；tools 已加载并可供 agent 使用 |
+| `unauthenticated` | 需要 OAuth login 或 refresh 失败；运行 `dcode mcp login <server>` |
+| `error` | Pre-flight、discovery 或 transport setup 失败；附带 error message |
+
+单个 server 失败不再会 abort startup。agent 会使用成功启动的 servers 继续运行，welcome banner 会在 tool count 旁显示 unauthenticated 和 errored servers 的数量。在 interactive session 中打开 `/mcp`，可以查看 per-server status、transport、tool list，以及非 `ok` entries 的 failure reason。viewer 会 live-update，并支持 `tab`/`shift+tab` navigation。
+
+## Project-level trust
+
+Project-level configs 可能包含会执行 local commands 的 stdio servers，以及可能从你的 environment 插值 `${VAR}` 的 remote server `headers`。为了防止 untrusted repositories 在 CLI startup 时运行任意 code 或外泄 local secrets，Deep Agents Code 对 project-level entries 执行 **default-deny** policy。
+
+### How it works
+
+- **Interactive mode:** Deep Agents Code 会在激活 project servers 前请求 approval，并显示每个 stdio command 和 remote URL。Approval 会使用 SHA-256 content fingerprint 持久化；如果 config 改变，你会再次收到 prompt。
+- **Non-interactive mode (`-n`):** 除非传入 `--trust-project-mcp`，否则 project servers 会被静默跳过。
+- **Trust 同时覆盖 stdio 和 remote entries** - remote servers 可能在 pre-flight probe 中 SSRF 到 localhost 或 cloud-metadata endpoints，并通过 headers 外泄 `${VAR}` values，因此它们与 stdio 一样需要 gating。
+- **User-level configs**（`~/.deepagents/.mcp.json`）始终 trusted，与 `config.toml` 和 `hooks.json` 的 trust model 相同。
+- **`dcode mcp login`** 也会遵守 project trust：login discovery 期间会跳过 untrusted project-level config，防止 attacker-controlled remote entry 把 secrets 带入 OAuth handshake。
+
+### Flags
+
+| Flag | Behavior |
+|------|----------|
+| `--trust-project-mcp` | 不提示，信任所有 project-level stdio servers（用于 CI 和 automation） |
+
+```bash
+# Skip the approval prompt
+dcode --trust-project-mcp
+
+# Non-interactive: explicitly trust project servers
+dcode -n "run tests" --trust-project-mcp
+```
+
+### Trust store
+
+Trust decisions 存储在 `~/.deepagents/config.toml`：
+
+```toml
+[mcp_trust.projects]
+"/Users/you/myproject" = "sha256:abc123..."
+```
+
+每个 key 都是 absolute project root path。value 是 project-level config contents 拼接后的 SHA-256 digest。要 revoke trust，请删除 entry 或修改 project 的 `.mcp.json`（这会自动让 fingerprint 失效）。
+
+<Warning>
+    trusted stdio MCP server 拥有与你 user account 相同的权限。只 approve 来自你信任 repositories 的 servers。接受前请 review approval prompt 中显示的 commands。
+</Warning>
+
+## System prompt awareness
+
+Connected MCP servers 及其 tools 会自动列在 agent 的 system prompt 中，并按 server name 和 transport type 分组。这有助于 model 推理 tool provenance 和 failure domains，而无需手动添加 context。
+
+## Troubleshooting
+
+<AccordionGroup>
+    <Accordion title="Server fails to start (stdio)">
+        验证 command 是否能在 Deep Agents Code 外部工作：
+
+        ```bash
+        npx -y @modelcontextprotocol/server-filesystem /tmp
+        ```
+
+        常见原因包括：package 未安装、`npx` 不在 `PATH` 上，或 required environment variables 缺失。
+    </Accordion>
+
+    <Accordion title="Connection refused (SSE/HTTP)">
+        检查 remote server 是否正在运行，URL 是否正确。如果 server 需要 authentication，请确认 `headers` 包含正确 credentials。
+    </Accordion>
+
+    <Accordion title="Tools not appearing">
+        Deep Agents Code 会在 startup 时打印 loaded tools 数量（例如 `Loaded 3 MCP tools`）。如果看到 `0`，说明 server 成功启动但没有 advertise any tools，请检查 server 自身 logs 或 documentation。
+    </Accordion>
+
+    <Accordion title="Server shows `unauthenticated` in /mcp">
+        可能是你尚未运行 `dcode mcp login <server>`，也可能是 persisted refresh token 已在 server-side expired 或 revoked。再次运行 login command；你的 session 会保持运行，并在 tokens 刷新后重新 attach server。
+    </Accordion>
+
+    <Accordion title="`Invalid MCP config at ...`">
+        pre-flight validation 拒绝了 `--mcp-config`（或 auto-discovered `.mcp.json`）。常见原因包括：unsupported server name（必须匹配 `[A-Za-z0-9_-]+`）、在 stdio server 上设置 `auth: oauth`、同一 entry 同时设置 `command` 和 `url`，或 header value 不是 string。修复 highlighted reason 后重新 launch；Deep Agents Code 不再为 config errors 输出多页 subprocess trace。
+    </Accordion>
+
+    <Accordion title="`${VAR}` header references fail">
+        Header interpolation 在 activation time 运行，因此 unset variable 只会让需要它的 server 失败。请在 parent shell 中 export 该 variable，或把它添加到 `~/.deepagents/.env`。debug 时可设置 `DEEPAGENTS_CODE_DEBUG=1`，并查看 shutdown 时 stderr 打印的 per-session log path。
+    </Accordion>
+</AccordionGroup>
+
+## Further reading
+
+- [LangChain MCP guide](/oss/python/langchain/mcp)：protocol details、building custom servers，以及以编程方式使用 `langchain-mcp-adapters`
+- [MCP specification](https://modelcontextprotocol.io/)：official protocol spec 和 server registry
+
+---
+
+<div className="source-links">
+<Callout icon="terminal-2">
+    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+</Callout>
+<Callout icon="edit">
+    [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/deepagents/code/mcp-tools.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
+</Callout>
+</div>

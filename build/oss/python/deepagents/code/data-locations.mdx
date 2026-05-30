@@ -1,0 +1,138 @@
+---
+title: Data locations
+sidebarTitle: App data
+description: Deep Agents Code 存储 configuration、sessions 和 customization files 的位置
+---
+
+Deep Agents Code 会把 data 存在两套 directory hierarchies 中：
+
+- **`~/.deepagents/`** - Deep Agents 专用 data（agent memory、skills、sessions）
+- **`~/.agents/`** - Tool-agnostic data（可在多个 AI CLI tools 之间共享的 skills）
+
+## Directory structure
+
+```text
+~/.deepagents/
+|-- .state/                  # Per-machine Deep Agents Code state (managed automatically)
+|   |-- sessions.db          #   SQLite database for conversation checkpoints
+|   |-- history.jsonl        #   Command input history
+|   `-- ...                  #   Other markers & credentials
+`-- {agent}/                 # Per-agent directory (default: "agent")
+    |-- AGENTS.md            # User customizations to agent instructions
+    |-- skills/              # User-level skills
+    |   `-- {skill-name}/
+    |       `-- SKILL.md
+    `-- agents/              # Custom subagent definitions
+        `-- {subagent-name}/
+            `-- AGENTS.md
+
+~/.agents/                   # Tool-agnostic alias (shared across AI CLIs)
+`-- skills/                  # Skills available to any compatible tool
+    `-- {skill-name}/
+        `-- SKILL.md
+
+{project}/                   # Project-level (in git repo root)
+|-- AGENTS.md                # Project instructions (root-level)
+|-- .deepagents/
+|   |-- AGENTS.md            # Project instructions (preferred location)
+|   |-- skills/              # Project-specific skills
+|   |   `-- {skill-name}/
+|   |       `-- SKILL.md
+|   `-- agents/              # Project-specific subagents
+|       `-- {subagent-name}/
+|           `-- AGENTS.md
+`-- .agents/                 # Tool-agnostic project skills
+    `-- skills/
+        `-- {skill-name}/
+            `-- SKILL.md
+```
+
+## What goes where
+
+| Data | Location | Read/Write | Notes |
+|------|----------|------------|-------|
+| **Sessions** | `~/.deepagents/.state/sessions.db` | R/W | SQLite checkpoint database |
+| **Input history** | `~/.deepagents/.state/history.jsonl` | R/W | JSON-lines，可用 up/down arrow recall |
+| **Base instructions** | Package `default_agent_prompt.md` | R | Immutable，会随 Deep Agents Code upgrades 更新 |
+| **User customizations** | `~/.deepagents/{agent}/AGENTS.md` | R/W | 追加到 base instructions |
+| **Project instructions** | `.deepagents/AGENTS.md` or `AGENTS.md` | R | 如果都存在，两者都会加载 |
+| **User skills** | `~/.deepagents/{agent}/skills/` | R/W | Agent-specific skills |
+| **Shared skills** | `~/.agents/skills/` | R | Tool-agnostic，cross-CLI |
+| **Project skills** | `.deepagents/skills/` or `.agents/skills/` | R | Project-scoped |
+| **Custom subagents** | `~/.deepagents/{agent}/agents/` | R/W | User-defined subagents |
+| **Project subagents** | `.deepagents/agents/` | R | Project-defined subagents |
+
+## Precedence rules
+
+当同一个 item 出现在多个 locations 中时，**higher precedence 会完全胜出**（不会 merging）。
+
+### Skills
+
+Precedence order（从低到高）：
+
+1. `~/.deepagents/{agent}/skills/` - User Deep Agents Code
+2. `~/.agents/skills/` - User tool-agnostic
+3. `.deepagents/skills/` - Project Deep Agents Code
+4. `.agents/skills/` - Project tool-agnostic *(highest)*
+
+加载 skill 时，Deep Agents Code 会验证 resolved file path 是否仍位于这些 directories 之一内。解析到所有 skill roots 之外的 symlinks 会被拒绝。若要允许 symlink targets 位于额外 directories 中，请参阅 [`[skills].extra_allowed_dirs`](/oss/python/deepagents/code/configuration#skills-extra-allowed-directories)。
+
+### Subagents
+
+Precedence order（从低到高）：
+
+1. `~/.deepagents/{agent}/agents/` - User-level
+2. `.deepagents/agents/` - Project-level *(highest)*
+
+每个 subagent 都是一个带 YAML frontmatter（`name`、`description`、可选 `model`）的 `AGENTS.md` file，并使用 markdown body 作为 system prompt。完整格式参考请参阅 [Use subagents in Deep Agents Code](/oss/python/deepagents/code/subagents)。
+
+### Instructions
+
+所有 instruction sources 都会 **combined**（不是 overridden）：
+
+1. Package base prompt *(always loaded)*
+2. `~/.deepagents/{agent}/AGENTS.md` *(appended)*
+3. `.deepagents/AGENTS.md` *(appended)*
+4. project root 下的 `AGENTS.md` *(appended)*
+
+## `.deepagents` vs `.agents`
+
+| Directory | Purpose | When to use |
+|-----------|---------|-------------|
+| `.deepagents/` | Deep Agents Code-specific | 使用 Deep Agents Code-specific features 的 skills 和 config |
+| `.agents/` | Tool-agnostic | 想在不同 AI CLI tools 之间共享的 skills |
+
+<Tip>
+使用 `.agents/skills/` 存放适用于任何 AI coding assistant 的 skills。
+使用 `.deepagents/skills/` 存放依赖 Deep Agents-specific tools 或 conventions 的 skills。
+</Tip>
+
+## Cleaning up
+
+| Need | Action |
+|------|--------|
+| Reset all data | `rm -rf ~/.deepagents` |
+| Clear sessions only | `rm ~/.deepagents/.state/sessions.db*` |
+| Clear input history | `rm ~/.deepagents/.state/history.jsonl` |
+| Clear stored API keys | `rm ~/.deepagents/.state/auth.json` |
+| Clear MCP OAuth tokens | `rm -rf ~/.deepagents/.state/mcp-tokens` |
+| Re-run first-run onboarding | `rm ~/.deepagents/.state/onboarding_complete` |
+| Reset agent instructions | `dcode agents reset --agent {name}` |
+| Remove a skill | `rm -rf ~/.deepagents/{agent}/skills/{skill-name}` |
+
+<Warning>
+    删除 `~/.deepagents/.state/sessions.db` 会移除所有 conversation history 和 checkpoints。
+
+    除非你有 `sessions.db` file 的 backup，否则此操作无法撤销。
+</Warning>
+
+---
+
+<div className="source-links">
+<Callout icon="terminal-2">
+    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+</Callout>
+<Callout icon="edit">
+    [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/deepagents/code/data-locations.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
+</Callout>
+</div>

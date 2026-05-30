@@ -1,0 +1,493 @@
+---
+title: 自定义 Deep Agents
+sidebarTitle: 自定义
+description: 学习如何用 system prompts、tools、subagents 等方式自定义 Deep Agents
+---
+
+import ChatModelTabsDaPy from '/snippets/chat-model-tabs-da.mdx';
+import ChatModelTabsDaJs from '/snippets/chat-model-tabs-da-js.mdx';
+import HitlBasicConfigPy from '/snippets/code-samples/hitl-basic-config-py.mdx';
+import HitlBasicConfigJs from '/snippets/code-samples/hitl-basic-config-js.mdx';
+import SkillsUsageTabsPy from '/snippets/skills-usage-tabs-py.mdx';
+import SkillsUsageTabsJs from '/snippets/skills-usage-tabs-js.mdx';
+import BackendStatePy from '/snippets/code-samples/backend-state-py.mdx';
+import BackendStateJs from '/snippets/code-samples/backend-state-js.mdx';
+import BackendFilesystemPy from '/snippets/code-samples/backend-filesystem-py.mdx';
+import BackendFilesystemJs from '/snippets/code-samples/backend-filesystem-js.mdx';
+import BackendLocalShellPy from '/snippets/code-samples/backend-local-shell-py.mdx';
+import BackendLocalShellJs from '/snippets/code-samples/backend-local-shell-js.mdx';
+import BackendStorePy from '/snippets/code-samples/backend-store-py.mdx';
+import BackendStoreJs from '/snippets/code-samples/backend-store-js.mdx';
+import BackendContextHubPy from '/snippets/code-samples/backend-context-hub-py.mdx';
+import BackendCompositePy from '/snippets/code-samples/backend-composite-py.mdx';
+import BackendCompositeJs from '/snippets/code-samples/backend-composite-js.mdx';
+import SubagentBasicPy from '/snippets/code-samples/subagent-basic-py.mdx';
+import SubagentBasicJs from '/snippets/code-samples/subagent-basic-js.mdx';
+import SandboxBasicPy from '/snippets/deepagents-sandbox-basic-py.mdx';
+import SandboxBasicJs from '/snippets/deepagents-sandbox-basic-js.mdx';
+import CreateDeepAgentConfigOptionsPy from '/snippets/create-deep-agent-config-options-py.mdx';
+import CreateDeepAgentConfigOptionsJs from '/snippets/create-deep-agent-config-options-js.mdx';
+import CustomizationToolsPy from '/snippets/code-samples/customization-tools-py.mdx';
+import CustomizationToolsJs from '/snippets/code-samples/customization-tools-js.mdx';
+import CustomizationSystemPromptPy from '/snippets/code-samples/customization-system-prompt-py.mdx';
+import CustomizationSystemPromptJs from '/snippets/code-samples/customization-system-prompt-js.mdx';
+import CustomizationMiddlewarePy from '/snippets/code-samples/customization-middleware-py.mdx';
+import CustomizationMiddlewareJs from '/snippets/code-samples/customization-middleware-js.mdx';
+import CustomizationMiddlewareDoPy from '/snippets/code-samples/customization-middleware-do-py.mdx';
+import CustomizationMiddlewareDoJs from '/snippets/code-samples/customization-middleware-do-js.mdx';
+import CustomizationMiddlewareDontPy from '/snippets/code-samples/customization-middleware-dont-py.mdx';
+import CustomizationMiddlewareDontJs from '/snippets/code-samples/customization-middleware-dont-js.mdx';
+import CustomizationInterpretersPy from '/snippets/code-samples/customization-interpreters-py.mdx';
+import CustomizationInterpretersJs from '/snippets/code-samples/customization-interpreters-js.mdx';
+import CustomizationMemoryStatePy from '/snippets/code-samples/customization-memory-state-py.mdx';
+import CustomizationMemoryStateJs from '/snippets/code-samples/customization-memory-state-js.mdx';
+import CustomizationMemoryStorePy from '/snippets/code-samples/customization-memory-store-py.mdx';
+import CustomizationMemoryStoreJs from '/snippets/code-samples/customization-memory-store-js.mdx';
+import CustomizationMemoryFilesystemPy from '/snippets/code-samples/customization-memory-filesystem-py.mdx';
+import CustomizationMemoryFilesystemJs from '/snippets/code-samples/customization-memory-filesystem-js.mdx';
+import CustomizationProfilesPy from '/snippets/code-samples/customization-profiles-py.mdx';
+import CustomizationStructuredOutputPy from '/snippets/code-samples/customization-structured-output-py.mdx';
+import CustomizationStructuredOutputJs from '/snippets/code-samples/customization-structured-output-js.mdx';
+
+围绕你的目标来构建 harness。`create_deep_agent` 会给你一个 production-ready foundation：把它连接到你的数据，塑造它的行为，并添加你的 use case 所需的能力。
+
+
+
+`createDeepAgent` 自带一个预组装的 harness：默认包含 filesystem、summarization、subagents 和 prompt caching。下面这些参数可用于定义 agent persona、连接数据和 tools，并用额外 middleware 扩展 stack。
+
+```typescript
+import { createDeepAgent } from "deepagents";
+
+const agent = await createDeepAgent({
+  model: "anthropic:claude-sonnet-4-6",
+  systemPrompt: "You are a helpful assistant.",
+  tools: [search, fetchUrl],
+  memory: ["./AGENTS.md"],
+  skills: ["./skills/"],
+});
+```
+
+| 参数 | 作用 |
+|---|---|
+| `model` | 使用哪个 model |
+| `systemPrompt` | 给 agent 的自定义 instructions |
+| `tools` | agent 可以调用的 domain tools |
+| `memory` | 启动时加载的 AGENTS.md 文件 |
+| `skills` | 用于按需知识加载的 Skills directory |
+| `backend` | Filesystem backend（默认是 StateBackend） |
+| `permissions` | 文件系统的 path-level access control |
+| `subagents` | 用于 delegated tasks 的 custom subagents |
+| `middleware` | 要添加到 stack 的额外 middleware |
+| `interruptOn` | 在 tool calls 之前暂停以等待 human approval |
+| `responseFormat` | Structured output schema |
+
+完整参数列表请参阅 [`createDeepAgent`](https://reference.langchain.com/javascript/deepagents/types/CreateDeepAgentParams) API reference。若要从零组合一个完全自定义的 harness，请参阅 [Configure the harness](/oss/javascript/langchain/agents#configure-the-harness)。
+
+
+## Model
+
+传入 `provider:model` 格式的 `model` 字符串，或传入 initialized model instance。所有 providers 请参阅 [supported models](/oss/javascript/deepagents/models#supported-models)，经过测试的推荐项请参阅 [suggested models](/oss/javascript/deepagents/models#suggested-models)。
+
+<Tip>
+    使用 `provider:model` 格式（例如 `openai:gpt-5.4`）可以快速在 models 之间切换。
+</Tip>
+
+
+
+<ChatModelTabsDaJs />
+
+
+<Tip>
+    Chat models 会自动重试 transient API failures（使用 exponential backoff）。关于调优 `max_retries` / `timeout` 的 defaults、limits 和 code samples，请参阅 LangChain [Models](/oss/javascript/langchain/models#connection-resilience) 页面。
+</Tip>
+
+## Tools
+
+除了用于 planning、file management 和 subagent spawning 的 [built-in tools](/oss/javascript/deepagents/overview#core-capabilities)，你也可以提供 custom tools：
+
+
+
+<CustomizationToolsJs />
+
+
+## System prompt
+
+Deep Agents 自带 built-in system prompt。deep agent 的价值来自 SDK 在 model 之上提供的 orchestration layer，包括 planning、virtual-filesystem tools 和 subagents；model 需要知道这些能力存在，以及何时应该使用它们。内置 prompt 会教 agent 如何使用这套 scaffolding，因此你不必在每个项目里重新推导它；可以通过 [profile](/oss/javascript/deepagents/profiles#harness-profiles) 或你自己的 `system_prompt=` 来微调，而不是逐字复制它。
+
+当 middleware 添加特殊 tools（例如 filesystem tools）时，它会把这些内容追加到 system prompt。
+
+每个 deep agent 也应该包含一个与具体 use case 相关的 custom system prompt：
+
+
+
+<CustomizationSystemPromptJs />
+
+
+### Prompt assembly
+
+Deep Agents 会从最多四个命名部分构建 system prompt，使调用方提供的 instructions、SDK 内置 agent guidance，以及任何 model-specific [profile](/oss/javascript/deepagents/profiles) overrides 能够以可预测的优先级共存。没有这层结构时，针对 Claude 调优的 profile suffix 可能会根据调用顺序覆盖你的 `system_prompt=` 参数，或被它覆盖；命名 slots 让顺序显式且稳定。
+
+实践中，大多数调用方只会遇到两个 slots：`USER`（你的 `system_prompt=`）和 `BASE`（SDK 默认值）。选择带 built-in profile 的 model（目前是 Anthropic 或 OpenAI）会添加 `SUFFIX`。完整的四段 assembly 主要在你编写 custom `HarnessProfile`，或 debug profile 文本为何出现在某处时才相关。
+
+四个命名部分如下（每个都可能不存在）：
+
+| 名称 | 来源 | 说明 |
+| --- | --- | --- |
+| `USER` | `create_deep_agent` 的 `system_prompt=` 参数 | `str` 或 `SystemMessage`；未设置时省略。 |
+| `BASE` | SDK 默认值（`BASE_AGENT_PROMPT`） | 除非被 profile 的 `CUSTOM` 替换，否则始终存在。 |
+| `CUSTOM` | [`HarnessProfile.base_system_prompt`](/oss/javascript/deepagents/profiles#harness-profiles) | 当匹配 profile 设置它时，会直接替换 `BASE`。 |
+| `SUFFIX` | [`HarnessProfile.system_prompt_suffix`](/oss/javascript/deepagents/profiles#harness-profiles) | 当匹配 profile 设置它时，会追加到最后。 |
+
+顺序始终是 **`USER` -> (`BASE` 或 `CUSTOM`) -> `SUFFIX`**，并用空行（`\n\n`）连接。由此得到两个不变量：
+
+1. **`USER` 始终在最前面。** 调用方文本会先于任何 SDK 或 profile 内容，因此无论选择哪个 model，persona/instructions 都具有优先级。
+2. **`SUFFIX` 始终在最后面。** Profile suffixes 位于最接近 conversation history 的位置，model-tuning guidance 通常在这里最可靠。
+
+组装形态（已设置 = yes，未设置 = no）：
+
+| `system_prompt=` | profile `base_system_prompt` (`CUSTOM`) | profile `system_prompt_suffix` (`SUFFIX`) | 最终组装出的 system prompt |
+| --- | :---: | :---: | --- |
+| `None` | no | no | `BASE` |
+| `None` | no | yes | `BASE` + `SUFFIX` |
+| `None` | yes | no | `CUSTOM` |
+| `None` | yes | yes | `CUSTOM` + `SUFFIX` |
+| `str` | no | no | `USER` + `BASE` |
+| `str` | no | yes | `USER` + `BASE` + `SUFFIX` |
+| `str` | yes | no | `USER` + `CUSTOM` |
+| `str` | yes | yes | `USER` + `CUSTOM` + `SUFFIX` |
+
+示例：built-in profiles（Anthropic、OpenAI）只附带 `system_prompt_suffix`，因此典型调用会落在 `str` + `no` + `yes` 这一行：
+
+```python
+agent = create_deep_agent(
+    model="anthropic:claude-sonnet-4-6",
+    system_prompt="You are a customer-support agent for ACME Corp.",
+)
+# Final = USER + BASE + SUFFIX
+#       = "You are a customer-support agent for ACME Corp."
+#         + "\n\n"
+#         + BASE_AGENT_PROMPT
+#         + "\n\n"
+#         + <Claude-specific guidance>
+```
+
+<Note>
+    传入 `SystemMessage`（而不是字符串）会触发不同的拼接路径：右侧 assembly（`BASE` 或 `CUSTOM`，再加上任何 `SUFFIX`）会作为额外 text content block 追加到该 message 已有的 `content_blocks` 中。逻辑顺序保持不变（调用方 blocks 在前），并且调用方 blocks 上的任何 `cache_control` markers 都会保留，这对放置显式 Anthropic prompt-cache breakpoints 很有用。
+</Note>
+
+<AccordionGroup>
+    <Accordion title="Subagent prompts">
+        同样的 overlay 规则也适用于声明式 [subagents](/oss/javascript/deepagents/subagents)：每个 subagent 会基于**自己的 model**重新执行 profile resolution，然后把解析出的 profile 的 `base_system_prompt` / `system_prompt_suffix` 应用到它自己编写的 `system_prompt` 上。subagent 的 `system_prompt` 扮演 `BASE` 角色；`CUSTOM` 和 `SUFFIX` 来自与 subagent model 匹配的 profile（它可能与 main agent 的 profile 不同）。
+
+        | `spec["system_prompt"]` | profile `base_system_prompt` (`CUSTOM`) | profile `system_prompt_suffix` (`SUFFIX`) | 最终 subagent system prompt |
+        | --- | :---: | :---: | --- |
+        | authored | no | no | authored |
+        | authored | no | yes | authored + `SUFFIX` |
+        | authored | yes | no | `CUSTOM` |
+        | authored | yes | yes | `CUSTOM` + `SUFFIX` |
+
+        subagents 没有 `USER` segment；spec 中编写的 `system_prompt` 是最接近的类比，并留在 `BASE` slot 中。只提供 `system_prompt_suffix` 的 profile（built-in Anthropic / OpenAI profiles 的常见情况）只会追加到 subagent 作者写的内容后面；设置 `base_system_prompt` 的 profile 会直接*替换*原 authored prompt，因此要谨慎使用这个字段。
+    </Accordion>
+    <Accordion title="General-purpose subagent prompt">
+        自动添加的 [general-purpose subagent](/oss/javascript/deepagents/subagents#the-general-purpose-subagent) 遵循相同的 overlay 规则，但多一层：GP base prompt 的解析顺序是 **`general_purpose_subagent.system_prompt`（如果设置） -> `HarnessProfile.base_system_prompt`（如果设置） -> SDK GP default**。profile suffix 会叠加在最终结果之上。
+
+        这两个 override 字段都可以携带 base-prompt replacement，但它们不能互换。`general_purpose_subagent.system_prompt` 是 GP-specific configuration；`base_system_prompt` 是主要面向 main agent 的 global override。当二者都设置时，**GP-specific intent 会在 GP subagent 中胜出**，因此同时调优这两个字段时，用户不会看到 GP override 被悄悄丢弃：
+
+        ```python
+        register_harness_profile(
+            "anthropic",
+            HarnessProfile(
+                base_system_prompt="You are ACME's support orchestrator.",  # main agent
+                general_purpose_subagent=GeneralPurposeSubagentProfile(
+                    system_prompt="You are a research subagent. Cite sources.",  # GP subagent
+                ),
+                system_prompt_suffix="Always think step by step.",
+            ),
+        )
+        ```
+
+        | Stack | 最终 system prompt |
+        | --- | --- |
+        | Main agent | `"You are ACME's support orchestrator." + SUFFIX` |
+        | GP subagent | `"You are a research subagent. Cite sources." + SUFFIX` |
+
+        如果未设置 `general_purpose_subagent.system_prompt`，GP subagent 会回退到 `base_system_prompt`（如果设置），最后再回退到 SDK GP default。
+    </Accordion>
+</AccordionGroup>
+
+## Middleware
+
+Deep Agents 支持任何 [middleware](/oss/javascript/langchain/middleware/overview)，包括下面列出的 built-in middleware、LangChain 的 prebuilt middleware、provider-specific middleware，以及你自己编写的 custom middleware。将 middleware 传给 `create_deep_agent` 的 `middleware` 参数即可。
+
+默认情况下，Deep Agents 可以访问以下 middleware：
+
+- [`TodoListMiddleware`](https://reference.langchain.com/javascript/langchain/index/todoListMiddleware)：跟踪和管理 todo lists，用于组织 agent tasks 和 work
+- [`FilesystemMiddleware`](https://reference.langchain.com/javascript/deepagents/middleware/createFilesystemMiddleware)：处理 file system operations，例如读取、写入和浏览目录
+- [`SubAgentMiddleware`](https://reference.langchain.com/javascript/deepagents/middleware/createSubAgentMiddleware)：生成并协调 subagents，将任务委派给 specialized agents
+- [`SummarizationMiddleware`](https://reference.langchain.com/javascript/langchain/index/summarizationMiddleware)：在 conversations 变长时压缩 message history，使其保持在 context limits 内
+- [`AnthropicPromptCachingMiddleware`](https://reference.langchain.com/javascript/langchain/index/anthropicPromptCachingMiddleware)：使用 Anthropic models 时自动减少重复 token processing
+- [`PatchToolCallsMiddleware`](https://reference.langchain.com/javascript/deepagents/middleware/createPatchToolCallsMiddleware)：当 tool calls 在收到结果前被 interrupted 或 cancelled 时，自动修复 message history
+
+如果你正在使用 memory、skills 或 human-in-the-loop，还会包含以下 middleware：
+
+- [`MemoryMiddleware`](https://reference.langchain.com/javascript/deepagents/middleware/createMemoryMiddleware)：当提供 `memory` 参数时，跨 sessions 持久化并检索 conversation context
+- [`SkillsMiddleware`](https://reference.langchain.com/javascript/deepagents/middleware/createSkillsMiddleware)：当提供 `skills` 参数时启用 custom skills
+- `HumanInTheLoopMiddleware`：当提供 `interruptOn` 参数时，在指定位置暂停以等待 human approval 或 input
+
+### Prebuilt middleware
+
+LangChain 暴露了额外的 prebuilt middleware，可让你添加 retries、fallbacks 或 PII detection 等功能。更多信息请参阅 [Prebuilt middleware](/oss/javascript/langchain/middleware/built-in)。
+
+
+
+`deepagents` package 也暴露了 [`createSummarizationMiddleware`](https://reference.langchain.com/javascript/deepagents/middleware/createSummarizationMiddleware)，用于同样的 workflow。更多细节请参阅 [Summarization](/oss/javascript/deepagents/context-engineering#summarization)。
+
+
+
+### Provider-specific middleware
+
+关于针对特定 LLM providers 优化的 provider-specific middleware，请参阅 [Official integrations](/oss/javascript/integrations/middleware#official-integrations) 和 [Community integrations](/oss/javascript/integrations/middleware#community-integrations)。
+
+### Custom middleware
+
+你可以提供额外 middleware 来扩展功能、添加 tools，或实现 custom hooks：
+
+
+
+<CustomizationMiddlewareJs />
+
+
+<Warning>
+**初始化后不要 mutate attributes**
+
+如果你需要跨 hook invocations 跟踪值（例如 counters 或 accumulated data），请使用 graph state。
+Graph state 按设计 scoped to a thread，因此并发更新是安全的。
+
+**这样做：**
+
+
+
+<CustomizationMiddlewareDoJs />
+
+
+**不要这样做：**
+
+
+
+<CustomizationMiddlewareDontJs />
+
+
+
+原地 mutation（例如在 `beforeAgent` 中修改 `state.x`、在 `beforeAgent` 中 mutate shared variable，或在 hooks 中修改其他 shared values）可能导致隐蔽 bugs 和 race conditions，因为许多操作会并发运行（subagents、parallel tools，以及不同 threads 上的 parallel invocations）。
+
+
+关于使用 custom properties 扩展 state 的完整细节，请参阅 [Custom middleware - Custom state schema](/oss/javascript/langchain/middleware/custom#custom-state-schema)。
+如果你必须在 custom middleware 中使用 mutation，请考虑 subagents、parallel tools 或 concurrent agent invocations 同时运行时会发生什么。
+</Warning>
+
+### Interpreters
+
+使用 [interpreters](/oss/javascript/deepagents/interpreters) 添加一个 `eval` tool，在 scoped QuickJS runtime 中运行 JavaScript。当 agent 需要以编程方式组合 tools、批处理工作、处理代码中的 errors，或在没有完整 shell environment 的情况下转换 structured data 时，interpreters 非常有用。
+
+
+
+<CustomizationInterpretersJs />
+
+
+关于 setup、programmatic tool calling、interpreter skills 和 limits，请参阅 [Interpreters](/oss/javascript/deepagents/interpreters)。
+
+## Subagents
+
+要隔离细节工作并避免 context bloat，请使用 subagents：
+
+
+
+<SubagentBasicJs />
+
+
+更多信息请参阅 [Subagents](/oss/javascript/deepagents/subagents)。
+
+{/* TODO(https://github.com/langchain-ai/docs/pull/2368/) ## Structured response format */}
+
+{/* ## Context - You can persist agent state between runs to store information like user IDs. */}
+
+## Backends
+
+deep agent 的 tools 可以使用 virtual file systems 来存储、访问和编辑文件。默认情况下，deep agents 使用 [`StateBackend`](https://reference.langchain.com/javascript/deepagents/backends/StateBackend)。
+
+如果你正在使用 [skills](#skills) 或 [memory](#memory)，必须先把预期的 skill 或 memory files 添加到 backend，然后再创建 agent。
+
+<Tabs>
+    <Tab title="StateBackend">
+        一个存储在 `langgraph` state 中、thread-scoped 的 filesystem backend。
+
+        文件会在同一个 thread 内跨 turns 持久存在（通过你的 checkpointer），并且不会在 threads 之间共享。
+
+
+
+        <BackendStateJs />
+
+    </Tab>
+    <Tab title="FilesystemBackend">
+        本机的 filesystem。
+
+        <Warning>
+            这个 backend 会授予 agents 直接读写 filesystem 的权限。
+            请谨慎使用，并且只在合适的环境中使用。
+            更多信息请参阅 [`FilesystemBackend`](/oss/javascript/deepagents/backends#filesystembackend-local-disk)。
+        </Warning>
+
+
+
+        <BackendFilesystemJs />
+
+
+        <Tip>
+            将 `FilesystemBackend` 包装在 `CompositeBackend` 中，可以防止 internal agent data（offloaded tool results、conversation history）与你的 project files 一起写入磁盘。请参阅 [recommended pattern](/oss/javascript/deepagents/backends#filesystembackend-local-disk)。
+        </Tip>
+    </Tab>
+    <Tab title="LocalShellBackend">
+        一个可以直接在 host 上执行 shell 的 filesystem。它提供 filesystem tools，以及用于运行命令的 `execute` tool。
+
+        <Warning>
+            这个 backend 会授予 agents 直接 filesystem read/write access，**并**允许在你的 host 上不受限制地执行 shell。
+            请极其谨慎，只在合适的环境中使用。
+            更多信息请参阅 [`LocalShellBackend`](/oss/javascript/deepagents/backends#localshellbackend-local-shell)。
+        </Warning>
+
+
+
+        <BackendLocalShellJs />
+
+    </Tab>
+    <Tab title="StoreBackend">
+        一个提供 long-term storage 的 filesystem，数据会 _跨 threads 持久化_。
+
+
+
+        <BackendStoreJs />
+
+
+        <Note>
+            部署到 [LangSmith Deployment](/langsmith/deployment) 时，请省略 `store` 参数。平台会自动为你的 agent provision 一个 store。
+        </Note>
+
+        <Tip>
+            `namespace` 参数控制 data isolation。对于 multi-user deployments，请始终设置 [namespace factory](/oss/javascript/deepagents/backends#namespace-factories)，按 user 或 tenant 隔离数据。
+        </Tip>
+    </Tab>
+    <Tab title="ContextHubBackend">
+        存储在 LangSmith Hub repo 中的 durable filesystem storage。
+
+
+
+        更多细节请参阅 [`ContextHubBackend`](/oss/javascript/deepagents/backends#contexthubbackend)。
+    </Tab>
+    <Tab title="CompositeBackend">
+        一个灵活的 backend，你可以指定 filesystem 中的不同 routes，让它们指向不同 backends。
+
+
+
+        <BackendCompositeJs />
+
+    </Tab>
+</Tabs>
+
+更多信息请参阅 [Backends](/oss/javascript/deepagents/backends)。
+
+### Sandboxes
+
+Sandboxes 是一类特殊的 [backends](/oss/javascript/deepagents/backends)，它们在隔离环境中运行 agent code，拥有自己的 filesystem，并提供用于 shell commands 的 `execute` tool。
+当你希望 deep agent 写文件、安装依赖并运行命令，同时不改变本机任何内容时，请使用 sandbox backend。
+
+创建 deep agent 时，将 sandbox backend 传给 `backend` 即可配置 sandboxes：
+
+
+
+<SandboxBasicJs />
+
+
+更多信息请参阅 [Sandboxes](/oss/javascript/deepagents/sandboxes)。
+
+## Human-in-the-loop
+
+某些 tool operations 可能很敏感，需要在执行前获得 human approval。
+你可以为每个 tool 配置 approval：
+
+
+
+<HitlBasicConfigJs />
+
+
+你也可以在 tool call 上为 agents 和 subagents 配置 interrupt，也可以从 tool calls 内部触发。
+更多信息请参阅 [Human-in-the-loop](/oss/javascript/deepagents/human-in-the-loop)。
+
+## Skills
+
+你可以使用 [skills](/oss/javascript/deepagents/overview) 为 deep agent 提供新的 capabilities 和 expertise。
+虽然 [tools](/oss/javascript/deepagents/customization#tools) 通常覆盖较底层的功能，例如 native file system actions 或 planning，但 skills 可以包含如何完成任务的详细 instructions、reference info，以及 templates 等其他 assets。
+这些文件只有在 agent 判断某个 skill 对当前 prompt 有用时才会加载。
+这种 progressive disclosure 会减少 agent 在启动时需要考虑的 tokens 和 context。
+
+示例 skills 请参阅 [Deep Agents example skills](https://github.com/langchain-ai/deepagentsjs/tree/main/examples/skills)。
+
+要把 skills 添加到 deep agent，请将它们作为参数传给 `create_deep_agent`：
+
+
+
+<SkillsUsageTabsJs />
+
+
+## Memory
+
+使用 [`AGENTS.md` files](https://agents.md/) 为 deep agent 提供额外 context。
+
+创建 deep agent 时，可以向 `memory` 参数传入一个或多个 file paths：
+
+
+
+<Tabs>
+    <Tab title="StateBackend">
+        <CustomizationMemoryStateJs />
+    </Tab>
+    <Tab title="StoreBackend">
+        <CustomizationMemoryStoreJs />
+    </Tab>
+    <Tab title="Filesystem">
+        <CustomizationMemoryFilesystemJs />
+    </Tab>
+</Tabs>
+
+
+
+
+
+## Structured output
+
+Deep Agents 支持 [structured output](/oss/javascript/langchain/structured-output)。
+
+你可以通过向 `createDeepAgent()` 调用传入 `responseFormat` 参数，设置期望的 structured output schema。
+当 model 生成 structured data 时，它会被捕获、验证，并返回到 agent state 的 `structuredResponse` key 中。
+
+<CustomizationStructuredOutputJs />
+
+
+
+更多信息和示例请参阅 [response format](/oss/javascript/langchain/structured-output#response-format)。
+
+## Advanced
+
+
+
+`createDeepAgent` 会在 `createAgent` 之上预组装 middleware stack。若要构建完全自定义的 agent，也就是精确选择要包含哪些 capabilities，请参阅 [Configure the harness](/oss/javascript/langchain/agents#configure-the-harness)。
+
+---
+
+<div className="source-links">
+<Callout icon="terminal-2">
+    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+</Callout>
+<Callout icon="edit">
+    [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/deepagents/customization.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
+</Callout>
+</div>

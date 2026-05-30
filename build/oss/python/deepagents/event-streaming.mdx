@@ -1,0 +1,225 @@
+---
+title: Event streaming
+description: 从 Deep Agents stream subagents、messages、tool calls 和最终 output。
+---
+
+本页介绍 Deep Agents 特有的 streaming 关注点，最重要的是通过 `stream.subagents` 从被 delegated 的 subagents streaming。关于通用 agent streaming（`stream.messages`、`stream.values`、tool calls、custom updates），请参见 [LangChain Event Streaming](/oss/python/langchain/event-streaming)。
+
+## Stream subagents
+
+Deep Agents 在 LangGraph streaming 之上添加了一个 subagent projection。当你希望每个被 delegated 的 `task` call 都有一个独立 stream handle 时，请使用 `stream.subagents`。这个 projection 很轻量：它会先发现 subagent tasks，只有当你访问某个 subagent handle 上的 messages、tool-call 或 value streams 时，才会打开对应 stream。
+
+```py
+stream = agent.stream_events({
+    "messages": [{"role": "user", "content": "Write me a haiku about the sea"}],
+}, version="v3")
+
+for subagent in stream.subagents:
+    print(subagent.name, subagent.path, subagent.status)
+
+    for message in subagent.messages:
+        print(message.text)
+```
+
+
+
+
+## Subagent stream fields
+
+每个 subagent stream 都会暴露与 parent run 相同类型的 projections，例如 messages、tool calls、nested subagents 和 final output。关于通用 parent-run streaming model，请参见 [LangChain Event Streaming](/oss/python/langchain/event-streaming)。
+
+Python 使用 snake_case projection names，例如 `tool_calls`。每个 subagent stream 可以暴露 `.messages`、`.tool_calls`、`.values`、`.subagents` 和 `.output`。
+
+
+
+
+| Field | Description |
+| ----- | ----------- |
+| `name` | Subagent name。 |
+| `messages` | subagent 发出的 messages。 |
+| `subagents` | Nested subagent invocations。 |
+| `output` | 最终 subagent state，或 delegated task 的 completion signal。 |
+| `path` | subagent stream 的 namespace path。 |
+| `status` | lifecycle status，例如 `started`、`completed`、`failed` 或 `interrupted`。 |
+| `tool_calls` | 作用域限定到 subagent 的 tool calls。 |
+
+
+## 跟踪 subagent lifecycle
+
+当你只需要显示哪些 subagents 已开始和已结束时，请使用 `stream.subagents`。除非你访问某个具体 subagent 上的 message 或 value streams，否则不需要订阅这些 streams。
+
+```py
+stream = agent.stream_events(input, version="v3")
+
+running = 0
+completed = 0
+failed = 0
+
+for subagent in stream.subagents:
+    running += 1
+    print(f"{subagent.name}: started")
+
+    try:
+        _ = subagent.output
+        running -= 1
+        completed += 1
+        print(f"{subagent.name}: completed")
+    except Exception:
+        running -= 1
+        failed += 1
+        print(f"{subagent.name}: failed")
+```
+
+
+
+
+
+## Stream messages
+
+Deep Agents 可以从 coordinator agent 和被 delegated 的 subagents 发出 messages。使用 `stream.messages` 获取 top-level messages，并为每个 delegated subagent 使用 `subagent.messages`。
+
+```py
+stream = agent.stream_events(input, version="v3")
+
+for message in stream.messages:
+    print("[coordinator]", message.text)
+
+for subagent in stream.subagents:
+    for message in subagent.messages:
+        print(f"[{subagent.name}]", message.text)
+```
+
+
+
+
+## Stream tool calls
+
+Deep Agents 会在 agent tree 的每个层级暴露 tool calls。使用 top-level `stream.tool_calls` 获取 coordinator tools，并为 delegated work 使用每个 `subagent.tool_calls`。
+
+```py
+stream = agent.stream_events(input, version="v3")
+
+for call in stream.tool_calls:
+    print("[coordinator tool]", call.tool_name, call.input)
+    print(call.completed, call.error)
+
+for subagent in stream.subagents:
+    for call in subagent.tool_calls:
+        print(f"[{subagent.name} tool]", call.tool_name, call.input)
+        for delta in call.output_deltas:
+            print(delta, end="", flush=True)
+
+        if call.completed and call.error is None:
+            print(call.output)
+        elif call.error is not None:
+            print(call.error)
+```
+
+
+
+
+## Stream nested work
+
+你可以递归进入 subagent stream，观察 nested subagents、messages 和 tool calls。
+
+```py
+stream = agent.stream_events(input, version="v3")
+
+for subagent in stream.subagents:
+    print(f"subagent {subagent.name}: {subagent.status}")
+
+    for tool_call in subagent.tool_calls:
+        print(f"{tool_call.tool_name}({tool_call.input})")
+        for delta in tool_call.output_deltas:
+            print(delta, end="", flush=True)
+
+    for nested in subagent.subagents:
+        print(f"nested subagent {nested.name}: {nested.status}")
+```
+
+
+
+
+## 并发消费
+
+Coordinator 和 subagent output 经常会交错出现。当你需要 live UI updates 时，请并发消费 projections。
+
+在 async code 中并发消费时，请将 `astream_events` 与 `asyncio.gather` 搭配使用：
+
+```py
+import asyncio
+
+stream = await agent.astream_events(input, version="v3")
+
+async def consume_coordinator():
+    async for message in stream.messages:
+        print("[coordinator]", await message.text)
+
+async def consume_subagents():
+    async for subagent in stream.subagents:
+        async for message in subagent.messages:
+            print(f"[{subagent.name}]", await message.text)
+
+await asyncio.gather(consume_coordinator(), consume_subagents())
+```
+
+在 synchronous code 中，请改用 `stream.interleave(...)`：
+
+```py
+stream = agent.stream_events(input, version="v3")
+
+for name, item in stream.interleave("messages", "subagents"):
+    if name == "messages":
+        print("[coordinator]", item.text)
+    else:
+        for message in item.messages:
+            print(f"[{item.name}]", message.text)
+```
+
+
+
+
+当你需要 coordinator 和所有 subagents 之间的精确 arrival order 时，请迭代 raw protocol events，并用 `namespace` 识别来源：
+
+```py
+stream = agent.stream_events(input, version="v3")
+
+for event in stream:
+    if event.get("method") != "messages":
+        continue
+
+    payload = event["params"]["data"][0]
+    if not isinstance(payload, dict):
+        continue
+    if payload.get("event") != "content-block-delta":
+        continue
+
+    block = payload.get("delta") or {}
+    if block.get("type") == "text-delta":
+        source = "subagent" if event["params"]["namespace"] else "coordinator"
+        print(f"[{source}] {block['text']}")
+```
+
+
+
+
+## Subagents 与 subgraphs
+
+`stream.subgraphs` 显示 graph execution structure。`stream.subagents` 显示产品层面的 Deep Agents task delegations。面向用户的 UI 请使用 `stream.subagents`，因为它会隐藏内部 graph nodes，并直接暴露 subagent 概念。
+
+## Related
+
+- [LangChain Event Streaming](/oss/python/langchain/event-streaming) 介绍通用 agent message 和 tool-call streaming 概念。
+- [Subagent frontend streaming](/oss/python/deepagents/frontend/subagent-streaming) 展示将 coordinator messages 与 subagent cards 分开的 UI patterns。
+- [LangGraph Event Streaming](/oss/python/langgraph/event-streaming) 介绍底层 graph streaming model。
+
+---
+
+<div className="source-links">
+<Callout icon="terminal-2">
+    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+</Callout>
+<Callout icon="edit">
+    [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/deepagents/event-streaming.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
+</Callout>
+</div>

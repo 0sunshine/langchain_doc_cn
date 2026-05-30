@@ -1,0 +1,161 @@
+---
+title: Use remote sandboxes
+sidebarTitle: Remote sandboxes
+description: 在 LangSmith、Daytona、Modal、Runloop 或 AgentCore sandboxes 中运行 Deep Agents Code tool execution。安装 provider extras、设置 credentials，并使用 flags 和 setup scripts。
+---
+
+Deep Agents Code 使用 [sandbox as tool](/oss/javascript/deepagents/sandboxes#sandbox-as-tool-pattern) pattern：`dcode` process（LLM loop、memory、tool dispatch）运行在你的机器上，但 agent tool calls（`read_file`、`write_file`、`execute` 等）会指向 remote sandbox，而不是你的 local filesystem。要把 files 放进 sandbox，请使用 [setup script](#setup-scripts) 或 provider 的 file transfer APIs（参见 [Working with files](/oss/javascript/deepagents/sandboxes#working-with-files)）。
+
+如需更深入了解 sandbox architecture、integration patterns 和 security best practices，请参阅 [Sandboxes](/oss/javascript/deepagents/sandboxes)。
+
+<Steps>
+    <Step title="Install provider dependency" icon="download">
+        <Tabs>
+            <Tab title="LangSmith">
+                安装 `deepagents-code` 时默认包含。不需要额外安装。
+            </Tab>
+            <Tab title="Daytona">
+                ```bash
+                uv tool install deepagents-code --with langchain-daytona
+                ```
+            </Tab>
+            <Tab title="Modal">
+                ```bash
+                uv tool install deepagents-code --with langchain-modal
+                ```
+            </Tab>
+            <Tab title="Runloop">
+                ```bash
+                uv tool install deepagents-code --with langchain-runloop
+                ```
+            </Tab>
+            <Tab title="AgentCore">
+                ```bash
+                uv tool install deepagents-code --with langchain-agentcore-codeinterpreter
+                ```
+            </Tab>
+        </Tabs>
+    </Step>
+
+    <Step title="Set provider credentials" icon="key">
+        <Tabs>
+            <Tab title="LangSmith">
+                ```bash
+                export LANGSMITH_API_KEY="your-key"
+                ```
+            </Tab>
+            <Tab title="Daytona">
+                ```bash
+                export DAYTONA_API_KEY="your-key"
+                ```
+            </Tab>
+            <Tab title="Modal">
+                ```bash
+                modal setup
+                ```
+            </Tab>
+            <Tab title="Runloop">
+                ```bash
+                export RUNLOOP_API_KEY="your-key"
+                ```
+            </Tab>
+            <Tab title="AgentCore">
+                ```bash
+                export AWS_ACCESS_KEY_ID="your-key"
+                export AWS_SECRET_ACCESS_KEY="your-secret"
+                export AWS_SESSION_TOKEN="session-token"
+                export AWS_REGION="us-west-2"
+                ```
+            </Tab>
+        </Tabs>
+    </Step>
+
+    <Step title="Run Deep Agents Code with a sandbox" icon="player-play">
+        <Tabs>
+            <Tab title="LangSmith">
+                ```bash
+                dcode --sandbox langsmith
+                ```
+            </Tab>
+            <Tab title="Daytona">
+                ```bash
+                dcode --sandbox daytona
+                ```
+            </Tab>
+            <Tab title="Modal">
+                ```bash
+                dcode --sandbox modal
+                ```
+            </Tab>
+            <Tab title="Runloop">
+                ```bash
+                dcode --sandbox runloop
+                ```
+            </Tab>
+            <Tab title="AgentCore">
+                ```bash
+                dcode --sandbox agentcore
+                ```
+            </Tab>
+        </Tabs>
+    </Step>
+</Steps>
+
+## Sandbox flags and examples
+
+| Flag | Description |
+|------|-------------|
+| `--sandbox TYPE` | 要使用的 sandbox provider：`langsmith`、`agentcore`、`modal`、`daytona` 或 `runloop`（default：`none`） |
+| `--sandbox-id ID` | 通过 ID 复用 existing sandbox，而不是创建新 sandbox。会跳过 creation 和 cleanup。更多信息请参阅你的 sandbox documentation |
+| `--sandbox-setup PATH` | sandbox 创建后在其中运行的 setup script path |
+
+Examples：
+
+```bash
+# Create a new Daytona sandbox
+dcode --sandbox daytona
+
+# Reuse an existing sandbox (skips creation and cleanup)
+dcode --sandbox runloop --sandbox-id dbx_abc123
+
+# Run a setup script after sandbox creation
+dcode --sandbox modal --sandbox-setup ./setup.sh
+```
+
+## Setup scripts
+
+使用 `--sandbox-setup` 在 sandbox 创建后运行 shell script。这对于 cloning repos、installing dependencies 和 configuring environment variables 很有用。
+
+```bash title="setup.sh"
+#!/bin/bash
+set -e
+
+# Clone repository using GitHub token
+git clone https://x-access-token:${GITHUB_TOKEN}@github.com/username/repo.git $HOME/workspace
+cd $HOME/workspace
+
+# Make environment variables persistent
+cat >> ~/.bashrc <<'EOF'
+export GITHUB_TOKEN="${GITHUB_TOKEN}"
+export OPENAI_API_KEY="${OPENAI_API_KEY}"
+cd $HOME/workspace
+EOF
+source ~/.bashrc
+```
+
+Deep Agents Code 会使用你的 local environment variables 展开 setup scripts 中的 `${VAR}` references。把 secrets 存在 local `.env` file 中，供 setup script 访问。
+
+<Warning>
+    Sandboxes 会隔离 code execution，但 agents 面对 untrusted inputs 时仍然容易受到 prompt injection 影响。请使用 human-in-the-loop approval、short-lived secrets，并且只使用 trusted setup scripts。详情请参阅 [Security considerations](/oss/javascript/deepagents/sandboxes#security-considerations)。
+</Warning>
+
+---
+
+<div className="source-links">
+<Callout icon="terminal-2">
+    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+</Callout>
+<Callout icon="edit">
+    [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/deepagents/code/remote-sandboxes.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
+</Callout>
+</div>

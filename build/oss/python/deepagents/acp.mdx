@@ -1,0 +1,157 @@
+---
+title: Agent Client Protocol (ACP)
+description: 通过 Agent Client Protocol (ACP) 暴露 Deep Agents，以便与 code editors 和 IDEs 集成。
+---
+
+[Agent Client Protocol (ACP)](https://agentclientprotocol.com/get-started/introduction) 标准化了 coding agents 与 code editors 或 IDEs 之间的通信。
+通过 ACP protocol，你可以在任何兼容 ACP 的 client 中使用自定义 deep agents，让 code editor 提供 project context，并接收丰富的 updates。
+
+<Note>
+    ACP 是为 agent-editor integrations 设计的。如果你希望 agent 调用由外部 servers 托管的 tools，请参见 [Model Context Protocol (MCP)](/oss/python/langchain/mcp/)。
+</Note>
+
+## Quickstart
+
+安装 ACP integration package：
+
+<CodeGroup>
+```bash pip
+pip install deepagents-acp
+```
+
+```bash uv
+uv add deepagents-acp
+```
+</CodeGroup>
+
+
+
+
+然后通过 ACP 暴露 deep agent。
+
+这会以 stdio mode 启动 ACP server（从 stdin 读取 requests，并向 stdout 写入 responses）。实际使用中，你通常会把它作为由 ACP client（例如你的 editor）启动的命令运行，然后 client 通过 stdio 与 server 通信。
+
+```python icon="server"
+import asyncio
+
+from acp import run_agent
+from deepagents import create_deep_agent
+from langgraph.checkpoint.memory import MemorySaver
+
+from deepagents_acp.server import AgentServerACP
+
+
+async def main() -> None:
+    agent = create_deep_agent(
+        model="google_genai:gemini-3.5-flash",
+        # You can customize your deep agent here: set a custom prompt,
+        # add your own tools, attach middleware, or compose subagents.
+        system_prompt="You are a helpful coding assistant",
+        checkpointer=MemorySaver(),
+    )
+
+    server = AgentServerACP(agent)
+    await run_agent(server)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+
+
+
+
+<Card title="Example coding agent" icon="brand-github" href="https://github.com/langchain-ai/deepagents/blob/main/libs/acp/examples/demo_agent.py">
+  `deepagents-acp` package 包含一个带 filesystem 和 shell 的示例 coding agent，可以直接运行。
+</Card>
+
+
+
+
+## Clients
+
+Deep agents 可以在任何能运行 ACP agent server 的地方工作。一些值得关注的 ACP clients 包括：
+
+- [Zed](https://zed.dev/docs/ai/external-agents)
+- [JetBrains IDEs](https://www.jetbrains.com/help/ai-assistant/acp.html)
+- Visual Studio Code（通过 [vscode-acp](https://github.com/formulahendry/vscode-acp)）
+- Neovim（通过 ACP-compatible plugins）
+
+### Zed
+
+`deepagents` repo 包含一个 [demo ACP entrypoint](https://github.com/langchain-ai/deepagents/blob/main/libs/acp/run_demo_agent.sh)，你可以将它注册到 [Zed](https://zed.dev/docs/ai/external-agents)：
+
+1. Clone `deepagents` repo 并安装 dependencies：
+
+```bash
+git clone https://github.com/langchain-ai/deepagents.git
+cd deepagents/libs/acp
+uv sync --all-groups
+chmod +x run_demo_agent.sh
+```
+
+2. 为 demo agent 配置 credentials：
+
+```bash
+cp .env.example .env
+```
+
+然后在 `.env` 中设置 `ANTHROPIC_API_KEY`。
+
+3. 在 Zed 的 `settings.json` 中配置 ACP agent server command：
+
+```json
+{
+  "agent_servers": {
+    "DeepAgents": {
+      "type": "custom",
+      "command": "/your/absolute/path/to/deepagents/libs/acp/run_demo_agent.sh"
+    }
+  }
+}
+```
+
+4. 打开 Zed 的 Agents panel，并启动一个 Deep Agents thread。
+
+
+
+
+
+### Toad
+
+如果你想把 ACP agent server 作为本地 dev tool 运行，可以使用 [Toad](https://github.com/batrachianai/toad) 管理这个进程。
+
+```bash
+uv tool install -U batrachian-toad
+
+toad acp "python path/to/your_server.py" .
+# or
+toad acp "uv run python path/to/your_server.py" .
+```
+
+
+
+
+
+
+
+
+
+
+<Info>
+    协议细节和 editor 支持请参见 upstream ACP docs：
+    - Introduction: https://agentclientprotocol.com/get-started/introduction
+    - Clients/editors: https://agentclientprotocol.com/get-started/clients
+</Info>
+
+---
+
+<div className="source-links">
+<Callout icon="terminal-2">
+    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+</Callout>
+<Callout icon="edit">
+    [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/deepagents/acp.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
+</Callout>
+</div>

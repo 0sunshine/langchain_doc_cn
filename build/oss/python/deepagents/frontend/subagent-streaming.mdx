@@ -1,0 +1,461 @@
+---
+title: Subagent streaming
+description: 使用 streaming content、progress tracking 和 collapsible cards 展示 specialist subagents
+---
+
+当 coordinator agent 生成 specialist subagents（researcher、analyst、writer）时，你需要将 orchestrator 的 messages 与每个 subagent 的 streaming output 分开渲染。在 `useStream` 中设置 `filterSubagentMessages: true`，可以清晰地拆分这两条 streams，然后使用 `getSubagentsByMessage` 将每个 subagent 的 progress card 附加到触发它的 coordinator message 上。
+
+import { PatternEmbed } from "/snippets/pattern-embed.jsx"
+
+<PatternEmbed pattern="deep-agent-subagent-cards" />
+
+## 为什么过滤 subagent messages
+
+如果不进行过滤，每个 subagent 生成的每个 token 都会交错出现在 coordinator 的 message stream 中，导致不可读。启用 `filterSubagentMessages: true` 后：
+
+- `stream.messages` 只包含 coordinator 的 messages
+- 每个 subagent 的内容可以通过 `stream.subagents` 和 `stream.getSubagentsByMessage` 访问
+- UI 保持清晰：coordinator 的 reasoning 与 specialists 的工作相互分离
+
+这种分离让你可以在一个位置渲染 orchestrator 的 messages，并把每个 subagent 的 progress card 准确地放到它所属的位置：触发该 subagent 的 coordinator message 下方。
+
+## 设置 useStream
+
+始终设置 `filterSubagentMessages: true`。它会从 main message stream 中移除 subagent tokens，让你可以独立渲染 coordinator messages 和 subagent output。
+
+定义一个与你的 agent state schema 匹配的 TypeScript interface，并将它作为 type parameter 传给 `useStream`，从而类型安全地访问 state values。在下面的示例中，请将 `typeof myAgent` 替换为你的 interface 名称：
+
+```ts
+import type { BaseMessage } from "@langchain/core/messages";
+
+interface AgentState {
+  messages: BaseMessage[];
+}
+```
+
+
+
+
+
+<CodeGroup>
+```tsx React
+import { useStream } from "@langchain/react";
+
+const AGENT_URL = "http://localhost:2024";
+
+export function DeepAgentChat() {
+  const stream = useStream<typeof myAgent>({
+    apiUrl: AGENT_URL,
+    assistantId: "deep_agent_subagent_cards",
+    filterSubagentMessages: true,
+  });
+
+  return (
+    <div>
+      {stream.messages.map((msg) => (
+        <MessageWithSubagents
+          key={msg.id}
+          message={msg}
+          subagents={stream.getSubagentsByMessage(msg.id)}
+        />
+      ))}
+    </div>
+  );
+}
+```
+
+```vue Vue
+<script setup lang="ts">
+import { useStream } from "@langchain/vue";
+
+const AGENT_URL = "http://localhost:2024";
+
+const stream = useStream<typeof myAgent>({
+  apiUrl: AGENT_URL,
+  assistantId: "deep_agent_subagent_cards",
+  filterSubagentMessages: true,
+});
+</script>
+
+<template>
+  <div>
+    <MessageWithSubagents
+      v-for="msg in stream.messages.value"
+      :key="msg.id"
+      :message="msg"
+      :subagents="stream.getSubagentsByMessage(msg.id)"
+    />
+  </div>
+</template>
+```
+
+```svelte Svelte
+<script lang="ts">
+  import { useStream } from "@langchain/svelte";
+
+  const AGENT_URL = "http://localhost:2024";
+
+  const { messages, getSubagentsByMessage, submit } = useStream<typeof myAgent>({
+    apiUrl: AGENT_URL,
+    assistantId: "deep_agent_subagent_cards",
+    filterSubagentMessages: true,
+  });
+</script>
+
+<div>
+  {#each $messages as msg (msg.id)}
+    <MessageWithSubagents
+      message={msg}
+      subagents={getSubagentsByMessage(msg.id)}
+    />
+  {/each}
+</div>
+```
+
+```ts Angular
+import { Component } from "@angular/core";
+import { useStream } from "@langchain/angular";
+
+const AGENT_URL = "http://localhost:2024";
+
+@Component({
+  selector: "app-deep-agent-chat",
+  template: `
+    @for (msg of stream.messages(); track msg.id) {
+      <app-message-with-subagents
+        [message]="msg"
+        [subagents]="stream.getSubagentsByMessage(msg.id)"
+      />
+    }
+  `,
+})
+export class DeepAgentChatComponent {
+  stream = useStream<typeof myAgent>({
+    apiUrl: AGENT_URL,
+    assistantId: "deep_agent_subagent_cards",
+    filterSubagentMessages: true,
+  });
+}
+```
+</CodeGroup>
+
+## 使用 subgraph streaming 提交
+
+提交 message 时，启用 subgraph streaming，并设置合适的 recursion limit。Deep agent workflows 往往包含多层 nested subgraphs，因此更高的 recursion limit 可以防止过早终止：
+
+```ts
+stream.submit(
+  { messages: [{ type: "human", content: text }] },
+  { streamSubgraphs: true }
+);
+```
+
+<Note>
+Deep Agents 设置了默认 recursion limit 10,000，足以满足大多数 multi-expert setups。如有需要，你可以通过 `config.recursion_limit` 覆盖它。
+</Note>
+
+## SubagentStreamInterface
+
+每个 subagent 都会暴露一个 `SubagentStreamInterface`，其中包含 subagent task、status 和 timing 相关 metadata：
+
+```ts
+interface SubagentStreamInterface {
+  id: string;
+  status: "pending" | "running" | "complete" | "error";
+  messages: BaseMessage[];
+  result: string | undefined;
+  toolCall: {
+    id: string;
+    name: string;
+    args: {
+      description: string;
+      subagent_type: string;
+      [key: string]: unknown;
+    };
+  };
+  startedAt: number | undefined;
+  completedAt: number | undefined;
+}
+```
+
+| Property | Description |
+| --- | --- |
+| `id` | 此 subagent instance 的唯一标识符 |
+| `status` | Lifecycle state：`pending` -> `running` -> `complete` 或 `error` |
+| `messages` | subagent 自己的 message stream，会实时更新 |
+| `result` | 最终 output text，仅当 `status` 为 `"complete"` 时可用 |
+| `toolCall` | 生成这个 subagent 的 tool call，包含 task metadata |
+| `toolCall.args.description` | coordinator 分配给该 subagent 的 task description |
+| `toolCall.args.subagent_type` | specialist 的类型或名称（例如 `"researcher"`、`"analyst"`） |
+| `startedAt` | subagent 开始执行时的 timestamp |
+| `completedAt` | subagent 完成时的 timestamp |
+
+## 将 subagents 关联到 messages
+
+`getSubagentsByMessage` method 会返回由特定 AI message 生成的 subagents。这样你就可以将 subagent cards 直接渲染在触发它们的 coordinator message 下方：
+
+```ts
+const turnSubagents = stream.getSubagentsByMessage(msg.id);
+```
+
+它返回一个 `SubagentStreamInterface` objects array。如果该 message 没有生成任何 subagents，则返回空 array。
+
+## 构建 SubagentCard
+
+每个 subagent card 会显示 specialist 的 name、task description、streaming content 或 final result，以及 timing information：
+
+```tsx
+import { AIMessage } from "@langchain/core/messages";
+
+function SubagentCard({
+  subagent,
+}: {
+  subagent: SubagentStreamInterface;
+}) {
+  const [expanded, setExpanded] = useState(true);
+
+  const title =
+    subagent.toolCall?.args?.subagent_type ?? `Agent ${subagent.id}`;
+  const description = subagent.toolCall?.args?.description ?? "";
+
+  const lastAIMessage = subagent.messages
+    .filter(AIMessage.isInstance)
+    .at(-1);
+
+  const displayContent =
+    subagent.status === "complete"
+      ? subagent.result
+      : typeof lastAIMessage?.content === "string"
+        ? lastAIMessage.content
+        : "";
+
+  const elapsed = getElapsedTime(subagent.startedAt, subagent.completedAt);
+
+  return (
+    <div className="rounded-lg border bg-white shadow-sm">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full items-center justify-between p-4"
+      >
+        <div className="flex items-center gap-3">
+          <StatusIcon status={subagent.status} />
+          <div>
+            <h4 className="font-semibold capitalize">{title}</h4>
+            <p className="text-xs text-gray-500">{description}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {elapsed && (
+            <span className="text-xs text-gray-400">{elapsed}</span>
+          )}
+          <StatusBadge status={subagent.status} />
+        </div>
+      </button>
+
+      {expanded && displayContent && (
+        <div className="border-t px-4 py-3">
+          <div className="prose prose-sm max-w-none line-clamp-6">
+            {displayContent}
+            {subagent.status === "running" && (
+              <span className="inline-block h-4 w-1 animate-pulse bg-blue-500" />
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function getElapsedTime(
+  startedAt: number | undefined,
+  completedAt: number | undefined
+): string | null {
+  if (!startedAt) return null;
+  const end = completedAt ?? Date.now();
+  const seconds = Math.round((end - startedAt) / 1000);
+  if (seconds < 60) return `${seconds}s`;
+  return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+}
+```
+
+## Status icons and badges
+
+一致的 visual indicators 能帮助用户一眼理解 subagent status：
+
+```tsx
+function StatusIcon({ status }: { status: SubagentStreamInterface["status"] }) {
+  switch (status) {
+    case "pending":
+      return <span className="text-gray-400">○</span>;
+    case "running":
+      return <span className="animate-spin text-blue-500">◌</span>;
+    case "complete":
+      return <span className="text-green-500">✓</span>;
+    case "error":
+      return <span className="text-red-500">✕</span>;
+  }
+}
+
+function StatusBadge({ status }: { status: SubagentStreamInterface["status"] }) {
+  const styles = {
+    pending: "bg-gray-100 text-gray-600",
+    running: "bg-blue-100 text-blue-700",
+    complete: "bg-green-100 text-green-700",
+    error: "bg-red-100 text-red-700",
+  };
+
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${styles[status]}`}>
+      {status}
+    </span>
+  );
+}
+```
+
+## Progress tracking
+
+显示 progress bar 和 counter，让用户知道已经有多少 subagents 完成：
+
+```tsx
+function SubagentProgress({
+  subagents,
+}: {
+  subagents: SubagentStreamInterface[];
+}) {
+  const completed = subagents.filter((s) => s.status === "complete").length;
+  const total = subagents.length;
+  const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between text-xs text-gray-500">
+        <span>Subagent progress</span>
+        <span>
+          {completed}/{total} complete
+        </span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-gray-200">
+        <div
+          className="h-full rounded-full bg-blue-500 transition-all duration-300"
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+```
+
+## 用 subagent cards 渲染 messages
+
+关键 layout pattern 是渲染每条 coordinator message；如果该 message 生成了 subagents，就在它下方立即渲染它们的 cards：
+
+```tsx
+function MessageWithSubagents({
+  message,
+  subagents,
+}: {
+  message: BaseMessage;
+  subagents: SubagentStreamInterface[];
+}) {
+  if (message.type === "human") {
+    return <HumanMessage content={message.content} />;
+  }
+
+  return (
+    <div className="space-y-3">
+      {message.content && (
+        <div className="prose prose-sm max-w-none">
+          {message.content}
+        </div>
+      )}
+
+      {subagents.length > 0 && (
+        <div className="ml-4 space-y-3 border-l-2 border-blue-200 pl-4">
+          <SubagentProgress subagents={subagents} />
+          {subagents.map((subagent) => (
+            <SubagentCard key={subagent.id} subagent={subagent} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+## Synthesis indicator
+
+所有 subagents 完成后，coordinator 需要时间把它们的 results 合成为最终 response。在这个阶段显示清晰的 indicator：
+
+```tsx
+function SynthesisIndicator({
+  subagents,
+  isLoading,
+}: {
+  subagents: SubagentStreamInterface[];
+  isLoading: boolean;
+}) {
+  const allComplete =
+    subagents.length > 0 &&
+    subagents.every((s) => s.status === "complete" || s.status === "error");
+
+  if (!allComplete || !isLoading) return null;
+
+  return (
+    <div className="flex items-center gap-2 rounded-lg bg-purple-50 px-4 py-2 text-sm text-purple-700">
+      <span className="animate-spin">◌</span>
+      Synthesizing results from {subagents.length} subagent
+      {subagents.length !== 1 ? "s" : ""}...
+    </div>
+  );
+}
+```
+
+<Tip>
+对于复杂 multi-expert workflows，synthesis phase 可能需要几秒钟。清晰的 "Synthesizing results..." indicator 可以避免用户误以为 agent 卡住了。
+</Tip>
+
+## Debug unfiltered output
+
+开发期间，你可以临时设置 `filterSubagentMessages: false`，在 main message stream 中查看来自所有 subagents 的原始交错 output。这有助于验证 subagent tokens 是否正确流动，但不应在 production UIs 中使用。
+
+## Use cases
+
+当你的 agent workflow 涉及以下内容时，deep agent subagent cards 是合适选择：
+
+- **Deep research**：coordinator 派发 researchers 调查问题的不同方面，然后综合 findings
+- **Multi-expert analysis**：例如 legal、financial、technical 等 domain specialists 分别贡献视角
+- **Complex task decomposition**：planner 将大型 task 拆成 subtasks，并分配给 specialist worker
+- **Code review pipelines**：独立 agents 分别处理 security review、style checking、performance analysis 和 documentation review
+
+## 访问完整 subagents map
+
+除了按 message 查询之外，你还可以通过 `stream.subagents` 一次性访问所有 subagents：
+
+```ts
+const allSubagents = [...stream.subagents.values()];
+const running = allSubagents.filter((s) => s.status === "running");
+const completed = allSubagents.filter((s) => s.status === "complete");
+const errors = allSubagents.filter((s) => s.status === "error");
+```
+
+这对于构建 global progress indicators 或 dashboards 很有用，可以汇总所有 subagent activity，而不管它们是由哪条 coordinator message 生成的。
+
+## Best practices
+
+- **始终设置 `filterSubagentMessages: true`**。未过滤 streams 会产生 coordinator 和 subagent tokens 的不可读交错。
+- **显示 task descriptions**。`toolCall.args.description` field 会告诉用户每个 subagent 具体被要求做什么。请始终突出显示它。
+- **使用 collapsible cards**。在包含 5 个以上 subagents 的 workflows 中，自动折叠 completed cards，让用户聚焦 active work。
+- **显示 timing data**。展示每个 subagent 花费的时间，有助于用户理解 performance characteristics 并识别 bottlenecks。
+- **设置合适的 recursion limit**。带 nested subgraphs 的 deep agent workflows 需要高于默认 25 的限制。可以从 100 开始。
+- **按 subagent 处理 errors**。一个 subagent 失败不应导致整个 UI 崩溃。请在该 subagent card 中显示 error，同时让其他 subagents 继续运行。
+
+---
+
+<div className="source-links">
+<Callout icon="terminal-2">
+    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+</Callout>
+<Callout icon="edit">
+    [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/deepagents/frontend/subagent-streaming.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
+</Callout>
+</div>

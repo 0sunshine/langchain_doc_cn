@@ -1,0 +1,491 @@
+---
+title: Skills
+description: 学习如何用 skills 扩展 deep agent 的能力
+---
+
+import SkillsUsageTabsPy from '/snippets/skills-usage-tabs-py.mdx';
+import SkillsUsageTabsJs from '/snippets/skills-usage-tabs-js.mdx';
+import SkillsSandboxPy from '/snippets/code-samples/skills-sandbox-py.mdx';
+import SkillsSandboxJs from '/snippets/code-samples/skills-sandbox-js.mdx';
+
+Skills 是可复用的 agent capabilities，用于提供 specialized workflows 和 domain knowledge。
+
+
+
+你可以使用 [Agent Skills](https://agentskills.io/) 为 deep agent 提供新的能力和专业知识。如果需要能提升 agent 在 LangChain ecosystem tasks 上表现的现成 skills，请参见 [LangChain Skills](https://github.com/langchain-ai/langchain-skills) repository。
+
+Deep agent skills 遵循 [Agent Skills specification](https://agentskills.io/specification)，并额外支持 interpreter skills。interpreter skills 让你可以提供带有 importable functions 的 skills，供 interpreter 调用。
+
+## 什么是 skills
+
+Skills 是一组 folders 目录，每个 folder 中包含一个或多个 agent 可以使用的 context files：
+
+- 一个 `SKILL.md` 文件，包含该 skill 的 instructions 和 metadata
+- 额外 scripts（可选）
+- 额外 reference info，例如 docs（可选）
+- 额外 assets，例如 templates 和其他 resources（可选）
+
+<Note>
+    任何额外 assets（scripts、docs、templates 或其他 resources）都必须在 `SKILL.md` 文件中被引用，并说明该文件包含什么以及如何使用，这样 agent 才能判断何时使用它们。
+</Note>
+
+## Skills 如何工作
+
+创建 deep agent 时，你可以传入一组包含 skills 的 directories。agent 启动时，会读取每个 `SKILL.md` 文件的 frontmatter。
+
+当 agent 收到 prompt 时，它会检查在完成该 prompt 时是否可以使用任何 skills。如果找到匹配的 prompt，它再读取该 skill 的其余文件。这种仅在需要时读取 skill 信息的模式称为 *progressive disclosure*。
+
+## 示例
+
+你可能有一个 skills folder，其中包含一个按特定方式使用 docs site 的 skill，以及另一个用于搜索 arXiv research papers preprint repository 的 skill：
+
+```plaintext
+skills/
+|-- langgraph-docs/
+|   `-- SKILL.md
+`-- arxiv_search/
+    |-- SKILL.md
+    `-- arxiv_search.py # code for searching arXiv
+```
+
+
+
+
+`SKILL.md` 文件总是遵循相同模式：以 frontmatter 中的 metadata 开头，后面跟着 skill instructions。
+
+下面的示例展示了一个 skill，它说明在收到相关 prompt 时如何提供 relevant langgraph docs：
+
+````md
+---
+name: langgraph-docs
+description: Use this skill for requests related to LangGraph in order to fetch relevant documentation to provide accurate, up-to-date guidance.
+module: index.ts
+---
+
+# langgraph-docs
+
+## Overview
+
+This skill explains how to access LangGraph Python documentation to help answer questions and guide implementation.
+
+## Instructions
+
+### 1. Fetch the Documentation Index
+
+Use the fetch_url tool to read the following URL:
+https://docs.langchain.com/llms.txt
+
+This provides a structured list of all available documentation with descriptions.
+
+### 2. Select Relevant Documentation
+
+Based on the question, identify 2-4 most relevant documentation URLs from the index. Prioritize:
+
+- Specific how-to guides for implementation questions
+- Core concept pages for understanding questions
+- Tutorials for end-to-end examples
+- Reference docs for API details
+
+### 3. Fetch Selected Documentation
+
+Use the fetch_url tool to read the selected documentation URLs.
+
+### 4. Provide accurate guidance
+
+After reading the documentation, answer the user's question using the relevant LangGraph docs you fetched.
+
+In your response:
+
+- Give a direct answer first.
+- Include the minimum necessary context and any key steps or API names.
+- Avoid quoting long passages. Paraphrase and link instead.
+
+### 5. Provide the regular links for the used references
+
+At the end of your response, include a **References** section listing the page URLs you used.
+
+`llms.txt` uses Markdown link targets that typically end in `.md`. Use the helper from this skill module to resolve those into the actual page URLs before listing them as references.
+
+```typescript
+const { resolveLlmsUrl } = await import("@/skills/langgraph-docs");
+
+// llms.txt uses Markdown link targets that typically end in `.md`.
+// Convert those into the actual page URLs before fetching.
+const llmsUrls = [
+  "https://docs.langchain.com/oss/langgraph/concepts.md",
+  "https://docs.langchain.com/oss/langgraph/concepts.md",
+  "https://docs.langchain.com/oss/langgraph/tutorials.md",
+];
+
+const pageUrls = [...new Set(llmsUrls.map(resolveLlmsUrl))];
+pageUrls;
+```
+````
+
+被引用的 helper code 会放在 `index.ts` 中：
+
+```typescript
+// index.ts
+export function resolveLlmsUrl(url: string) {
+  return url.endsWith(".md") ? url.slice(0, -3) : url;
+}
+```
+
+更多示例 skills 请参见 [Deep Agents example skills](https://github.com/langchain-ai/deepagents/tree/main/libs/cli/examples/skills)。
+
+
+
+
+<Warning>
+    **Important**
+
+    编写 skill files 时的 constraints 和 best practices，请参考完整的 [Agent Skills Specification](https://agentskills.io/specification)。特别注意：
+
+    * 如果 `description` field 超过 1024 个字符，会被截断到 1024 个字符。
+    * 在 Deep Agents 中，`SKILL.md` files 必须小于 10 MB。超过此限制的文件会在 skill loading 期间被跳过。
+</Warning>
+
+### 完整示例
+
+下面的示例展示了一个使用所有可用 frontmatter fields 的 `SKILL.md` 文件：
+
+````md expandable
+---
+name: langgraph-docs
+description: Use this skill for requests related to LangGraph in order to fetch relevant documentation to provide accurate, up-to-date guidance.
+license: MIT
+compatibility: Requires internet access for fetching documentation URLs
+metadata:
+  author: langchain
+  version: "1.0"
+allowed-tools: fetch_url
+module: index.ts
+---
+
+# langgraph-docs
+
+## Overview
+
+This skill explains how to access LangGraph Python documentation to help answer questions and guide implementation.
+
+## Instructions
+
+### 1. Fetch the documentation index
+
+Use the fetch_url tool to read the following URL:
+https://docs.langchain.com/llms.txt
+
+This provides a structured list of all available documentation with descriptions.
+
+### 2. Select relevant documentation
+
+Based on the question, identify 2-4 most relevant documentation URLs from the index. Prioritize:
+
+- Specific how-to guides for implementation questions
+- Core concept pages for understanding questions
+- Tutorials for end-to-end examples
+- Reference docs for API details
+
+### 3. Fetch selected documentation
+
+Use the fetch_url tool to read the selected documentation URLs.
+
+### 4. Provide accurate guidance
+
+After reading the documentation, answer the user's question using the relevant LangGraph docs you fetched.
+
+In your response:
+
+- Give a direct answer first.
+- Include the minimum necessary context and any key steps or API names.
+- Avoid quoting long passages. Paraphrase and link instead.
+
+### 5. Provide the regular links for the used references
+
+At the end of your response, include a **References** section listing the page URLs you used.
+
+`llms.txt` uses Markdown link targets that typically end in `.md`. Use the helper from this skill module to resolve those into the actual page URLs before listing them as references.
+
+```typescript
+const { resolveLlmsUrl } = await import("@/skills/langgraph-docs");
+
+// llms.txt uses Markdown link targets that typically end in `.md`.
+// Convert those into the actual page URLs before fetching.
+const llmsUrls = [
+  "https://docs.langchain.com/oss/langgraph/concepts.md",
+  "https://docs.langchain.com/oss/langgraph/concepts.md",
+  "https://docs.langchain.com/oss/langgraph/tutorials.md",
+];
+
+const pageUrls = [...new Set(llmsUrls.map(resolveLlmsUrl))];
+pageUrls;
+```
+````
+
+## Usage
+
+创建 deep agent 时传入 skills directory：
+
+<SkillsUsageTabsPy />
+
+<ParamField body="skills" type="list[str]" optional>
+    skill source paths 列表。
+
+    Paths 必须使用 forward slashes 指定，并且相对于 backend root。
+
+    - 如果省略，则不加载 skills。
+    - 使用 `StateBackend`（默认）时，请通过 `invoke(files={...})` 提供 skill files。使用 `deepagents.backends.utils` 中的 `create_file_data()` 格式化文件内容；不支持 raw strings。
+    - 使用 `FilesystemBackend` 时，skills 会从相对于 backend `root_dir` 的磁盘位置加载。
+
+    对于同名 skills，后面的 sources 会覆盖前面的 sources（last one wins）。
+</ParamField>
+
+
+
+
+
+<Note>
+    SDK 只会加载你通过 `skills` 传入的 sources。它不会自动扫描 CLI directories，例如 `~/.deepagents/...` 或 `~/.agents/...`。
+
+    关于 CLI storage conventions，请参见 [App data](/oss/python/deepagents/data-locations)。
+
+    <Accordion
+        title="在 SDK 中模拟 CLI source order"
+    >
+        如果你希望在 SDK code 中使用 CLI-style layering，请按从低到高 precedence 的顺序显式传入所有 desired sources：
+
+        ```text
+        [
+        "<user-home>/.deepagents/{agent}/skills/",
+        "<user-home>/.agents/skills/",
+        "<project-root>/.deepagents/skills/",
+        "<project-root>/.agents/skills/",
+        ]
+        ```
+
+        然后在创建 agent 时，将这个有序列表作为 `skills` 传入。
+    </Accordion>
+</Note>
+
+
+## Source precedence
+
+当多个 skill sources 包含同名 skill 时，在 `skills` array 中靠后的 source 中的 skill 优先（last one wins）。这让你可以从不同 origins 分层组合 skills。
+
+```python
+# If both sources contain a skill named "web-search",
+# the one from "/skills/project/" wins (loaded last).
+agent = create_deep_agent(
+    model="google_genai:gemini-3.5-flash",
+    skills=["/skills/user/", "/skills/project/"],
+    ...
+)
+```
+
+
+
+
+## Subagents 的 skills
+
+使用 [subagents](/oss/python/deepagents/subagents) 时，你可以配置每种 subagent 可以访问哪些 skills：
+
+- **General-purpose subagent**：当你向 `create_deep_agent` 传入 `skills` 时，会自动继承 main agent 的 skills。不需要额外配置。
+- **Custom subagents**：不会继承 main agent 的 skills。需要在每个 subagent definition 中添加 `skills` 参数，并传入该 subagent 的 skill source paths。
+
+Skill state 是完全隔离的：main agent 的 skills 对 subagents 不可见，subagent skills 对 main agent 也不可见。
+
+```python
+from deepagents import create_deep_agent
+
+research_subagent = {
+    "name": "researcher",
+    "description": "Research assistant with specialized skills",
+    "system_prompt": "You are a researcher.",
+    "tools": [web_search],
+    "skills": ["/skills/research/", "/skills/web-search/"],  # Subagent-specific skills
+}
+
+agent = create_deep_agent(
+    model="google_genai:gemini-3.5-flash",
+    skills=["/skills/main/"],  # Main agent and GP subagent get these
+    subagents=[research_subagent],  # Researcher gets only its own skills
+)
+```
+
+
+
+
+关于 subagent configuration 和 skills inheritance 的更多信息，请参见 [Subagents](/oss/python/deepagents/subagents)。
+
+## Agent 会看到什么
+
+配置 skills 后，一个 "Skills System" section 会被注入 agent 的 system prompt。agent 使用这些信息遵循三步流程：
+
+1. **Match**：当 user prompt 到达时，agent 检查是否有任何 skill 的 description 匹配该 task。
+2. **Read**：如果某个 skill 适用，agent 会使用 skills list 中显示的 path 读取完整 `SKILL.md` 文件。
+3. **Execute**：agent 遵循该 skill 的 instructions，并按需访问任何 supporting files（scripts、templates、reference docs）。
+
+<Tip>
+    在 `SKILL.md` frontmatter 中写清晰、具体的 descriptions。agent 只会根据 description 判断是否使用某个 skill；详细 descriptions 会带来更好的 skill matching。
+</Tip>
+
+## 使用 skills 执行代码
+
+Skills 通过两种方式支持 code execution：
+
+- 当 agent 需要可从 interpreter code 使用的 reusable、importable helpers 时，请[使用 interpreter skills](#use-interpreter-skills)。
+- 当 agent 需要安装 dependencies、运行 tests、调用 CLIs，或使用 operating-system filesystem 时，请[在 sandbox 中执行 skill scripts](#execute-skill-scripts-in-a-sandbox)。
+
+### 使用 interpreter skills
+
+Interpreter skills 是向 [interpreter](/oss/python/deepagents/interpreters) 暴露 code modules 的 skills。常规 skills 为 agent 提供 instructions 和 context。Interpreter skills 还会给 agent 提供 importable functions，让它能从 interpreter code 调用。
+
+这让你可以把 domain-specific logic 打包一次，并将它作为 deterministic building block 提供给 agent workspace。agent 不必要求 model 从头重新创建 parser、scorer、normalizer、validator 或 aggregation routine，而是可以 import 经过测试的 helper，并将其与 tools、subagents 和 runtime state 组合。
+
+适合 interpreter skills 的代码通常应该是：
+
+- **Reusable**：可跨 prompts、agents 或 projects 使用。
+- **Deterministic**：足够确定性，且你希望每次行为一致。
+- **Too detailed**：过于细节化，不适合作为 instructions 放进 model context。
+- **Useful inside larger workflows**：适用于更大 workflows，例如 scoring search results、normalizing API responses、validating records、grouping rows，或将 data 转成适合 report 的形态。
+
+要让 skill 可 import：
+
+<Steps titleSize="h4">
+    <Step title="添加 module entry">
+        在 skill 的 `SKILL.md` frontmatter 中添加 `module` key。值是相对于 skill directory 的 JavaScript 或 TypeScript file path。
+    </Step>
+    <Step title="正常配置 skills">
+        创建 agent 时，通过 `skills` argument 传入 skill source path。
+    </Step>
+    <Step title="使用同一个 backend">
+        为 interpreter middleware 配置与 `SkillsMiddleware` 加载 skill files 时使用的同一个 backend。
+    </Step>
+    <Step title="从 interpreter code import">
+        agent 使用 `await import("@/skills/<name>")` import helper module。
+    </Step>
+</Steps>
+
+最小 skill layout：
+
+```text
+skills/
+`-- order-helpers/
+    |-- SKILL.md
+    `-- index.ts
+```
+
+````md
+---
+name: order-helpers
+description: Helper functions for normalizing and grouping order records.
+module: index.ts
+---
+
+# order-helpers
+
+Use this skill when order records need deterministic cleanup or aggregation.
+
+Import these utilities into the REPL in order to interact with order data:
+
+```typescript
+const { groupByStatus } = await import("@/skills/order-helpers");
+groupByStatus(...);
+```
+````
+
+```typescript
+// skills/order-helpers/index.ts
+interface Order {
+  id: string;
+  status: string;
+}
+
+export function groupByStatus(orders: Order[]) {
+  return orders.reduce((acc, order) => {
+    acc[order.status] = acc[order.status] ?? [];
+    acc[order.status].push(order);
+    return acc;
+  }, {});
+}
+```
+
+然后配置 agent：
+
+```python
+from deepagents import create_deep_agent
+from deepagents.backends import StateBackend
+from langchain_quickjs import CodeInterpreterMiddleware
+
+backend = StateBackend()
+
+agent = create_deep_agent(
+    model="openai:gpt-5.4",
+    backend=backend,
+    skills=["/skills/"],
+    middleware=[CodeInterpreterMiddleware(skills_backend=backend)],
+)
+```
+
+
+
+
+agent 现在可以从 interpreter code import module：
+
+```javascript
+const { groupByStatus } = await import("@/skills/order-helpers");
+
+const grouped = groupByStatus(orders);
+grouped;
+```
+
+### 在 sandbox 中执行 skill scripts
+
+Skills 可以在 `SKILL.md` 文件旁边包含 scripts，例如执行搜索或 data transformation 的 Python 文件。agent 可以从任何 backend _读取_ 这些 scripts，但如果要 _执行_ 它们，agent 需要访问 shell；这只有 [sandbox backends](/oss/python/deepagents/sandboxes) 能提供。
+
+当你使用 [CompositeBackend](https://reference.langchain.com/python/deepagents/backends/composite/CompositeBackend) 将 skills 路由到 [StoreBackend](https://reference.langchain.com/python/deepagents/backends/store/StoreBackend) 以便持久化，同时用 sandbox 作为 default backend 时，skill files 位于 store 中，而不是代码运行所在的 sandbox 中。为了让 sandboxes 能使用这些 scripts，你必须使用 [custom middleware](/oss/python/langchain/middleware/custom) 在 agent 启动前把 skill scripts 上传到 sandbox：
+
+<SkillsSandboxPy />
+
+middleware 的 `before_agent` hook 会在每次 agent invocation 前运行，从这个 shared namespace 读取 skill files，并上传到 sandbox filesystem。同步完成后，agent 就可以像执行 sandbox 中其他文件一样，使用 `execute` tool 执行 scripts。
+
+
+
+
+
+更完整的例子，包括双向同步 [memories](/oss/python/deepagents/memory)，请参见 [syncing skills and memories with custom middleware](/oss/python/deepagents/going-to-production#example-syncing-skills-and-memories-with-custom-middleware)。
+
+## Skills vs. memory
+
+Skills 和 [memory](/oss/python/deepagents/customization#memory)（`AGENTS.md` files）服务于不同目的：
+
+| | Skills | Memory |
+|---|--------|--------|
+| **Purpose** | 通过 progressive disclosure 发现的 on-demand capabilities | 启动时始终加载的 persistent context |
+| **Loading** | 只有当 agent 判断相关时才读取 | 始终注入 system prompt |
+| **Format** | 命名 directories 中的 `SKILL.md` | `AGENTS.md` files |
+| **Layering** | User -> project（last wins） | User -> project（combined） |
+| **Use when** | Instructions 与具体 task 相关，且可能很大 | Context 始终相关（project conventions、preferences） |
+
+## 何时使用 skills 和 tools
+
+下面是使用 tools 和 skills 的一些通用 guidelines：
+
+- 当 context 很多时，使用 skills 来减少 system prompt 中的 tokens 数量。
+- 使用 skills 将 capabilities 打包成更大的 actions，并提供超出单个 tool description 的额外 context。
+- 如果 agent 无法访问 file system，请使用 tools。
+
+<Tip>
+用 [LangSmith](https://smith.langchain.com?utm_source=docs&utm_medium=cta&utm_campaign=langsmith-signup&utm_content=oss-deepagents-skills) trace agent 如何发现并执行 skills。按照 [observability quickstart](/langsmith/observability-quickstart) 完成设置。
+</Tip>
+
+---
+
+<div className="source-links">
+<Callout icon="terminal-2">
+    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+</Callout>
+<Callout icon="edit">
+    [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/deepagents/skills.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
+</Callout>
+</div>

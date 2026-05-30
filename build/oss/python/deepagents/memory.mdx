@@ -1,0 +1,556 @@
+---
+title: Memory
+description: 为使用 Deep Agents 构建的 agents 添加 persistent memory，使它们能跨 conversations 学习和改进
+---
+
+Memory 让你的 agent 能跨 conversations 学习和改进。Deep Agents 将 memory 作为一等能力，并通过 filesystem-backed memory 实现：agent 以文件形式读写 memory，你可以使用 [backends](/oss/python/deepagents/backends) 控制这些文件存储在哪里。
+
+<Note>
+本页介绍 **long-term memory**：跨 conversations 持久化的 memory。关于 short-term memory（单个 session 内的 conversation history 和 scratch files），请参见 [context engineering](/oss/python/deepagents/context-engineering) guide。Short-term memory 会作为 agent [state](/oss/python/langgraph/graph-api#state) 的一部分自动管理。
+
+![Short-term memory is scoped to a single thread via checkpoints; long-term memory persists across threads via the store](/oss/images/deepagents/production/memory.png)
+</Note>
+
+## Memory 如何工作
+
+1. **让 agent 指向 memory files。** 创建 agent 时，将 file paths 传给 `memory=`。你也可以通过 `skills=` 传入 [skills](/oss/python/deepagents/skills)，作为 procedural memory（告诉 agent *如何*执行任务的可复用 instructions）。[backend](/oss/python/deepagents/backends) 控制文件存储位置以及谁可以访问它们。
+2. **Agent 读取 memory。** agent 可以在启动时将 memory files 加载进 system prompt，也可以在 conversation 期间按需读取。例如，[skills](/oss/python/deepagents/skills) 使用 on-demand loading：agent 启动时只读取 skill descriptions，只有当某个 skill 匹配 task 时才读取完整 skill file。这能让 context 在需要 capability 之前保持精简。
+3. **Agent 更新 memory（可选）。** 当 agent 学到新信息时，它可以使用内置 `edit_file` tool 更新 memory files。更新可以发生在 conversation 期间（默认），也可以通过 [background consolidation](#background-consolidation) 在 conversations 之间后台进行。变更会持久化，并在下一次 conversation 中可用。并非所有 memory 都可写：developer-defined [skills](/oss/python/deepagents/skills) 和 [organization policies](#organization-level-memory) 通常是 read-only。详情参见 [read-only vs writable memory](#read-only-vs-writable-memory)。
+
+最常见的两种模式是 [agent-scoped memory](#agent-scoped-memory)（所有用户共享）和 [user-scoped memory](#user-scoped-memory)（按用户隔离）。
+
+## Scoped memory
+
+Agent memory 可以设置 scope，使同一组 memory files 对所有使用该 agent 的人可见，或者让 memory files 对每个用户独立。
+
+### Agent-scoped memory
+
+为 agent 提供一个随时间演化的持久身份。Agent-scoped memory 在所有用户之间共享，因此 agent 会通过每次 conversation 积累自己的 persona、知识和偏好。随着它与用户交互，它会发展专业能力、改进处理方式，并记住哪些做法有效。如果它拥有 write access，也可以学习并更新 [skills](/oss/python/deepagents/skills)。
+
+关键在于 backend namespace：将它设为 `(assistant_id,)` 表示该 agent 的每个 conversation 都会读取和写入同一个 memory file。
+
+<Note>
+访问 `rt.server_info` 需要 `deepagents>=0.5.0`。在旧版本中，请改从 `get_config()["metadata"]["assistant_id"]` 读取 assistant ID。
+</Note>
+
+
+
+
+```python
+from deepagents import create_deep_agent
+from deepagents.backends import CompositeBackend, StateBackend, StoreBackend
+
+agent = create_deep_agent(
+    model="google_genai:gemini-3.5-flash",
+    memory=["/memories/AGENTS.md"],
+    skills=["/skills/"],
+    backend=CompositeBackend(
+        default=StateBackend(),
+        routes={
+            "/memories/": StoreBackend(
+                namespace=lambda rt: (
+                    rt.server_info.assistant_id,  # [!code highlight]
+                ),
+            ),
+            "/skills/": StoreBackend(
+                namespace=lambda rt: (
+                    rt.server_info.assistant_id,  # [!code highlight]
+                ),
+            ),
+        },
+    ),
+)
+```
+
+
+
+
+<Accordion title="完整示例：seed memory 并 invoke">
+
+先向 store 写入初始 memories，然后跨两个 threads invoke agent，观察它如何记住并更新学到的内容。
+
+```python
+from langchain_core.utils.uuid import uuid7
+
+from deepagents import create_deep_agent
+from deepagents.backends import CompositeBackend, StateBackend, StoreBackend
+from deepagents.backends.utils import create_file_data
+from langgraph.store.memory import InMemoryStore
+
+store = InMemoryStore()  # Use platform store when deploying to LangSmith
+
+# Seed the memory file
+store.put(
+    ("my-agent",),
+    "/memories/AGENTS.md",
+    create_file_data("""## Response style
+- Keep responses concise
+- Use code examples where possible
+"""),
+)
+
+# Seed a skill
+store.put(
+    ("my-agent",),
+    "/skills/langgraph-docs/SKILL.md",
+    create_file_data("""---
+name: langgraph-docs
+description: Fetch relevant LangGraph documentation to provide accurate guidance.
+---
+
+# langgraph-docs
+
+Use the fetch_url tool to read https://docs.langchain.com/llms.txt, then fetch relevant pages.
+"""),
+)
+
+agent = create_deep_agent(
+    model="google_genai:gemini-3.5-flash",
+    memory=["/memories/AGENTS.md"],
+    skills=["/skills/"],
+    backend=lambda rt: CompositeBackend(
+        default=StateBackend(rt),
+        routes={
+            "/memories/": StoreBackend(
+                rt, namespace=lambda rt: ("my-agent",)
+            ),
+            "/skills/": StoreBackend(
+                rt, namespace=lambda rt: ("my-agent",)
+            ),
+        },
+    ),
+    store=store,
+)
+
+# Thread 1: the agent learns a new preference and saves it to memory
+config1 = {"configurable": {"thread_id": str(uuid7())}}
+agent.invoke(
+    {"messages": [{"role": "user", "content": "I prefer detailed explanations. Remember that."}]},
+    config=config1,
+)
+
+# Thread 2: the agent reads memory and applies the preference
+config2 = {"configurable": {"thread_id": str(uuid7())}}
+agent.invoke(
+    {"messages": [{"role": "user", "content": "Explain how transformers work."}]},
+    config=config2,
+)
+```
+
+
+
+
+</Accordion>
+
+### User-scoped memory
+
+为每个用户提供自己的 memory file。agent 会按用户记住 preferences、context 和 history，同时 core agent instructions 保持固定。如果 user-scoped backend 中保存了 per-user [skills](/oss/python/deepagents/skills)，用户也可以拥有自己的 skills。
+
+namespace 使用 `(user_id,)`，因此每个用户都会得到一份隔离的 memory file。User A 的 preferences 永远不会泄漏到 User B 的 conversations 中。
+
+```python
+from deepagents import create_deep_agent
+from deepagents.backends import CompositeBackend, StateBackend, StoreBackend
+
+agent = create_deep_agent(
+    model="google_genai:gemini-3.5-flash",
+    memory=["/memories/preferences.md"],
+    skills=["/skills/"],
+    backend=CompositeBackend(
+        default=StateBackend(),
+        routes={
+            "/memories/": StoreBackend(
+                namespace=lambda rt: (rt.server_info.user.identity,),
+            ),
+            "/skills/": StoreBackend(
+                namespace=lambda rt: (rt.server_info.user.identity,),
+            ),
+        },
+    ),
+)
+```
+
+
+
+
+<Accordion title="完整示例：跨用户隔离 memory">
+
+为不同用户 seed per-user memories，并以两个不同用户身份 invoke agent。每个用户只会看到自己的 preferences。
+
+```python
+from langchain_core.utils.uuid import uuid7
+
+from deepagents import create_deep_agent
+from deepagents.backends import CompositeBackend, StateBackend, StoreBackend
+from deepagents.backends.utils import create_file_data
+from langgraph.store.memory import InMemoryStore
+
+
+store = InMemoryStore()  # Use platform store when deploying to LangSmith
+
+# Seed preferences for two users
+store.put(
+    ("user-alice",),
+    "/memories/preferences.md",
+    create_file_data("""## Preferences
+- Likes concise bullet points
+- Prefers Python examples
+"""),
+)
+store.put(
+    ("user-bob",),
+    "/memories/preferences.md",
+    create_file_data("""## Preferences
+- Likes detailed explanations
+- Prefers TypeScript examples
+"""),
+)
+
+# Seed a skill for Alice
+store.put(
+    ("user-alice",),
+    "/skills/langgraph-docs/SKILL.md",
+    create_file_data("""---
+name: langgraph-docs
+description: Fetch relevant LangGraph documentation to provide accurate guidance.
+---
+
+# langgraph-docs
+
+Use the fetch_url tool to read https://docs.langchain.com/llms.txt, then fetch relevant pages.
+"""),
+)
+
+agent = create_deep_agent(
+    model="google_genai:gemini-3.5-flash",
+    memory=["/memories/preferences.md"],
+    skills=["/skills/"],
+    backend=lambda rt: CompositeBackend(
+        default=StateBackend(rt),
+        routes={
+            "/memories/": StoreBackend(
+                rt,
+                namespace=lambda rt: (rt.server_info.user.identity,),
+            ),
+            "/skills/": StoreBackend(
+                rt,
+                namespace=lambda rt: (rt.server_info.user.identity,),
+            ),
+        },
+    ),
+    store=store,
+)
+
+# When deployed, each authenticated request resolves
+# `rt.server_info.user.identity` to the calling user, so Alice and Bob
+# automatically see only their own preferences.
+agent.invoke(
+    {"messages": [{"role": "user", "content": "How do I read a CSV file?"}]},
+    config={"configurable": {"thread_id": str(uuid7())}},
+)
+```
+
+
+
+
+</Accordion>
+
+## Advanced usage
+
+除了 memory paths 和 scope 的基本配置外，你还可以为 memory 配置更高级的参数：
+
+| Dimension | Question it answers | Options |
+|---|---|---|
+| **Duration** | 它持续多久？ | [Short-term](/oss/python/deepagents/context-engineering)（单个 conversation）或 [long-term](#scoped-memory)（跨 conversations） |
+| **Information type** | 它是哪类信息？ | [Episodic](#episodic-memory)（过往经历）、[procedural](/oss/python/deepagents/skills)（instructions 和 skills），或 [semantic](/oss/python/concepts/memory#semantic-memory)（facts） |
+| **Scope** | 谁可以查看和修改它？ | [User](#user-scoped-memory)、[agent](#agent-scoped-memory) 或 [organization](#organization-level-memory) |
+| **Update strategy** | Memories 何时写入？ | Conversation 期间（默认）或 [between conversations](#background-consolidation) |
+| **Retrieval** | Memories 如何读取？ | 加载到 prompt（默认）或 on demand（例如 [skills](/oss/python/deepagents/skills)） |
+| **Agent permissions** | agent 可以写入 memory 吗？ | [Read-write](#read-only-vs-writable-memory)（默认）或 [read-only](#read-only-vs-writable-memory)（适用于 shared policies） |
+
+### Episodic memory
+
+Episodic memory 存储过往经历的记录：发生了什么、顺序如何，以及结果是什么。不同于 semantic memory（存储在 `AGENTS.md` 等文件中的 facts 和 preferences），episodic memory 会保留完整 conversational context，让 agent 能回忆某个问题是 *如何* 被解决的，而不只是从中学到了 *什么*。
+
+Deep Agents 已经使用 [checkpointers](/oss/python/langgraph/persistence#checkpoints)，这正是支持 episodic memory 的机制：每个 conversation 都会作为 checkpointed thread 持久化。
+
+要让过往 conversations 可搜索，请将 thread search 包装成 tool。`user_id` 从 runtime context 获取，而不是作为参数传入：
+
+```python
+from langgraph_sdk import get_client
+from langchain.tools import tool, ToolRuntime
+
+client = get_client(url="<DEPLOYMENT_URL>")
+
+
+@tool
+async def search_past_conversations(query: str, runtime: ToolRuntime) -> str:
+    """Search past conversations for relevant context."""
+    user_id = runtime.server_info.user.identity  # [!code highlight]
+    threads = await client.threads.search(
+        metadata={"user_id": user_id},
+        limit=5,
+    )
+    results = []
+    for thread in threads:
+        history = await client.threads.get_history(thread_id=thread["thread_id"])
+        results.append(history)
+    return str(results)
+```
+
+
+
+
+你可以通过调整 metadata filter，将 thread search scoped 到 user 或 organization：
+
+```python
+# Search conversations for a specific user
+threads = await client.threads.search(
+    metadata={"user_id": user_id},
+    limit=5,
+)
+
+# Search conversations across an organization
+threads = await client.threads.search(
+    metadata={"org_id": org_id},
+    limit=5,
+)
+```
+
+
+
+
+这对于执行复杂 multi-step tasks 的 agents 很有用。例如，coding agent 可以回看过去的 debugging session，并直接跳到可能的 root cause。
+
+### Organization-level memory
+
+Organization-level memory 遵循与 user-scoped memory 相同的模式，但使用 organization-wide namespace，而不是 per-user namespace。它适用于应在 organization 中所有 users 和 agents 之间生效的 policies 或 knowledge。
+
+Organization memory 通常是 **read-only**，用于防止 shared state 中的 prompt injection。详情参见 [read-only vs writable memory](#read-only-vs-writable-memory)。
+
+```python
+from deepagents import create_deep_agent
+from deepagents.backends import CompositeBackend, StateBackend, StoreBackend
+
+agent = create_deep_agent(
+    model="google_genai:gemini-3.5-flash",
+    memory=[
+        "/memories/preferences.md",
+        "/policies/compliance.md",
+    ],
+    backend=CompositeBackend(
+        default=StateBackend(),
+        routes={
+            "/memories/": StoreBackend(
+                namespace=lambda rt: (rt.server_info.user.identity,),
+            ),
+            "/policies/": StoreBackend(
+                namespace=lambda rt: (rt.context.org_id,),
+            ),
+        },
+    ),
+)
+```
+
+
+
+
+从你的 application code 填充 organization memory：
+
+```python
+from langgraph_sdk import get_client
+from deepagents.backends.utils import create_file_data
+
+client = get_client(url="<DEPLOYMENT_URL>")
+
+await client.store.put_item(
+    (org_id,),
+    "/compliance.md",
+    create_file_data("""## Compliance policies
+- Never disclose internal pricing
+- Always include disclaimers on financial advice
+"""),
+)
+```
+
+
+
+
+使用 [permissions](/oss/python/deepagents/permissions) 强制 org-level memory 为 read-only，或使用 [policy hooks](/oss/python/deepagents/backends#add-policy-hooks) 实现自定义 validation logic。
+
+### Background consolidation
+
+默认情况下，agent 会在 conversation 期间写入 memories（hot path）。另一种方式是将 memories 作为 background task 在 **conversations 之间**处理，有时称为 **sleep time compute**。一个独立 deep agent 会 review 最近 conversations、抽取关键 facts，并将它们与现有 memories 合并。
+
+| Approach | Pros | Cons |
+|---|---|---|
+| **Hot path**（conversation 期间） | Memories 立即可用，对用户透明 | 增加 latency，agent 必须 multitask |
+| **Background**（conversations 之间） | 没有 user-facing latency，可以跨多个 conversations synthesis | Memories 要到下一次 conversation 才可用，需要第二个 agent |
+
+对于大多数应用，hot path 已经足够。当你需要降低 latency 或在大量 conversations 中提升 memory quality 时，再加入 background consolidation。
+
+推荐模式是将一个 **consolidation agent** 与 main agent 一起部署：这是一个 deep agent，负责读取最近 conversation history、抽取关键 facts，并将其合并到 memory store 中；然后用 [cron schedule](#cron) 触发它。选择 cadence 时应反映用户真实交互频率：一个日常流量稳定的 chat product 可能每几小时 consolidate 一次，而每周只使用几次的 tool 可能 nightly 或 weekly 运行就够了。比用户 conversation 更频繁地 consolidate，通常只是在 no-op runs 上消耗 tokens。
+
+#### Consolidation agent
+
+consolidation agent 会读取最近 conversation history，并将关键 facts 合并到 memory store。请在 `langgraph.json` 中把它和 main agent 一起注册：
+
+```python consolidation_agent.py
+from datetime import datetime, timedelta, timezone
+
+from deepagents import create_deep_agent
+from langchain.tools import tool, ToolRuntime
+from langgraph_sdk import get_client
+
+sdk_client = get_client(url="<DEPLOYMENT_URL>")
+
+
+@tool
+async def search_recent_conversations(query: str, runtime: ToolRuntime) -> str:
+    """Search this user's conversations updated in the last 6 hours."""
+    user_id = runtime.server_info.user.identity  # [!code highlight]
+
+    since = datetime.now(timezone.utc) - timedelta(hours=6)
+    threads = await sdk_client.threads.search(
+        metadata={"user_id": user_id},
+        updated_after=since.isoformat(),
+        limit=20,
+    )
+    conversations = []
+    for thread in threads:
+        history = await sdk_client.threads.get_history(
+            thread_id=thread["thread_id"]
+        )
+        conversations.append(history["values"]["messages"])
+    return str(conversations)
+
+
+agent = create_deep_agent(
+    model="google_genai:gemini-3.5-flash",
+    system_prompt="""Review recent conversations and update the user's memory file.
+Merge new facts, remove outdated information, and keep it concise.""",
+    tools=[search_recent_conversations],
+)
+```
+
+
+
+
+```json langgraph.json
+{
+  "dependencies": ["."],
+  "graphs": {
+    "agent": "./agent.py:agent",
+    "consolidation_agent": "./consolidation_agent.py:agent"
+  },
+  "env": ".env"
+}
+```
+
+
+
+
+#### Cron
+
+[cron job](/langsmith/cron-jobs) 会按固定 schedule 运行 consolidation agent。agent 搜索最近 conversations，并将它们 synthesis 到 memory 中。请让 schedule 与你的 usage patterns 匹配，让 consolidation 大致跟随真实 activity。
+
+```mermaid
+graph LR
+    Store[(Memory store)] -.->|reads| Conv1[Conversation 1]
+    Store -.->|reads| Conv2[Conversation 2]
+    Cron[Cron schedule] -->|periodic| Agent[Consolidation agent]
+    Agent -->|writes| Store
+
+    classDef trigger fill:#F6FFDB,stroke:#6E8900,stroke-width:2px,color:#2E3900
+    classDef process fill:#E5F4FF,stroke:#006DDD,stroke-width:2px,color:#030710
+    classDef output fill:#EBD0F0,stroke:#885270,color:#441E33
+    classDef schedule fill:#FDF3FF,stroke:#7E65AE,stroke-width:2px,color:#504B5F
+
+    class Conv1,Conv2 trigger
+    class Agent process
+    class Store output
+    class Cron schedule
+```
+
+使用 cron job 调度 consolidation agent：
+
+```python
+from langgraph_sdk import get_client
+
+client = get_client(url="<DEPLOYMENT_URL>")
+
+cron_job = await client.crons.create(
+    assistant_id="consolidation_agent",
+    schedule="0 */6 * * *",
+    input={"messages": [{"role": "user", "content": "Consolidate recent memories."}]},
+)
+```
+
+
+
+
+<Note>
+所有 cron schedules 都按 **UTC** 解释。关于管理和删除 cron jobs 的细节，请参见 [cron jobs](/langsmith/cron-jobs)。
+</Note>
+
+<Warning>
+cron interval 必须与 consolidation agent 内部的 lookback window 匹配。上面的示例每 6 小时运行一次（`0 */6 * * *`），agent 的 `search_recent_conversations` tool 会向前看 `timedelta(hours=6)`；请保持二者同步。如果 cron 运行得比 lookback 更频繁，就会重复处理相同 conversations；如果运行得更少，就会丢失落在窗口之外的 memories。
+</Warning>
+
+关于使用 background processes 部署 agents 的更多信息，请参见 [going to production](/oss/python/deepagents/going-to-production)。
+
+### Read-only vs writable memory
+
+默认情况下，agent 可以读写 memory files。对于 organization policies 或 compliance rules 这样的 shared state，你可能希望让 memory **read-only**，使 agent 能引用它但不能修改它。这可以防止通过 shared memory 进行 prompt injection，并确保文件内容只由你的 application code 控制。
+
+| Permission | Use case | How it works |
+|---|---|---|
+| **Read-write**（默认） | User preferences、agent self-improvement、学到的 [skills](/oss/python/deepagents/skills) | Agent 通过 `edit_file` tool 更新 files |
+| **Read-only** | Organization policies、compliance rules、shared knowledge bases、developer-defined [skills](/oss/python/deepagents/skills) | 通过 application code 或 [Store API](/langsmith/custom-store) 填充。使用 [permissions](/oss/python/deepagents/permissions) 拒绝写入特定 paths，或使用 [policy hooks](/oss/python/deepagents/backends#add-policy-hooks) 实现 custom validation logic。 |
+
+**Security considerations：** 如果一个用户能写入另一个用户会读取的 memory，恶意用户就可能向 shared state 注入 instructions。缓解方式包括：
+
+- 除非有明确共享理由，否则**默认使用 user scope** `(user_id)`
+- 对 shared policies 使用 **read-only memory**（通过 application code 填充，而不是 agent）
+- 在 agent 写入 shared memory 前添加 **human-in-the-loop** validation。使用 [interrupt](/oss/python/langgraph/interrupts) 对敏感 paths 的写入要求人工审批。
+
+要强制 read-only memory，请使用 [permissions](/oss/python/deepagents/permissions) 声明式拒绝写入特定 paths。对于 custom validation logic（rate limiting、audit logging、content inspection），请使用 [backend policy hooks](/oss/python/deepagents/backends#add-policy-hooks)。
+
+### Concurrent writes
+
+多个 threads 可以并行写入 memory，但对**同一个 file** 的 concurrent writes 可能导致 last-write-wins conflicts。对于 user-scoped memory，这种情况较少见，因为用户通常一次只有一个 active conversation。对于 agent-scoped 或 organization-scoped memory，可以考虑使用 [background consolidation](#background-consolidation) 来串行化 writes，或将 memory 按 topic 拆成多个 files，以减少 contention。
+
+实践中，如果一次 write 因 conflict 失败，LLM 通常足够聪明，可以 retry 或优雅恢复，因此单次 lost write 通常不是灾难性的。
+
+### 同一 deployment 中的多个 agents
+
+要在 shared deployment 中为每个 agent 提供自己的 memory，请将 `assistant_id` 加入 namespace：
+
+```python
+StoreBackend(
+    namespace=lambda rt: (
+        rt.server_info.assistant_id,  # [!code highlight]
+        rt.server_info.user.identity,
+    ),
+)
+```
+
+
+
+
+如果只需要 per-agent isolation 而不需要 per-user scoping，可以只使用 `assistant_id`。
+
+<Tip>
+使用 [LangSmith tracing](/langsmith/trace-with-langgraph) audit agent 写入 memory 的内容。每次 file write 都会在 trace 中显示为一个 tool call。
+</Tip>
+
+---
+
+<div className="source-links">
+<Callout icon="terminal-2">
+    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+</Callout>
+<Callout icon="edit">
+    [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/deepagents/memory.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
+</Callout>
+</div>

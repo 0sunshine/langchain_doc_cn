@@ -1,0 +1,290 @@
+---
+title: Harness 能力
+sidebarTitle: 概览
+---
+
+Deep Agents harness 提供四类内置能力，让构建 long-running、reliable agents 更容易：
+
+<CardGroup cols={2}>
+  <Card title="Execution environment" icon="bolt" href="#execution-environment">
+    Tools、virtual filesystem、可选 sandbox，以及 REPL（interpreter）
+  </Card>
+  <Card title="Context management" icon="database" href="#context-management">
+    Skills、memory、summarization、context offloading 和 prompt caching
+  </Card>
+  <Card title="Delegation" icon="sitemap" href="#delegation">
+    Subagent spawning 和 task planning
+  </Card>
+  <Card title="Steering" icon="user" href="#steering">
+    Human-in-the-loop approval 和 interrupts
+  </Card>
+</CardGroup>
+
+除了这四个组件，[harness profiles](#harness-profiles) 还允许你将 per-model configuration 打包成 reusable bundles。
+
+![Deep Agents open harness：planning、virtual filesystem、permissions、subagents、context management、code execution、human-in-the-loop、skills 和 memory](/oss/images/deepagents/production/open-harness.png)
+
+## Execution environment
+
+Execution environment 是 agent 执行操作的地方。它有四层：
+
+- **[Tools](#tools)**：agent 可以调用的 custom functions、APIs 和 databases
+- **[Virtual filesystem](#virtual-filesystem-access)**：由 pluggable backends 支撑的 file tools
+- **[Filesystem permissions](#filesystem-permissions)**：声明式访问控制，用于限制 agents 可读写哪些 paths
+- **[Code execution](#code-execution)**：sandboxed shell execution 和 in-process JavaScript interpreter
+
+### Tools
+
+通过 `tools=` 参数向 `create_deep_agent` 传入任意 Python callable、LangChain tool 或 tool dict。这些是 agent 可以执行的 domain-specific actions，例如 web search、database queries、API calls，或你定义的任意函数。
+
+```python
+from deepagents import create_deep_agent
+
+agent = create_deep_agent(
+    model="anthropic:claude-sonnet-4-6",
+    tools=[search, fetch_page, run_query],
+)
+```
+
+关于定义和使用 tools 的更多信息，请参阅 [Tools](/oss/javascript/langchain/tools)。
+
+### Virtual filesystem access
+
+harness 提供可配置的 virtual filesystem，可由不同的 pluggable backends 支撑。
+backends 支持以下 file system operations：
+
+| Tool | 描述 |
+| --- | --- |
+| `ls` | 列出目录中的文件及其 metadata（size、modified time） |
+| `read_file` | 读取带 line numbers 的文件内容，支持 offset/limit 以处理大文件。也支持为非文本文件（images、video、audio 和 documents）返回 multimodal content blocks。支持的扩展名见下方。 |
+| `write_file` | 创建新文件 |
+| `edit_file` | 在文件中执行精确字符串替换（支持 global replace mode） |
+| `glob` | 查找匹配 patterns 的文件（例如 `**/*.py`） |
+| `grep` | 搜索文件内容，支持多种 output modes（仅文件、带上下文的内容，或计数） |
+| `execute` | 在环境中运行 shell commands（仅适用于 [sandbox backends](/oss/javascript/deepagents/sandboxes)） |
+
+<Accordion title="支持的 multimodal 文件扩展名">
+
+| 类型 | 扩展名 |
+| --- | --- |
+| [Image](/oss/javascript/langchain/messages#multimodal) | `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.heic`, `.heif` |
+| [Video](/oss/javascript/langchain/messages#multimodal) | `.mp4`, `.mpeg`, `.mov`, `.avi`, `.flv`, `.mpg`, `.webm`, `.wmv`, `.3gpp` |
+| [Audio](/oss/javascript/langchain/messages#multimodal) | `.wav`, `.mp3`, `.aiff`, `.aac`, `.ogg`, `.flac` |
+| [File](/oss/javascript/langchain/messages#multimodal) | `.pdf`, `.ppt`, `.pptx` |
+
+</Accordion>
+
+<Accordion title="不使用默认 filesystem tools 运行" icon="ban">
+    要从 model 隐藏上面列出的 filesystem tools，请注册一个带有 `excluded_tools` 的 [harness profile](#harness-profiles)：
+
+    ```python
+    from deepagents import HarnessProfile, register_harness_profile
+
+    register_harness_profile(
+        "anthropic:claude-sonnet-4-6",
+        HarnessProfile(
+            excluded_tools=frozenset(
+                {"ls", "read_file", "write_file", "edit_file", "glob", "grep"}
+            ),
+        ),
+    )
+    ```
+
+    通过 `excluded_middleware` 移除 `FilesystemMiddleware` 本身会被有意拒绝。请使用 `excluded_tools` 只隐藏 model-visible tool surface，同时保留 middleware。要移除 `task` tool，请参阅 [Running without subagents](/oss/javascript/deepagents/subagents#running-without-subagents)。
+</Accordion>
+
+virtual filesystem 会被 skills、memory、code execution 和 context management 等其他 harness capabilities 使用。
+你也可以在为 Deep Agents 构建 custom tools 和 middleware 时使用 file system。
+
+更多信息请参阅 [backends](/oss/javascript/deepagents/backends)。
+
+### Filesystem permissions
+
+harness 支持声明式 permission rules，用于控制 agent 可以读取或写入哪些文件和目录。Permissions 适用于上面列出的 built-in filesystem tools，并按声明顺序求值，采用 first-match-wins semantics。
+
+**工作方式：**
+- 创建 agent 时向 `permissions=` 传入 rules 列表
+- 每条 rule 指定 `operations`（`"read"`、`"write"`）、`paths`（glob patterns）和 `mode`（`"allow"` 或 `"deny"`）
+- 第一条匹配 rule 生效。如果没有 rule 匹配，则允许该操作。
+
+**为什么有用：**
+- 将 agents 限制到特定目录（例如 `/workspace/`）
+- 保护敏感文件（例如 `.env`、credentials）
+- 给 subagents 比 parent agent 更窄的访问范围
+
+Permissions 不适用于 [sandbox backends](/oss/javascript/deepagents/sandboxes)，因为它们通过 `execute` tool 支持任意 command execution。对于 custom validation logic，请使用 [backend policy hooks](/oss/javascript/deepagents/backends#add-policy-hooks)。
+
+完整 rule structure、示例和 subagent inheritance 请参阅 [Permissions](/oss/javascript/deepagents/permissions)。
+
+### Code execution
+
+Deep Agents 通过两种方式支持 code execution：
+
+- [Sandbox backends](/oss/javascript/deepagents/sandboxes) 暴露 `execute` tool，用于在隔离环境中执行 shell commands。
+- [Interpreters](/oss/javascript/deepagents/interpreters) 添加 `eval` tool，用于在 scoped QuickJS runtime 中运行 JavaScript。
+
+当 agent 需要安装依赖、运行 tests、调用 CLIs，或与 operating-system filesystem 交互时，请使用 sandbox backends。Sandbox backends 实现 `SandboxBackendProtocolV2`；检测到它时，harness 会将 `execute` tool 添加到 agent 的 available tools。
+
+当 agent 需要一个轻量的 programmable layer 来处理 loops、batching、deterministic data transformations 或 programmatic tool calling 时，请使用 interpreters。Interpreters 不提供 shell access、package installs，也不提供 filesystem 和 network access。
+
+关于 sandbox setup、providers 和 file transfer APIs，请参阅 [Sandboxes](/oss/javascript/deepagents/sandboxes)。关于 QuickJS runtime 和 programmatic tool calling，请参阅 [Interpreters](/oss/javascript/deepagents/interpreters)。
+
+## Context management
+
+Context management 组件控制 agent 知道什么、能在 token limits 内运行多久，以及跨 sessions 保留什么。它有四层：
+
+- **[Skills](#skills)**：按需 progressive loading 的 domain knowledge，来自 skill files
+- **[Memory](#memory)**：启动时从 `AGENTS.md` files 加载的 persistent instructions 和 preferences
+- **[Summarization and context offloading](#summarization-and-context-offloading)**：自动压缩 conversation history 和大型 tool results
+- **[Prompt caching](#prompt-caching)**：static prompt sections 可缓存，以在支持的 models 上加速 inference 并降低成本
+
+### Skills
+
+harness 支持 skills，为你的 deep agent 提供 specialized workflows 和 domain knowledge。
+
+**工作方式：**
+- Skills 遵循 [Agent Skills standard](https://agentskills.io/)
+- 每个 skill 是一个目录，其中包含带 instructions 和 metadata 的 `SKILL.md` 文件
+- Skills 可以包含额外 scripts、reference docs、templates 和其他 resources
+- Skills 使用 progressive disclosure：只有当 agent 判断它们对当前任务有用时才会加载
+- Agent 在启动时读取每个 `SKILL.md` 文件的 frontmatter，然后在需要时查看完整 skill content
+
+**为什么有用：**
+- 只在需要时加载相关 skills，减少 token usage
+- 将 capabilities 与额外 context 打包成更大的 actions
+- 在不弄乱 system prompt 的情况下提供 specialized expertise
+- 支持 modular、reusable agent capabilities
+
+更多信息请参阅 [Skills](/oss/javascript/deepagents/skills)。
+
+### Memory
+
+harness 支持 persistent memory files，用于跨 conversations 为 deep agent 提供额外 context。
+这些文件通常包含 general coding style、preferences、conventions 和 guidelines，帮助 agent 理解如何与你的 codebase 协作，并遵循你的偏好。
+
+**工作方式：**
+- 使用 [`AGENTS.md` files](https://agents.md/) 提供 persistent context
+- Memory files 始终加载（不同于使用 progressive disclosure 的 skills）
+- 创建 agent 时向 `memory` 参数传入一个或多个 file paths
+- 文件存储在 agent 的 backend 中（StateBackend、StoreBackend 或 FilesystemBackend）
+- agent 可以根据 interactions、feedback 和识别出的 patterns 更新 memory
+
+**为什么有用：**
+- 提供 persistent context，不需要每次 conversation 重新说明
+- 适合存储 user preferences、project guidelines 或 domain knowledge
+- 始终可供 agent 使用，确保行为一致
+
+配置细节和示例请参阅 [Memory](/oss/javascript/deepagents/customization#memory)。
+
+### Summarization and context offloading
+
+harness 管理 context，使 deep agents 能够在 token limits 内处理 long-running tasks，同时保留所需信息。
+
+**工作方式：**
+- **Input context**：System prompt、memory、skills 和 tool prompts 会塑造 agent 启动时知道的内容
+- **Compression**：内置 offloading 和 summarization 会随着任务推进，将 context 保持在 window limits 内
+- **Isolation**：Subagents 会隔离 heavy work，并只返回结果（见 [Delegation](#delegation)）
+- **Long-term memory**：通过 virtual filesystem 跨 threads 持久化存储
+
+**为什么有用：**
+- 支持超过单个 context window 的 multi-step tasks
+- 无需手动裁剪，也能让最相关的信息保持在 scope 内
+- 通过 automatic summarization 和 offloading 减少 token usage
+
+配置细节请参阅 [Context engineering](/oss/javascript/deepagents/context-engineering)。
+
+### Prompt caching
+
+对于 Anthropic models，`create_deep_agent` 会自动对 system prompt 中的 static sections 应用 prompt caching，例如 base agent instructions、memory，以及每一轮都会重复的 skill content。这可以避免跨 calls 反复处理相同 tokens，从而降低 long-running agents 的 latency 和 cost。
+
+使用 Anthropic model 时，prompt caching 默认启用。无需配置。
+
+对于其他 providers，请参阅 [Middleware integrations](/oss/javascript/integrations/middleware#official-integrations)，了解可用的 provider-specific caching middleware。
+
+## Delegation
+
+Delegation 组件让 agents 能够把大问题拆成更小、可并行的 work units。它有两层：
+
+- **[Task planning](#task-planning)**：内置 `write_todos` tool，用于 structured task tracking
+- **[Subagents](#subagents)**：处理 isolated subtasks 的 ephemeral child agents
+
+### Task planning
+
+harness 提供 `write_todos` tool，agents 可以用它维护 structured task list。
+
+**特性：**
+- 跟踪多个 tasks 及其 statuses（`'pending'`、`'in_progress'`、`'completed'`）
+- 持久化在 agent state 中
+- 帮助 agent 组织复杂的 multi-step work
+- 适合 long-running tasks 和 planning
+
+### Subagents
+
+harness 允许 main agent 创建 ephemeral "subagents"，用于隔离的 multi-step tasks。
+
+**为什么有用：**
+- **Context isolation**：Subagent 的工作不会污染 main agent 的 context
+- **Parallel execution**：多个 subagents 可以并发运行
+- **Specialization**：Subagents 可以拥有不同 tools 和 configurations
+- **Token efficiency**：大型 subtask context 会压缩成单个结果
+
+**工作方式：**
+- Main agent 拥有 `task` tool
+- 调用时，它会创建一个带有独立 context 的全新 agent instance
+- Subagent autonomous 执行直到完成
+- 向 main agent 返回单个 final report
+- 可以使用默认的 [`general-purpose` subagent](/oss/javascript/deepagents/subagents#default-subagent)（默认启用），也可以添加 [custom subagents](/oss/javascript/deepagents/subagents#custom-subagents)
+- Subagents 是 stateless 的（不能多次发消息回来）
+
+<Accordion title="不使用 subagents 运行（没有 `task` tool）" icon="ban">
+    要运行没有 `task` tool 的 agent，请参阅 [Running without subagents](/oss/javascript/deepagents/subagents#running-without-subagents)。不要尝试通过 `excluded_middleware` 移除 `SubAgentMiddleware`，这会被有意拒绝。请改为通过 [harness profile](#harness-profiles) 禁用自动添加的 subagent，并且不要通过 `subagents=` 传入 synchronous subagents。Async subagents 不受影响。
+</Accordion>
+
+更多信息请参阅 [Subagents](/oss/javascript/deepagents/subagents)。
+
+## Steering
+
+Steering 组件让 humans 能够在 runtime 控制 agent behavior。
+
+### Human-in-the-loop
+
+harness 可以在指定 tool calls 处暂停 agent execution，以允许 human approval 或 modification。这个功能通过 `interrupt_on` 参数 opt-in。
+
+**配置：**
+- 向 `create_deep_agent` 传入 `interrupt_on`，它是 tool names 到 interrupt configurations 的映射
+- 示例：`interrupt_on={"edit_file": True}` 会在每次 edit 之前暂停
+- 出现提示时，你可以提供 approval messages 或修改 tool inputs
+
+**为什么有用：**
+- 为 destructive operations 设置 safety gates
+- 在 expensive API calls 之前进行 user verification
+- 用于 interactive debugging 和 guidance
+
+更多信息请参阅 [Human-in-the-loop](/oss/javascript/deepagents/human-in-the-loop)。
+
+## Harness profiles
+
+harness 可以在选择给定 provider 或 model 时应用声明式 configuration bundle（`HarnessProfile`）。Profiles 会在 model 构建完成后调优 runtime behavior，而不需要 per-agent setup code。
+
+**工作方式：**
+- 在 provider name（`"openai"`）或 `provider:model` key（`"openai:gpt-5.4"`）下注册 profile
+- `create_deep_agent` 在解析 model 时查找并应用 profile
+- Provider-level 和 model-level profiles 会在 resolution time merge
+
+**为什么有用：**
+- 在一个地方打包 per-provider 或 per-model defaults（system-prompt tweaks、tool overrides、middleware）
+- 切换 models 时保持 `create_deep_agent` call site 不变
+- 通过 entry points 将 reusable profiles 作为 plugins 分发
+
+完整 field list、merge semantics 和 plugin packaging 请参阅 [Profiles](/oss/javascript/deepagents/profiles)。
+
+---
+
+<div className="source-links">
+<Callout icon="terminal-2">
+    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+</Callout>
+<Callout icon="edit">
+    [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/deepagents/harness.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
+</Callout>
+</div>
