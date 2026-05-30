@@ -1,0 +1,310 @@
+---
+title: Model providers
+description: 为 Deep Agents Code 配置任何 LangChain-compatible model provider
+---
+
+Deep Agents Code 支持任何 [与 LangChain 兼容的 chat model provider](/oss/integrations/chat)，因此几乎可以使用任何支持 tool calling 的 LLM。任何暴露 OpenAI-compatible 或 Anthropic-compatible API 的 service 也可以开箱即用。请参阅 [Compatible APIs](/oss/deepagents/code/configuration#compatible-apis)。
+
+## Quickstart
+
+Deep Agents Code 会自动集成 [以下 model providers](#provider-reference)：除了安装相关 provider package 外，不需要额外配置。
+
+1. **Install provider packages**
+
+    每个 model provider 都需要安装对应的 LangChain integration package。这些包在安装 Deep Agents Code 时作为 optional extras 提供，这是为了让应用保持轻量：
+
+    ```bash
+    # Quick install with chosen providers
+    # OpenAI, Anthropic, and Gemini are included by default
+    DEEPAGENTS_EXTRAS="baseten,groq" curl -LsSf https://langch.in/dcode | bash
+
+    # Or install directly with uv
+    uv tool install 'deepagents-code[baseten,groq]'
+
+    # Add additional packages at a later date
+    uv tool install deepagents-code --with langchain-ollama
+
+    # All providers
+    uv tool install 'deepagents-code[anthropic,baseten,bedrock,cohere,deepseek,fireworks,google-genai,groq,huggingface,ibm,litellm,mistralai,nvidia,ollama,openai,openrouter,perplexity,vertexai,xai]'
+    ```
+
+2. **Set credentials**
+
+    将 API keys 存在 `~/.deepagents/.env`，这样所有 projects 都能使用；也可以在 shell 中 export：
+
+    <Tabs>
+        <Tab title="OpenAI">
+            <CodeGroup>
+                ```bash Add permanently
+                mkdir -p ~/.deepagents
+                echo 'OPENAI_API_KEY=your-api-key' >> ~/.deepagents/.env
+                ```
+
+                ```bash Add for current session
+                export OPENAI_API_KEY="your-api-key"
+                ```
+            </CodeGroup>
+        </Tab>
+        <Tab title="Anthropic">
+            <CodeGroup>
+                ```bash Add permanently
+                mkdir -p ~/.deepagents
+                echo 'ANTHROPIC_API_KEY=your-api-key' >> ~/.deepagents/.env
+                ```
+
+                ```bash Add for current session
+                export ANTHROPIC_API_KEY="your-api-key"
+                ```
+            </CodeGroup>
+        </Tab>
+        <Tab title="Google">
+            <CodeGroup>
+                ```bash Add permanently
+                mkdir -p ~/.deepagents
+                echo 'GOOGLE_API_KEY=your-api-key' >> ~/.deepagents/.env
+                ```
+
+                ```bash Add for current session
+                export GOOGLE_API_KEY="your-api-key"
+                ```
+            </CodeGroup>
+        </Tab>
+        <Tab title="Other">
+            Deep Agents Code 可与任何支持 tool calling 的 LLM 搭配使用。完整 supported providers 列表和所需 environment variables 请参阅 [Provider reference](#provider-reference)。
+
+        </Tab>
+    </Tabs>
+
+    如需配置 model parameters，请参阅 [Model parameters](/oss/deepagents/code/providers#model-parameters)。
+
+    你也可以使用 [`DEEPAGENTS_CODE_` prefix](/oss/deepagents/code/configuration#deepagents_code_-prefix) 将 credentials 限定给 Deep Agents Code。
+
+## Provider reference
+
+:::js
+Deep Agents Code 使用 Python 构建，请使用 [Python provider reference docs](https://docs.langchain.com/oss/python/deepagents/code/providers#provider-reference)。
+:::
+
+:::python
+
+使用了这里未列出的 provider？请参阅 [Arbitrary providers](/oss/deepagents/code/configuration#arbitrary-providers)：任何 LangChain-compatible provider 都可以通过额外设置在 Deep Agents Code 中使用。
+
+| Provider | Package | Credential env var | Model profiles |
+| --- | --- | --- | --- |
+| OpenAI | [`langchain-openai`](/oss/integrations/chat/openai) | `OPENAI_API_KEY` | Yes |
+| Azure OpenAI | [`langchain-openai`](/oss/integrations/chat/azure_chat_openai) | `AZURE_OPENAI_API_KEY` | Yes |
+| Anthropic | [`langchain-anthropic`](/oss/integrations/chat/anthropic) | `ANTHROPIC_API_KEY` | Yes |
+| Google Gemini API | [`langchain-google-genai`](/oss/integrations/chat/google_generative_ai) | `GOOGLE_API_KEY` | Yes |
+| Google Vertex AI | [`langchain-google-genai`](/oss/integrations/chat/google_generative_ai#credentials) | `GOOGLE_CLOUD_PROJECT` | Yes |
+| Baseten | [`langchain-baseten`](https://github.com/basetenlabs/langchain-baseten) | `BASETEN_API_KEY` | Yes |
+| AWS Bedrock | [`langchain-aws`](/oss/integrations/chat/bedrock) | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | Yes |
+| AWS Bedrock Converse | [`langchain-aws`](/oss/integrations/chat/bedrock) | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | Yes |
+| Hugging Face | [`langchain-huggingface`](/oss/integrations/chat/huggingface) | `HUGGINGFACEHUB_API_TOKEN` | Yes |
+| Ollama | [`langchain-ollama`](/oss/integrations/chat/ollama) | `OLLAMA_API_KEY` (cloud only; optional) | No |
+| Groq | [`langchain-groq`](/oss/integrations/chat/groq) | `GROQ_API_KEY` | Yes |
+| Cohere | [`langchain-cohere`](/oss/integrations/chat/cohere) | `COHERE_API_KEY` | No |
+| Fireworks | [`langchain-fireworks`](/oss/integrations/chat/fireworks) | `FIREWORKS_API_KEY` | Yes |
+| Together | [`langchain-together`](/oss/integrations/chat/together) | `TOGETHER_API_KEY` | No |
+| Mistral AI | [`langchain-mistralai`](/oss/integrations/chat/mistralai) | `MISTRAL_API_KEY` | Yes |
+| DeepSeek | [`langchain-deepseek`](/oss/integrations/chat/deepseek) | `DEEPSEEK_API_KEY` | Yes |
+| IBM (watsonx.ai) | [`langchain-ibm`](/oss/integrations/chat/ibm_watsonx) | `WATSONX_APIKEY` | No |
+| Nvidia | [`langchain-nvidia-ai-endpoints`](/oss/integrations/chat/nvidia_ai_endpoints) | `NVIDIA_API_KEY` | Yes |
+| xAI | [`langchain-xai`](/oss/integrations/chat/xai) | `XAI_API_KEY` | Yes |
+| Perplexity | [`langchain-perplexity`](/oss/integrations/chat/perplexity) | `PERPLEXITY_API_KEY` (or `PPLX_API_KEY`) | Yes |
+| OpenRouter | [`langchain-openrouter`](/oss/integrations/chat/openrouter) | `OPENROUTER_API_KEY` | Yes |
+| LiteLLM | [`langchain-litellm`](/oss/integrations/chat/litellm) | Per-provider (see [docs](https://docs.litellm.ai/)) | No |
+
+<Tip>
+    你可以给任意 credential 添加 `DEEPAGENTS_CODE_` prefix，让它只作用于 Deep Agents Code。例如，在 Deep Agents Code 内部，`DEEPAGENTS_CODE_OPENAI_API_KEY` 的优先级高于 `OPENAI_API_KEY`，且不会影响其他 tools。详情请参阅 [`DEEPAGENTS_CODE_` prefix](/oss/deepagents/code/configuration#deepagents_code_-prefix)。
+</Tip>
+
+<Tip>
+    **[model profile](/oss/langchain/models#model-profiles)** 是 provider package 随附的一组 metadata（model name、default parameters、capabilities 等），主要由 [models.dev](https://models.dev/) project 驱动。
+
+    包含 model profiles 的 providers 会在 interactive `/model` switcher 中自动列出其 models，但要满足 [filtering criteria](#which-models-appear-in-the-switcher)（尤其是必须启用 `tool_calling`）。没有 model profiles 的 providers 需要你直接指定 model name，或通过 `config.toml` 添加 models。
+</Tip>
+
+:::
+
+### Model routers and proxies
+
+[OpenRouter](https://openrouter.ai/) 和 [LiteLLM](https://docs.litellm.ai/) 这类 model routers 可以通过单一 endpoint 访问多个 providers 的 models。
+
+请使用这些 services 的专用 integration packages：
+
+:::python
+| Router | Package | Config |
+| --- | --- | --- |
+| OpenRouter | [`langchain-openrouter`](/oss/integrations/chat/openrouter) | `openrouter:<model>`（built-in，参见 [Provider reference](#provider-reference)） |
+| LiteLLM | [`langchain-litellm`](/oss/integrations/chat/litellm) | `litellm:<model>`（built-in，参见 [Provider reference](#provider-reference)） |
+:::
+
+:::js
+| Router | Package |
+| --- | --- |
+| OpenRouter | [`langchain-openrouter`](/oss/integrations/chat/openrouter) |
+:::
+
+**OpenRouter** 是 built-in provider。安装 package 后即可直接使用：
+
+```bash
+uv tool install 'deepagents-code[openrouter]'
+```
+
+**LiteLLM** 也是 built-in provider：
+
+```bash
+uv tool install 'deepagents-code[litellm]'
+```
+
+## Switch models
+
+在 Deep Agents Code 中切换 models 有三种方式：
+
+1. **使用 interactive model switcher**：通过 `/model` command 打开。它会显示从各个已安装 LangChain provider package 的 [model profiles](/oss/langchain/models#model-profiles) 中获取的 available models。
+
+    <Note>
+        并非所有 models 都会出现在这里。如果你的 model 缺失，请直接传入 model name（例如 `/model gpt-5.5`）。详情请参阅 [Which models appear in the switcher](#which-models-appear-in-the-switcher)。
+    </Note>
+2. **直接指定 model name** 作为参数，例如 `/model gpt-5.5`。你可以使用所选 provider 支持的任意 model，无论它是否出现在方式 1 的列表中。model name 会被传给 API request。
+3. **启动时通过 `--model` 指定 model**，例如：
+
+    ```txt
+    dcode --model openai:gpt-5.5
+    ```
+
+<Accordion title="Model resolution order" icon="list-numbers">
+    Deep Agents Code 启动时，会按以下顺序解析要使用的 model：
+
+    1. 提供了 **`--model` flag** 时，它总是优先。
+    2. `~/.deepagents/config.toml` 中的 **`[models].default`** - user 有意设置的 long-term preference。
+    3. `~/.deepagents/config.toml` 中的 **`[models].recent`** - 最近一次通过 `/model` 切换到的 model。它会自动写入，但不会覆盖 `[models].default`。
+    4. **Environment auto-detection**：回退到第一个可用的 startup credential，按顺序检查：`OPENAI_API_KEY`、`ANTHROPIC_API_KEY`、`GOOGLE_API_KEY`、`GOOGLE_CLOUD_PROJECT`（Vertex AI）。
+
+    startup fallback 有意只检查这四个 credentials。其他 supported providers（例如 Groq）仍然可以通过 `--model`、`/model` 和 saved defaults（`[models].default` / `[models].recent`）使用。
+</Accordion>
+
+### Which models appear in the switcher
+
+`/model` selector 会从 installed provider packages 动态构建列表。展开下方可查看完整 criteria 和 troubleshooting。
+
+<Accordion title="How the switcher builds its model list" icon="list-search">
+    interactive `/model` selector 会动态构建列表，它不是写死在 Deep Agents Code 里的 hardcoded list。当且仅当满足以下所有条件时，model 才会出现在 switcher 中：
+
+    1. **provider package 已安装。** 每个 provider（例如 `langchain-anthropic`、`langchain-openai`）都必须与 `deepagents-code` 一起安装，可以作为 [install extra](/oss/deepagents/code/providers#quickstart)（例如 `uv tool install 'deepagents-code[ollama]'`），也可以稍后通过 `uv tool install deepagents-code --with <package>` 添加。如果 package 缺失，整个 provider section 都不会出现在 switcher 中。
+    2. **model profile 启用了 `tool_calling`。** Deep Agents Code 需要 tool-calling support，因此 profile 中没有 `tool_calling: true` 的 models 会被排除。这是 model 从列表中缺失的最常见原因。对于不捆绑 profiles 的 providers（参见 [Provider reference](#provider-reference) table），你可以在 `config.toml` 中定义：
+
+        ```toml
+        [models.providers.ollama.profile."qwen3:4b"]
+        tool_calling = true
+        max_input_tokens = 32768
+        max_output_tokens = 8192
+        ```
+
+        严格来说，这不是让 model 出现在 switcher 中的必要条件；把它添加到 [`models` list](/oss/deepagents/code/configuration#adding-models-to-the-interactive-switcher) 也可以，而且更简单。当你希望 Deep Agents Code 了解 model 的 context window 和 capabilities，以支持 auto-summarization 等功能时，profile 会很有用。所有可覆盖字段请参阅 [Profile overrides](/oss/deepagents/code/configuration#profile-overrides-advanced)。
+    3. **model 接受并生成 text。** 如果 model profile 明确将 `text_inputs` 或 `text_outputs` 设置为 `false`（例如 embedding 或 image-generation models），它会被排除。
+
+    在 `config.toml` 的 [`[models.providers.<name>].models`](/oss/deepagents/code/configuration#adding-models-to-the-interactive-switcher) 下定义的 models 会绕过 profile filter，无论 profile metadata 如何都会出现在 switcher 中。这是添加缺失 models 的推荐方式。
+
+    <Tip>
+        Credential status **不会** 影响 model 是否列出。switcher 会显示所有符合条件的 models，并在每个 provider header 旁边显示 credential indicator：checkmark 表示 credentials 已确认，warning 表示缺少 credentials，question mark 表示 credential status unknown。即使 credentials 缺失，你仍然可以选择 model；provider 会在 request time 报 authentication error。
+    </Tip>
+
+    #### Troubleshooting missing models
+
+    | Symptom | Likely cause | Fix |
+    | --- | --- | --- |
+    | 整个 provider 从 switcher 中缺失 | Provider package 未安装 | 安装 package（例如 `uv tool install deepagents-code --with langchain-groq`） |
+    | provider 显示了，但某个 model 缺失 | Model profile 中 `tool_calling: false`，或没有 profile | 把 model 添加到 `config.toml` 的 `[models.providers.<name>].models`，或直接使用 `/model <provider>:<model>` |
+    | Provider 显示 "missing credentials" | API key env var 未设置 | 根据 [Provider reference](#provider-reference) table 设置 credential env var |
+    | Provider 显示 "credentials unknown" | Provider 使用 Deep Agents Code 无法验证的 non-standard auth | Credentials 可能仍然可用；尝试切换到该 model。如果 auth 失败，请检查 provider docs |
+</Accordion>
+
+### Set a default model
+
+你可以设置 persistent default model，之后所有 CLI launches 都会使用它：
+
+* **Via model selector:** 打开 `/model`，导航到目标 model，按 `Ctrl+S` 将它固定为 default。在当前 default 上再次按 `Ctrl+S` 会清除它。
+* **Via command:** `/model --default provider:model`（例如 `/model --default anthropic:claude-opus-4-7`）
+* **Via config file:** 在 `~/.deepagents/config.toml` 中设置 `[models].default`（参见 [Configuration](/oss/deepagents/code/configuration)）。
+* **From the shell:**
+
+    ```bash
+    dcode --default-model anthropic:claude-opus-4-7
+    ```
+
+查看当前 default：
+
+```bash
+dcode --default-model
+```
+
+清除 default：
+
+* **From the shell:**
+
+    ```bash
+    dcode --clear-default-model
+    ```
+
+* **Via command:** `/model --default --clear`
+* **Via model selector:** 在当前 pinned default model 上按 `Ctrl+S`。
+
+没有 default 时，Deep Agents Code 会默认使用 most recently used model。
+
+### Model parameters
+
+向 model 传递额外 constructor kwargs，例如 sampling controls、reasoning/thinking budgets、context window sizes、request timeouts，以及 underlying chat-model class 接受的任何其他参数。可以在三个位置设置，优先级如下（从高到低）：
+
+1. **启动时用 `--model-params` 做 one-off 设置。** JSON string，仅本 session 生效：
+
+    ```bash
+    # OpenAI reasoning effort
+    dcode --model openai:gpt-5.5 --model-params '{"reasoning": {"effort": "high"}}'
+
+    # Anthropic extended thinking
+    dcode --model anthropic:claude-opus-4-7 --model-params '{"thinking": {"type": "enabled", "budget_tokens": 10000}, "max_tokens": 16000}'
+    ```
+
+2. **session 中通过 `/model --model-params` 设置。** 相同 JSON syntax，可在不重启的情况下切换 params（也可同时切换 model）：
+
+    ```txt
+    /model --model-params '{"temperature": 0.7}' anthropic:claude-opus-4-7
+    /model --model-params '{"num_ctx": 16384}'           # opens selector, applies params to choice
+    ```
+
+3. **持久化到 `config.toml`。** Provider-level defaults（可带 per-model sub-tables），每次 launch 都生效：
+
+    ```toml
+    [models.providers.anthropic.params]
+    thinking = { type = "enabled", budget_tokens = 10000 }
+    max_tokens = 16000
+
+    [models.providers.openai.params]
+    reasoning = { effort = "high", summary = "auto" }
+    output_version = "responses/v1"
+
+    [models.providers.ollama.params]
+    num_ctx = 16384
+    temperature = 0
+
+    # Per-model override - wins over provider-level keys
+    [models.providers.ollama.params."qwen3:4b"]
+    temperature = 0.5
+    ```
+
+CLI flags 会覆盖 config-file `params`，且只对 session 生效（mid-session changes 不会持久化）。`config.toml` 中的 per-model sub-tables 会覆盖 provider-level keys（shallow merge；完整语义请参阅 [Model constructor params](/oss/deepagents/code/configuration#model-constructor-params)）。`--model-params` 不能与 `--default` 组合使用。
+
+<Tip>
+    underlying chat-model constructor 接受的任何 kwarg 都是有效的。完整列表请参阅 provider reference docs，例如 [`ChatAnthropic`](https://reference.langchain.com/python/langchain-anthropic/langchain_anthropic/chat_models/ChatAnthropic)、[`ChatOpenAI`](https://reference.langchain.com/python/langchain-openai/langchain_openai/chat_models/base/ChatOpenAI)、[`ChatOllama`](https://reference.langchain.com/python/langchain-ollama/langchain_ollama/chat_models/ChatOllama)。未知 kwargs 会转发给 upstream API request，因此新发布的 parameters 不需要 CLI update 也能使用。
+</Tip>
+
+<Note>
+    不要把 credentials（`api_key`）放进 `params`。请使用 [`api_key_env`](/oss/deepagents/code/configuration#provider-configuration) 指向 environment variable。
+</Note>
+
+如需覆盖 model runtime *profile* 上的字段（`max_input_tokens`、`tool_calling`、capability flags），这与 constructor params 不同，请参阅 [Profile overrides](/oss/deepagents/code/configuration#profile-overrides-advanced)。
+
+## Advanced configuration
+
+如需 provider params、profile overrides、custom base URLs、compatible APIs、arbitrary providers 和 lifecycle hooks 的详细配置，请参阅 [Configuration](/oss/deepagents/code/configuration)。
