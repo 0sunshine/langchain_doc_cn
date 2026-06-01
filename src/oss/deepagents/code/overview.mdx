@@ -1,6 +1,6 @@
 ---
 title: Deep Agents Code
-sidebarTitle: Overview
+sidebarTitle: 概览
 description: 基于 Deep Agents SDK 构建的 terminal coding agent
 ---
 
@@ -8,11 +8,11 @@ Deep Agents Code（`dcode`）是一个基于 [Deep Agents SDK](/oss/deepagents/q
 它可与任何支持 tool calling 的 LLM 配合使用，并允许你在 inputs 之间切换 LLMs。
 它会保留 conversations 中学到的 persistent memory，跨 sessions 维护 context，使用可自定义的 skills，并通过 approval controls 执行 code。
 
-## Quickstart
+## 快速开始 {#quickstart}
 
 <Steps>
 
-    <Step title="Install and launch" icon="terminal">
+    <Step title="安装并启动" icon="terminal">
         OpenAI、Anthropic 和 Google 默认已安装。其他 providers（Ollama、Groq、xAI 等）可作为 optional extras 使用。详情请参阅 [Providers](/oss/deepagents/code/providers)。
 
         <CodeGroup>
@@ -46,7 +46,7 @@ Deep Agents Code（`dcode`）是一个基于 [Deep Agents SDK](/oss/deepagents/q
 
     </Step>
 
-    <Step title="Add provider credentials" icon="key">
+    <Step title="添加 provider 凭证" icon="key">
         Deep Agents Code 可与任何支持 tool calling 的 LLM 配合使用。使用 `/auth` command 为你选择的 providers 设置 API key。完整流程和存储细节请参阅 [Provider credentials](/oss/deepagents/code/configuration#provider-credentials)。
 
         其他 providers 和 headless runs 请参阅 [Providers](/oss/deepagents/code/providers)。
@@ -56,7 +56,7 @@ Deep Agents Code（`dcode`）是一个基于 [Deep Agents SDK](/oss/deepagents/q
         </Note>
     </Step>
 
-    <Step title="Give the agent a task" icon="message">
+    <Step title="给 agent 一个任务" icon="message">
         ```txt
         Create a Python script that prints "Hello, World!"
         ```
@@ -64,7 +64,7 @@ Deep Agents Code（`dcode`）是一个基于 [Deep Agents SDK](/oss/deepagents/q
         agent 会解释 query，并在修改 files 前通过 diffs 提出 changes 供你 approval。必要时，它可以运行 shell commands 来测试 code、检查 documentation，或搜索 web 获取最新信息。
     </Step>
 
-    <Step title="Enable tracing (optional)" icon="chart-dots">
+    <Step title="启用 tracing（可选）" icon="chart-dots">
         要在 LangSmith 中记录 agent operations、tool calls 和 decisions，请把以下内容添加到 `~/.deepagents/.env`，或在 shell 中 export variables：
 
         ```bash title="~/.deepagents/.env"
@@ -81,7 +81,7 @@ Deep Agents Code（`dcode`）是一个基于 [Deep Agents SDK](/oss/deepagents/q
     Deep Agents Code 未正式支持 Windows。Windows users 可以尝试在 [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/install) 下运行。
 </Note>
 
-## Capabilities
+## 能力 {#capabilities}
 
 Deep Agents Code 内置以下 capabilities：
 
@@ -99,8 +99,8 @@ Deep Agents Code 内置以下 capabilities：
 * <Icon icon="plug" size={16} /> **[MCP tools](/oss/deepagents/code/mcp-tools)** - 从 [Model Context Protocol](https://modelcontextprotocol.io/) servers 加载 external tools。
 * <Icon icon="chart-dots" size={16} /> **[Tracing](/oss/deepagents/code/overview#trace-with-langsmith)** - 在 LangSmith 中 trace agent operations，用于 observability 和 debugging。
 
-<Accordion title="Full list of built-in tools">
-    ## Built-in tools
+<Accordion title="完整内置工具列表" id="full-list-of-built-in-tools">
+    ## 内置 tools
 
     agent 随附以下 built-in tools，无需配置即可使用：
 
@@ -139,7 +139,7 @@ Deep Agents Code 内置以下 capabilities：
     [观看 demo video](https://youtu.be/IrnacLa9PJc?si=3yUnPbxnm2yaqVQb)，了解 Deep Agents Code 如何工作。
 </Tip>
 
-## Command reference
+## 命令参考 {#command-reference}
 
 ```bash
 # Use a specific agent configuration
@@ -162,7 +162,7 @@ dcode --startup-cmd "git diff --stat" -n "Review these changes"
 ```
 
 <AccordionGroup>
-    <Accordion title="Command-line options" icon="flag">
+    <Accordion title="命令行选项" id="command-line-options" icon="flag">
         | Option                 | Description                                                 |
         |------------------------|-------------------------------------------------------------|
         | `-a`, `--agent NAME`   | 使用带独立 memory 的 named agent。覆盖 `config.toml` 中的 `[agents].recent`。Default：`agent`（如果设置了 `[agents].recent`，则使用最近使用的 agent） |
@@ -195,7 +195,7 @@ dcode --startup-cmd "git diff --stat" -n "Review these changes"
         | `-h`, `--help`         | 显示 help |
     </Accordion>
 
-    <Accordion title="CLI commands" icon="terminal">
+    <Accordion title="CLI 命令" id="cli-commands" icon="terminal">
         | Command                              | Description                            |
         |--------------------------------------|----------------------------------------|
         | `dcode help`                    | 显示 help                              |
@@ -217,13 +217,13 @@ dcode --startup-cmd "git diff --stat" -n "Review these changes"
     </Accordion>
 </AccordionGroup>
 
-## Configuration
+## 配置 {#configuration}
 
 完整 reference（包括 `config.toml` schema、provider parameters、profile overrides 和 hook configuration）请参阅 [Configuration](/oss/deepagents/code/configuration)。
 
 Deep Agents Code 会把所有 configuration 存在 `~/.deepagents/` 下。在该 directory 内，每个 agent 都有自己的 subdirectory（default：`agent`）：
 
-| Path | Purpose |
+| 路径 | 用途 |
 |------|---------|
 | `~/.deepagents/config.toml` | Model 和 agent defaults、provider settings、constructor params、profile overrides、themes、update settings、MCP trust store |
 | `~/.deepagents/.env` | Global API keys 和 secrets。参见 [configuration](/oss/deepagents/code/configuration#environment-variables) |
@@ -236,13 +236,13 @@ Deep Agents Code 会把所有 configuration 存在 `~/.deepagents/` 下。在该
 dcode agents list
 ```
 
-## Interactive mode
+## 交互模式 {#interactive-mode}
 
 像在 chat interface 中一样自然输入。
 agent 会使用其 built-in tools、skills 和 memory 来帮助你完成 tasks。
 
 <AccordionGroup>
-    <Accordion title="Slash commands" icon="slash">
+    <Accordion title="Slash 命令" id="slash-commands" icon="slash">
         在 Deep Agents Code session 中使用这些 commands：
 
         - `/model` - 切换 models 或打开 interactive model selector。
@@ -270,7 +270,7 @@ agent 会使用其 built-in tools、skills 和 memory 来帮助你完成 tasks�
         - `/quit` - 退出 Deep Agents Code
     </Accordion>
 
-    <Accordion title="Shell commands" icon="prompt">
+    <Accordion title="Shell 命令" id="shell-commands" icon="prompt">
         输入 `!` 进入 shell mode，然后输入 command。
 
         ```bash
@@ -280,10 +280,10 @@ agent 会使用其 built-in tools、skills 和 memory 来帮助你完成 tasks�
         ```
     </Accordion>
 
-    <Accordion title="Keyboard shortcuts" icon="keyboard">
+    <Accordion title="键盘快捷键" id="keyboard-shortcuts" icon="keyboard">
         **General**
 
-        | Shortcut | Action |
+        | 快捷键 | 操作 |
         |-|-|
         | `Enter` | 提交 prompt |
         | `Shift+Enter`, `Ctrl+J`, `Alt+Enter`, or `Ctrl+Enter` | 插入 newline |
@@ -299,7 +299,7 @@ agent 会使用其 built-in tools、skills 和 memory 来帮助你完成 tasks�
     </Accordion>
 </AccordionGroup>
 
-## Non-interactive mode and piping
+## 非交互模式和管道 {#non-interactive-mode-and-piping}
 
 使用 `-n` 运行单个 task，而不启动 interactive UI：
 
@@ -325,7 +325,7 @@ git diff | dcode --skill code-review -n 'summarize changes'
 non-interactive mode 中 shell execution 默认 disabled。使用 `-S`/`--shell-allow-list` 启用特定 commands（例如 `-S "pytest,git,make"`），使用 `recommended` 获取 safe defaults，或使用 `all` 允许任意 command。
 
 <AccordionGroup>
-    <Accordion title="Cap turn count with `--max-turns`" icon="gauge">
+    <Accordion title="使用 `--max-turns` 限制 turn 数" id="cap-turn-count-with-max-turns" icon="gauge">
         CI/CD pipelines 中 long-running 或 misbehaving agents 可能无限循环。`--max-turns N` 为 operators 提供 hard upper bound，而不必触碰 SDK internals：
 
         ```bash
@@ -337,7 +337,7 @@ non-interactive mode 中 shell execution 默认 disabled。使用 `-S`/`--shell-
         如果想使用 time-based limit 而不是（或同时使用）turn-count limit，请参阅 [Cap wall-clock time with `--timeout`](#non-interactive-mode-and-piping)。
     </Accordion>
 
-    <Accordion title="Cap wall-clock time with `--timeout`" icon="clock">
+    <Accordion title="使用 `--timeout` 限制实际耗时" id="cap-wall-clock-time-with-timeout" icon="clock">
         `--timeout SECONDS` 为 non-interactive run 强制 hard wall-clock limit。它用 time-based budget 补充 `--max-turns`（turn count），哪个 limit 先命中就取消 agent。
 
         ```bash
@@ -351,7 +351,7 @@ non-interactive mode 中 shell execution 默认 disabled。使用 `-S`/`--shell-
         到期时 agent 会被 cancelled，process 以 code 124 退出，与 `--max-turns` 使用同一 code，因此 CI 可以统一处理两种 budget hits。需要 `-n` 或 piped stdin；否则以 code 2 退出。
     </Accordion>
 
-    <Accordion title="Clean output and buffering" icon="buffer">
+    <Accordion title="干净输出和缓冲" id="clean-output-and-buffering" icon="buffer">
         使用 `-q` 生成适合 pipe 到其他 commands 的 clean output，并使用 `--no-stream` 在写入 stdout 前 buffer 完整 response（而不是 streaming）：
 
         ```bash
@@ -362,7 +362,7 @@ non-interactive mode 中 shell execution 默认 disabled。使用 `-S`/`--shell-
         non-interactive mode 中，agent 会被指示做合理假设并自主推进，而不是提出 clarifying questions。它也会偏好 non-interactive command variants（例如 `npm init -y`、`apt-get install -y`）。
     </Accordion>
 
-    <Accordion title="Shell execution examples" icon="shield-check">
+    <Accordion title="Shell 执行示例" id="shell-execution-examples" icon="shield-check">
         ```bash
         # Allow specific commands (validated against the list)
         dcode -n "Run the tests and fix failures" -S "pytest,git,make"
@@ -382,7 +382,7 @@ non-interactive mode 中 shell execution 默认 disabled。使用 `-S`/`--shell-
     `-S all`（或 `--shell-allow-list all`）允许 agent 在没有 human confirmation 的情况下执行 arbitrary shell commands。
 </Warning>
 
-## Trace with LangSmith
+## 使用 LangSmith trace {#trace-with-langsmith}
 
 启用 [LangSmith](https://smith.langchain.com) tracing，可以在 LangSmith project 中查看 agent operations、tool calls 和 decisions。
 
@@ -402,7 +402,7 @@ LANGSMITH_PROJECT=optional-project-name  # Specify a project name or default to 
 export LANGSMITH_TRACING=false
 ```
 
-<Accordion title="Separate agent traces from app traces">
+<Accordion title="将 agent traces 与 app traces 分离" id="separate-agent-traces-from-app-traces">
     以编程方式从 LangChain application 调用 Deep Agents Code 时（例如在 [non-interactive mode](#non-interactive-mode-and-piping) 中作为 subprocess），你的 app 和 Deep Agents Code 都会生成 LangSmith traces。默认情况下，它们都会进入同一个 project。
 
     要把 Deep Agents Code traces 发送到 dedicated project，请设置 `DEEPAGENTS_CODE_LANGSMITH_PROJECT`：

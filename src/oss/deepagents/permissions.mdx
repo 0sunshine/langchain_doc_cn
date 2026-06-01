@@ -1,5 +1,5 @@
 ---
-title: Permissions
+title: 权限
 description: 使用声明式 permission rules 控制 Deep Agents 的 filesystem access
 ---
 
@@ -42,7 +42,7 @@ Permissions 只适用于内置 filesystem tools（`ls`、`read_file`、`glob`、
 当你需要对内置 filesystem tools 使用 **path-based allow/deny rules** 时，请使用 `permissions`。当你需要 custom validation logic（rate limiting、audit logging、content inspection），或需要控制 custom tools 时，请使用 [backend policy hooks](/oss/deepagents/backends#add-policy-hooks)。
 </Tip>
 
-## 基本用法
+## 基本用法 {#basic-usage}
 
 :::python
 
@@ -60,7 +60,7 @@ Permissions 只适用于内置 filesystem tools（`ls`、`read_file`、`glob`、
 
 :::
 
-## Rule structure
+## 规则结构 {#rule-structure}
 
 :::python
 
@@ -92,33 +92,33 @@ Paths 必须是绝对路径（以 `/` 开头），且不能包含 `..` 或 `~`�
 
 :::
 
-## 示例
+## 示例 {#examples}
 
 :::python
 
-### 隔离到 workspace 目录
+### 隔离到 workspace 目录 {#isolate-to-a-workspace-directory}
 
 只允许在 `/workspace/` 下读取和写入，并拒绝其他所有访问：
 
 <PermissionsIsolateWorkspacePy />
 
-### 保护特定文件
+### 保护特定文件 {#protect-specific-files}
 
 <PermissionsProtectFilesPy />
 
-### Read-only memory
+### 只读 memory {#read-only-memory}
 
 允许 agent 读取 memory files，但阻止它修改它们。这适用于 organization-wide policies，或只应由 application code 更新的 shared knowledge bases。更多背景请参阅 [read-only vs writable memory](/oss/deepagents/memory#read-only-vs-writable-memory)。
 
 <PermissionsReadOnlyMemoryPy />
 
-### 拒绝所有访问
+### 拒绝所有访问 {#deny-all-access}
 
 阻止所有读取和写入。这是一个 restrictive baseline，你可以在其上叠加更具体的 allow rules：
 
 <PermissionsDenyAllPy />
 
-### Rule ordering
+### 规则顺序 {#rule-ordering}
 
 由于使用 first-match-wins，rule order 很重要。请把更具体的 rules 放在更宽泛的 rules 之前：
 
@@ -128,29 +128,29 @@ Paths 必须是绝对路径（以 `/` 开头），且不能包含 `..` 或 `~`�
 
 :::js
 
-### 隔离到 workspace 目录
+### 隔离到 workspace 目录 {#isolate-to-a-workspace-directory-2}
 
 只允许在 `/workspace/` 下读取和写入，并拒绝其他所有访问：
 
 <PermissionsIsolateWorkspaceJs />
 
-### 保护特定文件
+### 保护特定文件 {#protect-specific-files-2}
 
 <PermissionsProtectFilesJs />
 
-### Read-only memory
+### 只读 memory {#read-only-memory-2}
 
 允许 agent 读取 memory files，但阻止它修改它们。这适用于 organization-wide policies，或只应由 application code 更新的 shared knowledge bases。更多背景请参阅 [read-only vs writable memory](/oss/deepagents/memory#read-only-vs-writable-memory)。
 
 <PermissionsReadOnlyMemoryJs />
 
-### 拒绝所有访问
+### 拒绝所有访问 {#deny-all-access-2}
 
 阻止所有读取和写入。这是一个 restrictive baseline，你可以在其上叠加更具体的 allow rules：
 
 <PermissionsDenyAllJs />
 
-### Rule ordering
+### 规则顺序 {#rule-ordering-2}
 
 由于使用 first-match-wins，rule order 很重要。请把更具体的 rules 放在更宽泛的 rules 之前：
 
@@ -158,7 +158,7 @@ Paths 必须是绝对路径（以 `/` 开头），且不能包含 `..` 或 `~`�
 
 :::
 
-## Subagent permissions
+## Subagent 权限 {#subagent-permissions}
 
 :::python
 

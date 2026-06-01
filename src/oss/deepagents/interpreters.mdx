@@ -17,7 +17,7 @@ Interpreters 为 agents 提供一个可编程 workspace，让它们可以探索�
 </Note>
 :::
 
-## 何时使用 interpreter
+## 何时使用 interpreter {#when-to-use-an-interpreter}
 
 大多数 agent 工作会在 model reasoning 和 tool execution 之间交替。对于简单动作，这种方式没问题；但当 agent 需要组合多个步骤、对 structured data 进行 reasoning，或管理 intermediate state 时，它会变得笨重。
 
@@ -54,9 +54,9 @@ graph LR
 
 QuickJS 是 interpreter code 的执行边界。显式 bridges（例如 programmatic tool calling）会决定代码可以访问哪些 capabilities。
 
-## 选择合适的 execution path
+## 选择合适的执行路径 {#choose-the-right-execution-path}
 
-| Need | Use |
+| 需求 | 使用方式 |
 | --- | --- |
 | 一两个简单的外部调用 | Normal tool calling |
 | 一个带有 loops、branches、retries 或聚合逻辑的小程序 | Interpreter |
@@ -64,7 +64,7 @@ QuickJS 是 interpreter code 的执行边界。显式 bridges（例如 programma
 | 跨 threads 复用的 helpers | 带 [interpreter skills](/oss/deepagents/skills#use-interpreter-skills) 的 Interpreter |
 | Shell commands、package installs、tests，或完整 OS filesystem access | [Sandboxes](/oss/deepagents/sandboxes) |
 
-## 向 agent 添加 interpreter
+## 向 agent 添加 interpreter {#add-an-interpreter-to-an-agent}
 
 先安装 QuickJS middleware package，然后在创建 agent 时添加 middleware。
 
@@ -116,7 +116,7 @@ const agent = createDeepAgent({
 ```
 :::
 
-## 在 interpreter 中运行代码
+## 在 interpreter 中运行代码 {#run-code-in-the-interpreter}
 
 middleware 会向 agent 添加一个 `eval` tool。该 tool 会在持久化 context 中运行 TypeScript，捕获 `console.log`，并返回最后一个 expression 的结果。
 
@@ -142,7 +142,7 @@ totals;
 默认情况下，interpreter state 还会在同一个 thread 的不同 turns 之间持久化：每次 agent run 之后 snapshot working state，并在下一次 run 前恢复。
 :::
 
-## Programmatic tool calling
+## 编程式 tool calling {#programmatic-tool-calling}
 
 Programmatic tool calling（PTC）会把选定的 agent tools 暴露到 interpreter 的全局 `tools` namespace 下。agent 不必要求 model 发出一个 tool call、等待结果、再决定下一个调用，而是可以写代码在 loops、branches、retries 或 parallel batches 中调用 tools。
 
@@ -150,7 +150,7 @@ Programmatic tool calling（PTC）会把选定的 agent tools 暴露到 interpre
 
 Deep Agents 中的 PTC 与 model 无关。它由 middleware 实现，而不是 provider-specific 的 code-execution 或 tool-calling API。
 
-### 工作原理
+### 工作原理 {#how-it-works}
 
 1. 你用 `ptc` allowlist 选择 interpreter 可以调用哪些 tools。
 2. middleware 将这些 tools 作为 async JavaScript functions 暴露在 `tools` 下。
@@ -166,7 +166,7 @@ const result: string = await tools.webSearch({
 });
 ```
 
-### 常用模式
+### 常用模式 {#useful-patterns}
 
 | **Pattern** | **What the interpreter can do** |
 | --- | --- |
@@ -177,7 +177,7 @@ const result: string = await tools.webSearch({
 | Data filtering | 只向 model 返回相关 rows、snippets、errors 或 summaries。 |
 | Recursive orchestration | 反复调用 `task`，然后在代码中合并 subagent results。 |
 
-### 启用 PTC
+### 启用 PTC {#enable-ptc}
 
 使用显式 allowlist 启用 PTC：
 
@@ -240,7 +240,7 @@ try {
     PTC calls 目前通过 interpreter bridge 执行，不会经过 normal tool calling path。因此，`interrupt_on` approval workflows 不会按每个由 PTC 调用的 tool call 强制执行。
 </Warning>
 
-## Recursive language models
+## 递归语言模型 {#recursive-language-models}
 
 Recursive language models 使用 interpreter 作为用于 decomposition 的 workspace。model 会把大型 input 或 working set 保存在 runtime variables 中，编写代码来检查并拆分它，调用 subagents 或其他 model tools 处理较小片段，然后在代码中拼接返回结果。
 
@@ -305,14 +305,14 @@ const releaseSummary = riskReports
 releaseSummary;
 ```
 
-## Interpreter skills
+## Interpreter skills {#interpreter-skills}
 
 Interpreter skills 是向 interpreter 暴露 code modules 的 [skills](/oss/deepagents/skills)。配置 interpreter middleware 后，agent 可以从代码中 import 这些 modules，并将其用于确定性的 helper logic。
 
 当 agent 需要为 structured data workflows 复用 helpers（例如 sorting、grouping、scoring、parsing、validating 或 aggregating data）时，interpreter skills 很有用。设置细节请参见 [Interpreter skills](/oss/deepagents/skills#use-interpreter-skills)。
 
 :::python
-## Snapshots 和 time travel
+## 快照和 time travel {#snapshots-and-time-travel}
 
 默认情况下，`CodeInterpreterMiddleware` 会在每次 agent run 之后 snapshot interpreter state，并在下一次 run 前恢复它。snapshot 是 interpreter 的 in-memory JavaScript state 的序列化副本，包括 agent 完成代码运行时存在的 globals、variables、functions 和 imported modules。
 
@@ -354,14 +354,14 @@ agent = create_deep_agent(
 你可以用 `snapshot_between_turns=False` 禁用跨 turn snapshots。
 :::
 
-## Security and limits
+## 安全和限制 {#security-and-limits}
 
 Interpreters 使用 QuickJS 运行不可信 JavaScript，并采用严格的默认 isolation。请把它视为一个 capability-scoped interpreter runtime，而不是完整的 production sandbox backend。
 
 通过 PTC 暴露的每个 tool 都是 interpreter code 可以使用的外部 capability。请把 PTC allowlist 视为 permission boundary：只暴露 agent 需要的 tools，并避免桥接可以访问敏感系统、花费金钱、修改数据或调用 unrestricted networks 的宽泛 tools，除非这些行为是有意设计的。
 
 :::python
-| Capability | Available by default | How to expose it |
+| 能力 | 默认可用 | 如何暴露 |
 | --- | --- | --- |
 | JavaScript execution | Yes | 添加 interpreter middleware |
 | Top-level `await` | Yes | 在 interpreter code 中使用 promises |
@@ -374,7 +374,7 @@ Interpreters 使用 QuickJS 运行不可信 JavaScript，并采用严格的默�
 | Shell commands、package installs、tests、OS-level execution | No | 使用 [sandbox backend](/oss/deepagents/sandboxes) |
 :::
 :::js
-| Capability | Available by default | How to expose it |
+| 能力 | 默认可用 | 如何暴露 |
 | --- | --- | --- |
 | JavaScript execution | Yes | 添加 interpreter middleware |
 | Top-level `await` | Yes | 在 interpreter code 中使用 promises |
@@ -397,12 +397,12 @@ Interpreters 使用 QuickJS 运行不可信 JavaScript，并采用严格的默�
 </Note>
 :::
 
-## Middleware options
+## Middleware 选项 {#middleware-options}
 
 :::python
 `CodeInterpreterMiddleware` 接受以下 options：
 
-| Kwarg | Default | Purpose |
+| Kwarg | 默认值 | 用途 |
 | --- | --- | --- |
 | `memory_limit` | `64 * 1024 * 1024` <br/>(64 MB) | QuickJS heap memory limit，单位为 bytes。 |
 | `timeout` | `5.0` | 每次 eval 的 timeout，单位为秒。 |
@@ -419,7 +419,7 @@ Interpreters 使用 QuickJS 运行不可信 JavaScript，并采用严格的默�
 :::js
 `createCodeInterpreterMiddleware` 接受以下 options：
 
-| Option | Default | Purpose |
+| 选项 | 默认值 | 用途 |
 | --- | --- | --- |
 | `ptc` | omitted | PTC allowlist：tool names 或 `StructuredToolInterface` instances 的数组。 |
 | `memoryLimitBytes` | `64 * 1024 * 1024` <br/>(64 MB) | QuickJS memory limit，单位为 bytes。 |

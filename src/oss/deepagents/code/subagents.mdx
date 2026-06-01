@@ -1,5 +1,5 @@
 ---
-title: Use subagents in Deep Agents Code
+title: 在 Deep Agents Code 中使用 subagents
 sidebarTitle: Subagents
 description: 将自定义 Deep Agents Code subagents 定义为带 YAML frontmatter 的 AGENTS.md 文件。涵盖 project 和 user paths、可选 model overrides，以及示例。
 ---
@@ -25,7 +25,7 @@ frontmatter 必须包含 `name` 和 `description`（与 [`SubAgent` dictionary s
     其他 `SubAgent` fields（`tools`、`middleware`、`interrupt_on`、`skills`）目前无法通过 `AGENTS.md` frontmatter 配置。以这种方式定义的 custom subagents 会继承 main agent 的 tools。若需要完整控制，请直接使用 SDK。
 </Note>
 
-## File format
+## 文件格式 {#file-format}
 
 Subagent `AGENTS.md` files 使用 YAML frontmatter，后面跟 markdown body：
 
@@ -43,7 +43,7 @@ You are a research assistant with access to web search.
 2. Summarize findings clearly
 ```
 
-## Example: cost-efficient subagents
+## 示例：cost-efficient subagents {#example-cost-efficient-subagents}
 
 为简单 delegation tasks 使用更便宜、更快的 model，同时让 main agent 继续使用更强的 model：
 
