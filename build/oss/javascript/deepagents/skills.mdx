@@ -19,7 +19,7 @@ Skills 需要 `deepagents>=1.7.0`。
 
 Deep agent skills 遵循 [Agent Skills specification](https://agentskills.io/specification)，并额外支持 interpreter skills。interpreter skills 让你可以提供带有 importable functions 的 skills，供 interpreter 调用。
 
-## 什么是 skills
+## 什么是 skills {#what-are-skills}
 
 Skills 是一组 folders 目录，每个 folder 中包含一个或多个 agent 可以使用的 context files：
 
@@ -32,13 +32,13 @@ Skills 是一组 folders 目录，每个 folder 中包含一个或多个 agent �
     任何额外 assets（scripts、docs、templates 或其他 resources）都必须在 `SKILL.md` 文件中被引用，并说明该文件包含什么以及如何使用，这样 agent 才能判断何时使用它们。
 </Note>
 
-## Skills 如何工作
+## Skills 如何工作 {#how-skills-work}
 
 创建 deep agent 时，你可以传入一组包含 skills 的 directories。agent 启动时，会读取每个 `SKILL.md` 文件的 frontmatter。
 
 当 agent 收到 prompt 时，它会检查在完成该 prompt 时是否可以使用任何 skills。如果找到匹配的 prompt，它再读取该 skill 的其余文件。这种仅在需要时读取 skill 信息的模式称为 *progressive disclosure*。
 
-## 示例
+## 示例 {#example}
 
 你可能有一个 skills folder，其中包含一个按特定方式使用 docs site 的 skill，以及另一个用于搜索 arXiv research papers preprint repository 的 skill：
 
@@ -148,7 +148,7 @@ export function resolveLlmsUrl(url: string) {
     * 在 Deep Agents 中，`SKILL.md` files 必须小于 10 MB。超过此限制的文件会在 skill loading 期间被跳过。
 </Warning>
 
-### 完整示例
+### 完整示例 {#full-example}
 
 下面的示例展示了一个使用所有可用 frontmatter fields 的 `SKILL.md` 文件：
 
@@ -225,7 +225,7 @@ pageUrls;
 ```
 ````
 
-## Usage
+## 用法 {#usage}
 
 创建 deep agent 时传入 skills directory：
 
@@ -270,7 +270,7 @@ pageUrls;
 </Note>
 
 
-## Source precedence
+## 来源优先级 {#source-precedence}
 
 当多个 skill sources 包含同名 skill 时，在 `skills` array 中靠后的 source 中的 skill 优先（last one wins）。这让你可以从不同 origins 分层组合 skills。
 
@@ -286,7 +286,7 @@ const agent = await createDeepAgent({
 ```
 
 
-## Subagents 的 skills
+## Subagents 的 skills {#skills-for-subagents}
 
 使用 [subagents](/oss/javascript/deepagents/subagents) 时，你可以配置每种 subagent 可以访问哪些 skills：
 
@@ -316,7 +316,7 @@ const agent = await createDeepAgent({
 
 关于 subagent configuration 和 skills inheritance 的更多信息，请参见 [Subagents](/oss/javascript/deepagents/subagents)。
 
-## Agent 会看到什么
+## Agent 会看到什么 {#what-the-agent-sees}
 
 配置 skills 后，一个 "Skills System" section 会被注入 agent 的 system prompt。agent 使用这些信息遵循三步流程：
 
@@ -328,14 +328,14 @@ const agent = await createDeepAgent({
     在 `SKILL.md` frontmatter 中写清晰、具体的 descriptions。agent 只会根据 description 判断是否使用某个 skill；详细 descriptions 会带来更好的 skill matching。
 </Tip>
 
-## 使用 skills 执行代码
+## 使用 skills 执行代码 {#execute-code-with-skills}
 
 Skills 通过两种方式支持 code execution：
 
 - 当 agent 需要可从 interpreter code 使用的 reusable、importable helpers 时，请[使用 interpreter skills](#use-interpreter-skills)。
 - 当 agent 需要安装 dependencies、运行 tests、调用 CLIs，或使用 operating-system filesystem 时，请[在 sandbox 中执行 skill scripts](#execute-skill-scripts-in-a-sandbox)。
 
-### 使用 interpreter skills
+### 使用 interpreter skills {#use-interpreter-skills}
 
 Interpreter skills 是向 [interpreter](/oss/javascript/deepagents/interpreters) 暴露 code modules 的 skills。常规 skills 为 agent 提供 instructions 和 context。Interpreter skills 还会给 agent 提供 importable functions，让它能从 interpreter code 调用。
 
@@ -437,7 +437,7 @@ const grouped = groupByStatus(orders);
 grouped;
 ```
 
-### 在 sandbox 中执行 skill scripts
+### 在 sandbox 中执行 skill scripts {#execute-skill-scripts-in-a-sandbox}
 
 Skills 可以在 `SKILL.md` 文件旁边包含 scripts，例如执行搜索或 data transformation 的 Python 文件。agent 可以从任何 backend _读取_ 这些 scripts，但如果要 _执行_ 它们，agent 需要访问 shell；这只有 [sandbox backends](/oss/javascript/deepagents/sandboxes) 能提供。
 
@@ -452,7 +452,7 @@ middleware 的 `beforeAgent` hook 会在每次 agent invocation 前运行，从�
 
 更完整的例子，包括双向同步 [memories](/oss/javascript/deepagents/memory)，请参见 [syncing skills and memories with custom middleware](/oss/javascript/deepagents/going-to-production#example-syncing-skills-and-memories-with-custom-middleware)。
 
-## Skills vs. memory
+## Skills 与 memory {#skills-vs-memory}
 
 Skills 和 [memory](/oss/javascript/deepagents/customization#memory)（`AGENTS.md` files）服务于不同目的：
 
@@ -464,7 +464,7 @@ Skills 和 [memory](/oss/javascript/deepagents/customization#memory)（`AGENTS.m
 | **Layering** | User -> project（last wins） | User -> project（combined） |
 | **Use when** | Instructions 与具体 task 相关，且可能很大 | Context 始终相关（project conventions、preferences） |
 
-## 何时使用 skills 和 tools
+## 何时使用 skills 和 tools {#when-to-use-skills-and-tools}
 
 下面是使用 tools 和 skills 的一些通用 guidelines：
 

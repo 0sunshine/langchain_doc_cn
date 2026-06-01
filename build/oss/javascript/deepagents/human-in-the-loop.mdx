@@ -1,5 +1,5 @@
 ---
-title: Human-in-the-loop
+title: 人在环
 description: 学习如何为敏感 tool 操作配置人工审批
 ---
 
@@ -33,7 +33,7 @@ graph LR
     class ToolMessage process
 ```
 
-## 基本配置
+## 基本配置 {#basic-configuration}
 
 `interrupt_on` 参数接受一个 dictionary，将 tool names 映射到 interrupt configurations。每个 tool 都可以这样配置：
 
@@ -46,7 +46,7 @@ graph LR
 <HitlBasicConfigJs />
 
 
-## Decision types
+## 决策类型 {#decision-types}
 
 `allowed_decisions` list 控制人工 review 一个 tool call 时可以采取哪些动作：
 
@@ -73,7 +73,7 @@ const interruptOn = {
 ```
 
 
-## 处理 interrupts
+## 处理中断 {#handle-interrupts}
 
 当 interrupt 被触发时，agent 会暂停执行并交还控制权。检查结果中是否有 interrupts，并据此处理。
 
@@ -128,7 +128,7 @@ console.log(result.messages[result.messages.length - 1].content);
 ```
 
 
-## 多个 tool calls
+## 多个工具调用 {#multiple-tool-calls}
 
 当 agent 调用多个需要审批的 tools 时，所有 interrupts 会被批处理到一个 interrupt 中。你必须按顺序为每个 action 提供 decisions。
 
@@ -165,7 +165,7 @@ if (result.__interrupt__) {
 ```
 
 
-## 编辑 tool arguments
+## 编辑工具参数 {#edit-tool-arguments}
 
 当 allowed decisions 中包含 `"edit"` 时，你可以在执行前修改 tool arguments：
 
@@ -196,11 +196,11 @@ if (result.__interrupt__) {
 ```
 
 
-## Subagent interrupts
+## Subagent 中断 {#subagent-interrupts}
 
-使用 subagents 时，你可以使用 [tool calls 上的 interrupts](#tool-calls-上的-interrupts) 和 [tool calls 内部的 interrupts](#tool-calls-内部的-interrupts)。
+使用 subagents 时，你可以使用 [tool calls 上的 interrupts](#interrupts-on-tool-calls) 和 [tool calls 内部的 interrupts](#interrupts-within-tool-calls)。
 
-### Tool calls 上的 interrupts
+### 工具调用上的中断 {#interrupts-on-tool-calls}
 
 每个 subagent 都可以有自己的 `interrupt_on` 配置，用来覆盖 main agent 的设置：
 
@@ -231,7 +231,7 @@ const agent = createDeepAgent({
 
 当 subagent 触发 interrupt 时，处理方式相同：检查 result 上的 `interrupts`，并用 `Command` resume。
 
-### Tool calls 内部的 interrupts
+### 工具调用内部的中断 {#interrupts-within-tool-calls}
 
 Subagent tools 可以直接调用 `interrupt()` 来暂停执行并等待审批：
 
@@ -370,27 +370,27 @@ Execution completed!
 
 
 
-## Best practices
+## 最佳实践 {#best-practices}
 
-### 始终使用 checkpointer
+### 始终使用 checkpointer {#always-use-a-checkpointer}
 
 Human-in-the-loop 需要 checkpointer 来在 interrupt 与 resume 之间持久化 agent state：
 
 
 
-### 使用相同 thread ID
+### 使用相同 thread ID {#use-the-same-thread-id}
 
 resume 时，你必须使用带有相同 `thread_id` 的同一个 config：
 
 
 
-### 让 decision 顺序匹配 actions
+### 让 decision 顺序匹配 action 顺序 {#match-decision-order-to-actions}
 
 decisions list 必须与 `action_requests` 的顺序一致：
 
 
 
-### 按风险定制配置
+### 按风险定制配置 {#tailor-configurations-by-risk}
 
 根据不同 tool 的风险等级配置它们：
 

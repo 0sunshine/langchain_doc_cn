@@ -1,5 +1,5 @@
 ---
-title: Permissions
+title: 权限
 description: 使用声明式 permission rules 控制 Deep Agents 的 filesystem access
 ---
 
@@ -37,7 +37,7 @@ Permissions 只适用于内置 filesystem tools（`ls`、`read_file`、`glob`、
 当你需要对内置 filesystem tools 使用 **path-based allow/deny rules** 时，请使用 `permissions`。当你需要 custom validation logic（rate limiting、audit logging、content inspection），或需要控制 custom tools 时，请使用 [backend policy hooks](/oss/python/deepagents/backends#add-policy-hooks)。
 </Tip>
 
-## 基本用法
+## 基本用法 {#basic-usage}
 
 向 [`create_deep_agent`](https://reference.langchain.com/python/deepagents/graph/create_deep_agent) 传入 [`FilesystemPermission`](https://reference.langchain.com/python/deepagents/middleware/permissions/FilesystemPermission) rules 列表。Rules 会按声明顺序求值。第一条匹配 rule 生效。如果没有 rule 匹配，则允许该操作。
 
@@ -47,7 +47,7 @@ Permissions 只适用于内置 filesystem tools（`ls`、`read_file`、`glob`、
 
 
 
-## Rule structure
+## 规则结构 {#rule-structure}
 
 每个 `FilesystemPermission` 有三个字段：
 
@@ -63,31 +63,31 @@ Rules 使用 first-match-wins evaluation：第一条 `operations` 和 `paths` �
 
 
 
-## 示例
+## 示例 {#examples}
 
-### 隔离到 workspace 目录
+### 隔离到 workspace 目录 {#isolate-to-a-workspace-directory}
 
 只允许在 `/workspace/` 下读取和写入，并拒绝其他所有访问：
 
 <PermissionsIsolateWorkspacePy />
 
-### 保护特定文件
+### 保护特定文件 {#protect-specific-files}
 
 <PermissionsProtectFilesPy />
 
-### Read-only memory
+### 只读 memory {#read-only-memory}
 
 允许 agent 读取 memory files，但阻止它修改它们。这适用于 organization-wide policies，或只应由 application code 更新的 shared knowledge bases。更多背景请参阅 [read-only vs writable memory](/oss/python/deepagents/memory#read-only-vs-writable-memory)。
 
 <PermissionsReadOnlyMemoryPy />
 
-### 拒绝所有访问
+### 拒绝所有访问 {#deny-all-access}
 
 阻止所有读取和写入。这是一个 restrictive baseline，你可以在其上叠加更具体的 allow rules：
 
 <PermissionsDenyAllPy />
 
-### Rule ordering
+### 规则顺序 {#rule-ordering}
 
 由于使用 first-match-wins，rule order 很重要。请把更具体的 rules 放在更宽泛的 rules 之前：
 
@@ -97,7 +97,7 @@ Rules 使用 first-match-wins evaluation：第一条 `operations` 和 `paths` �
 
 
 
-## Subagent permissions
+## Subagent 权限 {#subagent-permissions}
 
 [Subagents](/oss/python/deepagents/subagents) 默认继承 parent agent 的 permissions。要给 subagent 不同 permissions，请在它的 spec 中设置 `permissions` 字段。这会完全**替换** parent rules。
 

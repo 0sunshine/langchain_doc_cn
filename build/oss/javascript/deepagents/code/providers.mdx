@@ -5,7 +5,7 @@ description: 为 Deep Agents Code 配置任何 LangChain-compatible model provid
 
 Deep Agents Code 支持任何 [与 LangChain 兼容的 chat model provider](/oss/javascript/integrations/chat)，因此几乎可以使用任何支持 tool calling 的 LLM。任何暴露 OpenAI-compatible 或 Anthropic-compatible API 的 service 也可以开箱即用。请参阅 [Compatible APIs](/oss/javascript/deepagents/code/configuration#compatible-apis)。
 
-## Quickstart
+## 快速开始 {#quickstart}
 
 Deep Agents Code 会自动集成 [以下 model providers](#provider-reference)：除了安装相关 provider package 外，不需要额外配置。
 
@@ -69,7 +69,7 @@ Deep Agents Code 会自动集成 [以下 model providers](#provider-reference)�
                 ```
             </CodeGroup>
         </Tab>
-        <Tab title="Other">
+        <Tab title="其他" id="other">
             Deep Agents Code 可与任何支持 tool calling 的 LLM 搭配使用。完整 supported providers 列表和所需 environment variables 请参阅 [Provider reference](#provider-reference)。
 
         </Tab>
@@ -79,14 +79,14 @@ Deep Agents Code 会自动集成 [以下 model providers](#provider-reference)�
 
     你也可以使用 [`DEEPAGENTS_CODE_` prefix](/oss/javascript/deepagents/code/configuration#deepagents_code_-prefix) 将 credentials 限定给 Deep Agents Code。
 
-## Provider reference
+## Provider 参考 {#provider-reference}
 
 Deep Agents Code 使用 Python 构建，请使用 [Python provider reference docs](https://docs.langchain.com/oss/python/deepagents/code/providers#provider-reference)。
 
 
 
 
-### Model routers and proxies
+### Model routers 和 proxies {#model-routers-and-proxies}
 
 [OpenRouter](https://openrouter.ai/) 和 [LiteLLM](https://docs.litellm.ai/) 这类 model routers 可以通过单一 endpoint 访问多个 providers 的 models。
 
@@ -111,7 +111,7 @@ uv tool install 'deepagents-code[openrouter]'
 uv tool install 'deepagents-code[litellm]'
 ```
 
-## Switch models
+## 切换 models {#switch-models}
 
 在 Deep Agents Code 中切换 models 有三种方式：
 
@@ -127,7 +127,7 @@ uv tool install 'deepagents-code[litellm]'
     dcode --model openai:gpt-5.5
     ```
 
-<Accordion title="Model resolution order" icon="list-numbers">
+<Accordion title="Model 解析顺序" id="model-resolution-order" icon="list-numbers">
     Deep Agents Code 启动时，会按以下顺序解析要使用的 model：
 
     1. 提供了 **`--model` flag** 时，它总是优先。
@@ -138,11 +138,11 @@ uv tool install 'deepagents-code[litellm]'
     startup fallback 有意只检查这四个 credentials。其他 supported providers（例如 Groq）仍然可以通过 `--model`、`/model` 和 saved defaults（`[models].default` / `[models].recent`）使用。
 </Accordion>
 
-### Which models appear in the switcher
+### 哪些 models 会出现在 switcher 中 {#which-models-appear-in-the-switcher}
 
 `/model` selector 会从 installed provider packages 动态构建列表。展开下方可查看完整 criteria 和 troubleshooting。
 
-<Accordion title="How the switcher builds its model list" icon="list-search">
+<Accordion title="Switcher 如何构建 model 列表" id="how-the-switcher-builds-its-model-list" icon="list-search">
     interactive `/model` selector 会动态构建列表，它不是写死在 Deep Agents Code 里的 hardcoded list。当且仅当满足以下所有条件时，model 才会出现在 switcher 中：
 
     1. **provider package 已安装。** 每个 provider（例如 `langchain-anthropic`、`langchain-openai`）都必须与 `deepagents-code` 一起安装，可以作为 [install extra](/oss/javascript/deepagents/code/providers#quickstart)（例如 `uv tool install 'deepagents-code[ollama]'`），也可以稍后通过 `uv tool install deepagents-code --with <package>` 添加。如果 package 缺失，整个 provider section 都不会出现在 switcher 中。
@@ -164,7 +164,7 @@ uv tool install 'deepagents-code[litellm]'
         Credential status **不会** 影响 model 是否列出。switcher 会显示所有符合条件的 models，并在每个 provider header 旁边显示 credential indicator：checkmark 表示 credentials 已确认，warning 表示缺少 credentials，question mark 表示 credential status unknown。即使 credentials 缺失，你仍然可以选择 model；provider 会在 request time 报 authentication error。
     </Tip>
 
-    #### Troubleshooting missing models
+    #### 排查缺失 models
 
     | Symptom | Likely cause | Fix |
     | --- | --- | --- |
@@ -174,7 +174,7 @@ uv tool install 'deepagents-code[litellm]'
     | Provider 显示 "credentials unknown" | Provider 使用 Deep Agents Code 无法验证的 non-standard auth | Credentials 可能仍然可用；尝试切换到该 model。如果 auth 失败，请检查 provider docs |
 </Accordion>
 
-### Set a default model
+### 设置 default model {#set-a-default-model}
 
 你可以设置 persistent default model，之后所有 CLI launches 都会使用它：
 
@@ -206,7 +206,7 @@ dcode --default-model
 
 没有 default 时，Deep Agents Code 会默认使用 most recently used model。
 
-### Model parameters
+### Model 参数 {#model-parameters}
 
 向 model 传递额外 constructor kwargs，例如 sampling controls、reasoning/thinking budgets、context window sizes、request timeouts，以及 underlying chat-model class 接受的任何其他参数。可以在三个位置设置，优先级如下（从高到低）：
 
@@ -259,7 +259,7 @@ CLI flags 会覆盖 config-file `params`，且只对 session 生效（mid-sessio
 
 如需覆盖 model runtime *profile* 上的字段（`max_input_tokens`、`tool_calling`、capability flags），这与 constructor params 不同，请参阅 [Profile overrides](/oss/javascript/deepagents/code/configuration#profile-overrides-advanced)。
 
-## Advanced configuration
+## 高级配置 {#advanced-configuration}
 
 如需 provider params、profile overrides、custom base URLs、compatible APIs、arbitrary providers 和 lifecycle hooks 的详细配置，请参阅 [Configuration](/oss/javascript/deepagents/code/configuration)。
 

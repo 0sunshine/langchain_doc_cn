@@ -9,7 +9,7 @@ import { PatternEmbed } from "/snippets/pattern-embed.jsx";
 
 <PatternEmbed pattern="deep-agent-ide" minHeight={700} />
 
-## Architecture
+## 架构 {#architecture}
 
 sandbox pattern 有三层：
 
@@ -53,11 +53,11 @@ graph LR
   class API orangeHighlight;
 ```
 
-## Sandbox lifecycle
+## Sandbox 生命周期 {#sandbox-lifecycle}
 
 在深入代码之前，先理解 sandboxes 如何 scoped 很重要。scoping strategy 会决定谁共享 sandbox、sandbox 存活多久，以及 runtime 中如何解析它。
 
-### Thread-scoped sandbox (recommended)
+### Thread-scoped sandbox（推荐） {#thread-scoped-sandbox-recommended}
 
 每个 LangGraph thread 都获得自己的 sandbox。sandbox ID 会存储在 thread metadata 中，并在 runtime 通过 `getConfig()` 解析。这是大多数 applications 推荐使用的方式：
 
@@ -126,7 +126,7 @@ def get_sandbox_backend_for_user():
 
 
 
-### Session-scoped sandbox (client-side)
+### Session-scoped sandbox（client-side） {#session-scoped-sandbox-client-side}
 
 对于没有 LangGraph threads 的简单 apps，frontend 可以生成一个 session ID 并直接传入。这种方式不会跨 browser sessions 持久化，最适合 demos 或 prototyping：
 
@@ -146,9 +146,9 @@ urllib.request.urlopen(f"http://localhost:2024/api/sandbox/tree?{query}")
 
 本指南剩余部分会以 **thread-scoped sandboxes** 作为主要示例。
 
-## Setting up the agent
+## 设置 agent {#setting-up-the-agent}
 
-### Choose a sandbox provider
+### 选择 sandbox provider {#choose-a-sandbox-provider}
 
 Deep Agents 支持多个 [sandbox providers](/oss/python/integrations/sandboxes)。任何实现 `SandboxBackendProtocol` 的 provider 都可以使用：
 
@@ -166,7 +166,7 @@ agent = create_deep_agent(model="google_genai:gemini-3.5-flash", backend=sandbox
 
 agent 会自动获得 filesystem tools（`read_file`、`write_file`、`edit_file`、`ls`、`glob`、`grep`），以及用于运行 shell commands 的 `execute` tool。不需要额外 tool configuration。
 
-### Resolve a sandbox per thread
+### 为每个 thread 解析 sandbox {#resolve-a-sandbox-per-thread}
 
 不要在 module level 创建 sandbox（那会被所有 threads 共享，而且可能过期），而是在 runtime 为每个 thread 解析 sandbox。sandbox 会通过 `getConfig()` 从 LangGraph config 中读取 `thread_id`：
 
@@ -197,7 +197,7 @@ agent = create_deep_agent(
 
 
 
-### Seed the sandbox
+### 初始化 sandbox {#seed-the-sandbox}
 
 在 agent 运行前，使用 `uploadFiles` 把 project files 填充到 sandbox 中：
 
@@ -226,7 +226,7 @@ await sandbox.uploadFiles(
   上传 `package.json` 后运行 `sandbox.execute("cd /app && npm install")`，以便在 agent 启动前安装 dependencies。
 </Tip>
 
-## Adding the file browsing API
+## 添加 file browsing API {#adding-the-file-browsing-api}
 
 
 
@@ -234,7 +234,7 @@ agent 可以 read 和 write files，但 frontend 也需要直接访问 sandbox f
 
 
 
-### Create the API server
+### 创建 API server {#create-the-api-server}
 
 sandbox API endpoints 使用 thread ID 作为 URL path parameter。这能确保 frontend 始终访问当前 conversation 对应的正确 sandbox，并使用与
 agent backend 相同的 `get_or_create_sandbox_for_thread` function：
@@ -292,7 +292,7 @@ async def read_file(
   同一个 sandbox。thread metadata 中的 sandbox ID 是 single source of truth - 不需要 in-memory caches。
 </Note>
 
-### Configure `langgraph.json`
+### 配置 `langgraph.json` {#configure-langgraph-json}
 
 同时注册 agent graph 和 API server。`http.app` field 会告诉 LangGraph platform，在默认 routes 旁边同时 serve 你的 custom routes：
 
@@ -318,11 +318,11 @@ async def read_file(
   在 `http.app` 中定义的 custom routes 优先级高于默认 LangGraph routes。这意味着你可以在需要时 shadow built-in endpoints，但要小心不要意外覆盖 `/threads` 或 `/runs` 这样的 routes。
 </Note>
 
-## Building the frontend
+## 构建 frontend {#building-the-frontend}
 
 frontend 有三个 panels：file tree sidebar、code/diff viewer 和 chat panel。它使用 `useStream` 进行 agent conversation，并使用 custom API endpoints 浏览 files。
 
-### Thread creation
+### 创建 thread {#thread-creation}
 
 page loads 时创建 LangGraph thread，并把它的 ID 持久化到 `sessionStorage`，这样 page reloads 后可以重新连接到同一个 sandbox：
 
@@ -368,7 +368,7 @@ function handleNewThread() {
 }
 ```
 
-### File state management
+### 文件状态管理 {#file-state-management}
 
 跟踪 sandbox filesystem 的两个 snapshots：original state（agent 运行前）和 current state（实时更新）。API URL 中包含 thread ID，因此 requests 总是命中正确的 sandbox：
 
@@ -392,7 +392,7 @@ async function fetchFile(threadId: string, path: string): Promise<string | null>
 }
 ```
 
-### Real-time file sync
+### 实时文件同步 {#real-time-file-sync}
 
 IDE experience 的关键在于 **agent 工作时** 就更新 files，而不是等它完成后再更新。监听 stream messages 中来自 file-mutating tools 的 `ToolMessage` instances。当 `write_file` 或 `edit_file` tool call 完成时，刷新对应 file。当 `execute` 完成时，刷新全部内容（因为 shell command 可能修改任意 file）：
 
@@ -592,7 +592,7 @@ export class IdePreviewComponent {
 
 </CodeGroup>
 
-### Detecting changed files
+### 检测变更文件 {#detecting-changed-files}
 
 每次 agent run 前，对当前 file contents 做 snapshot。files 刷新后，把它与 snapshot 对比，找出哪些 files changed：
 
@@ -611,7 +611,7 @@ function detectChanges(current: FileSnapshot, original: FileSnapshot): Set<strin
 
 当 user 选择 changed file 时，默认进入 diff view，让他们立即看到 agent 修改了什么。
 
-### Displaying diffs
+### 显示 diffs {#displaying-diffs}
 
 使用适合对应 framework 的 diff library 来渲染 unified diffs：
 
@@ -643,7 +643,7 @@ function DiffPanel({ original, current, fileName }) {
 }
 ```
 
-### Changed files summary
+### 变更文件摘要 {#changed-files-summary}
 
 显示所有 modified files 的 summary，并包含 line-level addition/deletion counts。这会让 users 快速了解 agent 造成的影响，类似 `git status`：
 
@@ -671,15 +671,15 @@ function ChangedFilesSummary({ changedFiles, files, originalFiles, onSelect }) {
 }
 ```
 
-## The three-panel layout
+## 三栏布局 {#the-three-panel-layout}
 
-IDE layout 会把三个 panels 并排排列：
+IDE layout 会把三个面板并排排列：
 
-| Panel       | Width         | Purpose                                      |
+| 面板 | 宽度 | 用途 |
 | ----------- | ------------- | -------------------------------------------- |
-| File tree   | Fixed (208px) | 浏览 sandbox files，查看 change indicators   |
-| Code / Diff | Flexible      | 查看 file content 或 unified diff            |
-| Chat        | Fixed (320px) | 与 agent 交互                                |
+| 文件树      | 固定 (208px) | 浏览 sandbox 文件，查看变更指示器           |
+| Code / Diff | 弹性         | 查看文件内容或 unified diff                  |
+| Chat        | 固定 (320px) | 与 agent 交互                                |
 
 ```tsx
 <div className="flex h-screen">
@@ -698,7 +698,7 @@ IDE layout 会把三个 panels 并排排列：
 
 file tree 会显示 VS Code-style icons（使用 [`@iconify-json/vscode-icons`](https://www.npmjs.com/package/@iconify-json/vscode-icons)），并在 modified files 上显示 amber dots。选择 modified file 会自动切换到 diff tab。
 
-## Use cases
+## 使用场景 {#use-cases}
 
 以下场景适合使用 sandbox：
 
@@ -707,7 +707,7 @@ file tree 会显示 VS Code-style icons（使用 [`@iconify-json/vscode-icons`](
 - **Tutorial or learning apps**：AI assistant 帮助 users step by step 构建 project，并在 context 中展示 changes
 - **Prototyping tools**：users 用 natural language 描述 features，并实时观看 agent 实现它们
 
-## Best practices
+## 最佳实践 {#best-practices}
 
 - **Use thread-scoped sandboxes** 用于 production apps。把 sandbox ID 存储在 thread metadata 中，并在 runtime 通过 `getConfig()` 解析。这可以避免 module-level state，并让每个 conversation 的 sandboxes 保持隔离。
 - **Share `getOrCreateSandboxForThread`** 于 agent backend 和 API server 之间。两者都应该以同样方式解析 sandbox，也就是通过 thread metadata，这样就有 single source of truth，不需要 in-memory caches。

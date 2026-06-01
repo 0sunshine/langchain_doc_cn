@@ -1,6 +1,6 @@
 ---
-title: Memory and Skills
-sidebarTitle: Memory and skills
+title: Memory 和 Skills
+sidebarTitle: Memory 和 Skills
 description: Deep Agents Code 的 persistent memory、AGENTS.md files 和 reusable skills，包括创建、发现和调用。
 ---
 
@@ -18,7 +18,7 @@ description: Deep Agents Code 的 persistent memory、AGENTS.md files 和 reusab
 
 ## Memory
 
-### Automatic memory
+### 自动 memory {#automatic-memory}
 
 随着你使用 agent，它会按照 memory-first protocol，把信息作为 markdown files 自动存储在 `~/.deepagents/<agent_name>/memories/`：
 
@@ -49,7 +49,7 @@ dcode --agent backend-dev
 # Applies conventions without prompting
 ```
 
-### AGENTS.md files
+### AGENTS.md 文件 {#agents-md-files}
 
 [`AGENTS.md` files](https://agents.md/) 提供 session start 时始终加载的 persistent context：
 
@@ -58,7 +58,7 @@ dcode --agent backend-dev
 
 两个文件都会在 startup 时追加到 system prompt。
 
-### How memory works
+### Memory 工作原理 {#how-memory-works}
 
 当回答 project-specific questions，或者当你引用过去的 work 或 patterns 时，agent 也可能读取它的 memory files。
 
@@ -69,7 +69,7 @@ dcode --agent backend-dev
 你必须在 `AGENTS.md` file 中引用额外 files，agent 才会知道它们存在。
 这些额外 files 不会在 startup 时读取，但 agent 可以在需要时 reference 和 update 它们。
 
-### When to use global vs. project AGENTS.md
+### 何时使用 global 与 project AGENTS.md {#when-to-use-global-vs-project-agents-md}
 
 使用 global `AGENTS.md`（`~/.deepagents/agent/AGENTS.md`）保存：
 
@@ -94,10 +94,10 @@ Skills 是 reusable agent capabilities，可提供 specialized workflows 和 dom
 Deep agent skills 遵循 [Agent Skills standard](https://agentskills.io/)。
 一旦添加了 skills，deep agent 会在你使用 agent 并提供额外信息时自动使用并更新它们。
 
-### Add skills
+### 添加 skills {#add-skills}
 
 <Steps>
-    <Step title="Create a skill">
+    <Step title="创建 skill">
 
         ```bash
         # User skill (stored in ~/.deepagents/<agent_name>/skills/)
@@ -116,10 +116,10 @@ Deep agent skills 遵循 [Agent Skills standard](https://agentskills.io/)。
         ```
 
     </Step>
-    <Step title="Edit SKILL.md">
+    <Step title="编辑 SKILL.md">
         打开生成的 `SKILL.md`，编辑该 file 以加入你的 instructions。
     </Step>
-    <Step title="Add optional resources">
+    <Step title="添加可选 resources">
         可选地向 `test-skill` folder 添加 additional scripts 或其他 resources。更多信息请参阅 [Examples](/oss/javascript/deepagents/skills#example)。
     </Step>
 </Steps>
@@ -131,7 +131,7 @@ mkdir -p ~/.deepagents/<agent_name>/skills
 cp -r examples/skills/web-research ~/.deepagents/<agent_name>/skills/
 ```
 
-### Install community skills
+### 安装 community skills {#install-community-skills}
 
 你可以使用 Vercel 的 [Skills CLI](https://github.com/vercel-labs/skills) 等 tools 在环境中安装 community [Agent Skills](https://agentskills.io/)，并让 deep agents 可以使用它们：
 
@@ -149,7 +149,7 @@ Global installs（`-g`）会把 skills symlink 到 `~/.deepagents/agent/skills/`
     Global installs 只指向默认的 `agent` directory。如果你使用 custom-named agent，请使用 project-level installs，或手动把 skill symlink 到 `~/.deepagents/{your-agent}/skills/`。
 </Note>
 
-### Skill discovery
+### Skill 发现 {#skill-discovery}
 
 startup 时，Deep Agents Code 会从 Deep Agents 和 shared alias directories 中发现 skills：
 
@@ -172,7 +172,7 @@ startup 时，Deep Agents Code 会从 Deep Agents 和 shared alias directories �
 
 你也可以使用 `/skill:<name> [args]` 直接调用 skill。Skill discovery 会在 startup 时运行，也会在 `/reload` 时再次运行。
 
-### Invoke a skill from the command line
+### 从 command line 调用 skill {#invoke-a-skill-from-the-command-line}
 
 使用 `--skill` 可以在 launch 时调用 skill，而不必在交互中输入 slash command：
 
@@ -204,7 +204,7 @@ dcode --skill code-review -n 'review this patch' -q
     `--skill` 搭配 `--quiet` 或 `--no-stream` 时需要 `-n`（non-interactive mode）。
 </Note>
 
-### List skills
+### 列出 skills {#list-skills}
 
 ```bash
 # List all user skills

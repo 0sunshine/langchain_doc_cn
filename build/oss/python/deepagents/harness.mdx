@@ -6,16 +6,16 @@ sidebarTitle: 概览
 Deep Agents harness 提供四类内置能力，让构建 long-running、reliable agents 更容易：
 
 <CardGroup cols={2}>
-  <Card title="Execution environment" icon="bolt" href="#execution-environment">
+  <Card title="执行环境" icon="bolt" href="#execution-environment">
     Tools、virtual filesystem、可选 sandbox，以及 REPL（interpreter）
   </Card>
-  <Card title="Context management" icon="database" href="#context-management">
+  <Card title="Context 管理" icon="database" href="#context-management">
     Skills、memory、summarization、context offloading 和 prompt caching
   </Card>
-  <Card title="Delegation" icon="sitemap" href="#delegation">
+  <Card title="任务委派" icon="sitemap" href="#delegation">
     Subagent spawning 和 task planning
   </Card>
-  <Card title="Steering" icon="user" href="#steering">
+  <Card title="行为引导" icon="user" href="#steering">
     Human-in-the-loop approval 和 interrupts
   </Card>
 </CardGroup>
@@ -24,7 +24,7 @@ Deep Agents harness 提供四类内置能力，让构建 long-running、reliable
 
 ![Deep Agents open harness：planning、virtual filesystem、permissions、subagents、context management、code execution、human-in-the-loop、skills 和 memory](/oss/images/deepagents/production/open-harness.png)
 
-## Execution environment
+## 执行环境 {#execution-environment}
 
 Execution environment 是 agent 执行操作的地方。它有四层：
 
@@ -33,7 +33,7 @@ Execution environment 是 agent 执行操作的地方。它有四层：
 - **[Filesystem permissions](#filesystem-permissions)**：声明式访问控制，用于限制 agents 可读写哪些 paths
 - **[Code execution](#code-execution)**：sandboxed shell execution 和 in-process JavaScript interpreter
 
-### Tools
+### 工具 {#tools}
 
 通过 `tools=` 参数向 `create_deep_agent` 传入任意 Python callable、LangChain tool 或 tool dict。这些是 agent 可以执行的 domain-specific actions，例如 web search、database queries、API calls，或你定义的任意函数。
 
@@ -48,12 +48,12 @@ agent = create_deep_agent(
 
 关于定义和使用 tools 的更多信息，请参阅 [Tools](/oss/python/langchain/tools)。
 
-### Virtual filesystem access
+### 虚拟文件系统访问 {#virtual-filesystem-access}
 
 harness 提供可配置的 virtual filesystem，可由不同的 pluggable backends 支撑。
 backends 支持以下 file system operations：
 
-| Tool | 描述 |
+| 工具 | 描述 |
 | --- | --- |
 | `ls` | 列出目录中的文件及其 metadata（size、modified time） |
 | `read_file` | 读取带 line numbers 的文件内容，支持 offset/limit 以处理大文件。也支持为非文本文件（images、video、audio 和 documents）返回 multimodal content blocks。支持的扩展名见下方。 |
@@ -63,7 +63,7 @@ backends 支持以下 file system operations：
 | `grep` | 搜索文件内容，支持多种 output modes（仅文件、带上下文的内容，或计数） |
 | `execute` | 在环境中运行 shell commands（仅适用于 [sandbox backends](/oss/python/deepagents/sandboxes)） |
 
-<Accordion title="支持的 multimodal 文件扩展名">
+<Accordion title="支持的多模态文件扩展名" id="supported-multimodal-file-extensions">
 
 | 类型 | 扩展名 |
 | --- | --- |
@@ -74,7 +74,7 @@ backends 支持以下 file system operations：
 
 </Accordion>
 
-<Accordion title="不使用默认 filesystem tools 运行" icon="ban">
+<Accordion title="不使用默认文件系统工具运行" id="running-without-the-default-filesystem-tools" icon="ban">
     要从 model 隐藏上面列出的 filesystem tools，请注册一个带有 `excluded_tools` 的 [harness profile](#harness-profiles)：
 
     ```python
@@ -98,7 +98,7 @@ virtual filesystem 会被 skills、memory、code execution 和 context managemen
 
 更多信息请参阅 [backends](/oss/python/deepagents/backends)。
 
-### Filesystem permissions
+### 文件系统权限 {#filesystem-permissions}
 
 harness 支持声明式 permission rules，用于控制 agent 可以读取或写入哪些文件和目录。Permissions 适用于上面列出的 built-in filesystem tools，并按声明顺序求值，采用 first-match-wins semantics。
 
@@ -116,7 +116,7 @@ Permissions 不适用于 [sandbox backends](/oss/python/deepagents/sandboxes)，
 
 完整 rule structure、示例和 subagent inheritance 请参阅 [Permissions](/oss/python/deepagents/permissions)。
 
-### Code execution
+### 代码执行 {#code-execution}
 
 Deep Agents 通过两种方式支持 code execution：
 
@@ -129,7 +129,7 @@ Deep Agents 通过两种方式支持 code execution：
 
 关于 sandbox setup、providers 和 file transfer APIs，请参阅 [Sandboxes](/oss/python/deepagents/sandboxes)。关于 QuickJS runtime 和 programmatic tool calling，请参阅 [Interpreters](/oss/python/deepagents/interpreters)。
 
-## Context management
+## Context 管理 {#context-management}
 
 Context management 组件控制 agent 知道什么、能在 token limits 内运行多久，以及跨 sessions 保留什么。它有四层：
 
@@ -176,7 +176,7 @@ harness 支持 persistent memory files，用于跨 conversations 为 deep agent 
 
 配置细节和示例请参阅 [Memory](/oss/python/deepagents/customization#memory)。
 
-### Summarization and context offloading
+### 总结和 context offloading {#summarization-and-context-offloading}
 
 harness 管理 context，使 deep agents 能够在 token limits 内处理 long-running tasks，同时保留所需信息。
 
@@ -193,7 +193,7 @@ harness 管理 context，使 deep agents 能够在 token limits 内处理 long-r
 
 配置细节请参阅 [Context engineering](/oss/python/deepagents/context-engineering)。
 
-### Prompt caching
+### Prompt 缓存 {#prompt-caching}
 
 对于 Anthropic models，`create_deep_agent` 会自动对 system prompt 中的 static sections 应用 prompt caching，例如 base agent instructions、memory，以及每一轮都会重复的 skill content。这可以避免跨 calls 反复处理相同 tokens，从而降低 long-running agents 的 latency 和 cost。
 
@@ -201,14 +201,14 @@ harness 管理 context，使 deep agents 能够在 token limits 内处理 long-r
 
 对于其他 providers，请参阅 [Middleware integrations](/oss/python/integrations/middleware#official-integrations)，了解可用的 provider-specific caching middleware。
 
-## Delegation
+## 任务委派 {#delegation}
 
 Delegation 组件让 agents 能够把大问题拆成更小、可并行的 work units。它有两层：
 
 - **[Task planning](#task-planning)**：内置 `write_todos` tool，用于 structured task tracking
 - **[Subagents](#subagents)**：处理 isolated subtasks 的 ephemeral child agents
 
-### Task planning
+### 任务规划 {#task-planning}
 
 harness 提供 `write_todos` tool，agents 可以用它维护 structured task list。
 
@@ -236,13 +236,13 @@ harness 允许 main agent 创建 ephemeral "subagents"，用于隔离的 multi-s
 - 可以使用默认的 [`general-purpose` subagent](/oss/python/deepagents/subagents#default-subagent)（默认启用），也可以添加 [custom subagents](/oss/python/deepagents/subagents#custom-subagents)
 - Subagents 是 stateless 的（不能多次发消息回来）
 
-<Accordion title="不使用 subagents 运行（没有 `task` tool）" icon="ban">
+<Accordion title="不使用 subagents 运行（没有 `task` tool）" id="running-without-subagents-no-task-tool" icon="ban">
     要运行没有 `task` tool 的 agent，请参阅 [Running without subagents](/oss/python/deepagents/subagents#running-without-subagents)。不要尝试通过 `excluded_middleware` 移除 `SubAgentMiddleware`，这会被有意拒绝。请改为通过 [harness profile](#harness-profiles) 禁用自动添加的 subagent，并且不要通过 `subagents=` 传入 synchronous subagents。Async subagents 不受影响。
 </Accordion>
 
 更多信息请参阅 [Subagents](/oss/python/deepagents/subagents)。
 
-## Steering
+## 行为引导 {#steering}
 
 Steering 组件让 humans 能够在 runtime 控制 agent behavior。
 
@@ -262,7 +262,7 @@ harness 可以在指定 tool calls 处暂停 agent execution，以允许 human a
 
 更多信息请参阅 [Human-in-the-loop](/oss/python/deepagents/human-in-the-loop)。
 
-## Harness profiles
+## Harness profiles {#harness-profiles}
 
 harness 可以在选择给定 provider 或 model 时应用声明式 configuration bundle（`HarnessProfile`）。Profiles 会在 model 构建完成后调优 runtime behavior，而不需要 per-agent setup code。
 

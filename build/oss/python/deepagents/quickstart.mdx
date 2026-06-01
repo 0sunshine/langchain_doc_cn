@@ -1,5 +1,5 @@
 ---
-title: Quickstart
+title: 快速开始
 description: 几分钟内构建你的第一个 deep agent
 ---
 
@@ -19,7 +19,7 @@ import QuickstartRunAgentJs from '/snippets/code-samples/quickstart-run-agent-js
     - 安装 [LangChain Skills](https://github.com/langchain-ai/langchain-skills)，提升 agent 处理 LangChain 生态任务的表现。
 </Tip>
 
-## 前置条件
+## 前置条件 {#prerequisites}
 
 开始之前，请确保你已经从某个 model provider（例如 Gemini、Anthropic、OpenAI）获取了 API key。
 
@@ -27,7 +27,7 @@ import QuickstartRunAgentJs from '/snippets/code-samples/quickstart-run-agent-js
     Deep Agents 需要支持 [tool calling](/oss/python/langchain/models#tool-calling) 的 model。如何配置 model，请参阅 [customization](/oss/python/deepagents/customization#model)。
 </Note>
 
-## Step 1：安装依赖
+## 步骤 1：安装依赖 {#step-1-install-dependencies}
 
 <CodeGroup>
     ```bash pip
@@ -48,7 +48,7 @@ import QuickstartRunAgentJs from '/snippets/code-samples/quickstart-run-agent-js
     本指南使用 [Tavily](https://tavily.com/) 作为示例 search provider，但你可以替换为任何 search API（例如 DuckDuckGo、SerpAPI、Brave Search）。
 </Note>
 
-## Step 2：设置 API keys
+## 步骤 2：设置 API keys {#step-2-set-up-your-api-keys}
 
 <Tabs>
     <Tab title="Google">
@@ -106,14 +106,14 @@ import QuickstartRunAgentJs from '/snippets/code-samples/quickstart-run-agent-js
     </Tab>
 </Tabs>
 
-## Step 3：创建 search tool
+## 步骤 3：创建 search tool {#step-3-create-a-search-tool}
 
 <QuickstartSearchToolPy />
 
 
 
 
-## Step 4：创建 deep agent
+## 步骤 4：创建 deep agent {#step-4-create-a-deep-agent}
 
 传入 `provider:model` 格式的 `model` 字符串，或传入一个 [initialized model instance](/oss/python/deepagents/models#configure-model-parameters)。所有 providers 请参阅 [supported models](/oss/python/deepagents/models#supported-models)，经过测试的推荐项请参阅 [suggested models](/oss/python/deepagents/models#suggested-models)。
 
@@ -122,7 +122,7 @@ import QuickstartRunAgentJs from '/snippets/code-samples/quickstart-run-agent-js
 
 
 
-## Step 5：运行 agent
+## 步骤 5：运行 agent {#step-5-run-the-agent}
 
 <QuickstartRunAgentPy />
 
@@ -133,7 +133,7 @@ import QuickstartRunAgentJs from '/snippets/code-samples/quickstart-run-agent-js
 使用 [LangSmith](https://smith.langchain.com?utm_source=docs&utm_medium=cta&utm_campaign=langsmith-signup&utm_content=oss-deepagents-quickstart) trace agent 的 planning steps、tool calls 和 subagent delegation。按照 [observability quickstart](/langsmith/observability-quickstart) 完成设置。
 </Tip>
 
-## 它是如何工作的？
+## 它是如何工作的？ {#how-does-it-work}
 
 你的 deep agent 会自动：
 
@@ -143,16 +143,16 @@ import QuickstartRunAgentJs from '/snippets/code-samples/quickstart-run-agent-js
 1. **按需生成 subagents**：将复杂 subtasks 委派给专用 subagents。
 1. **综合报告**：将发现整理成连贯的 response。
 
-## 示例
+## 示例 {#examples}
 
 要查看可用 Deep Agents 构建的 agents、patterns 和 applications，请参阅 [Examples](https://github.com/langchain-ai/deepagents/tree/main/examples)。
 
-## Streaming
+## 流式传输 {#streaming}
 
 Deep Agents 内置 [streaming](/oss/python/langchain/event-streaming)，可基于 LangGraph 从 agent execution 中获取实时更新。
 这让你可以逐步观察输出，并 review 和 debug agent 与 subagent 的工作，例如 tool calls、tool results 和 LLM responses。
 
-## 下一步
+## 下一步 {#next-steps}
 
 现在你已经构建了第一个 deep agent：
 

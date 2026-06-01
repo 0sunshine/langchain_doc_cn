@@ -1,11 +1,11 @@
 ---
-title: Event streaming
+title: 事件流式传输
 description: 从 Deep Agents stream subagents、messages、tool calls 和最终 output。
 ---
 
 本页介绍 Deep Agents 特有的 streaming 关注点，最重要的是通过 `stream.subagents` 从被 delegated 的 subagents streaming。关于通用 agent streaming（`stream.messages`、`stream.values`、tool calls、custom updates），请参见 [LangChain Event Streaming](/oss/python/langchain/event-streaming)。
 
-## Stream subagents
+## 流式传输 subagents {#stream-subagents}
 
 Deep Agents 在 LangGraph streaming 之上添加了一个 subagent projection。当你希望每个被 delegated 的 `task` call 都有一个独立 stream handle 时，请使用 `stream.subagents`。这个 projection 很轻量：它会先发现 subagent tasks，只有当你访问某个 subagent handle 上的 messages、tool-call 或 value streams 时，才会打开对应 stream。
 
@@ -24,7 +24,7 @@ for subagent in stream.subagents:
 
 
 
-## Subagent stream fields
+## Subagent stream 字段 {#subagent-stream-fields}
 
 每个 subagent stream 都会暴露与 parent run 相同类型的 projections，例如 messages、tool calls、nested subagents 和 final output。关于通用 parent-run streaming model，请参见 [LangChain Event Streaming](/oss/python/langchain/event-streaming)。
 
@@ -33,7 +33,7 @@ Python 使用 snake_case projection names，例如 `tool_calls`。每个 subagen
 
 
 
-| Field | Description |
+| 字段 | 说明 |
 | ----- | ----------- |
 | `name` | Subagent name。 |
 | `messages` | subagent 发出的 messages。 |
@@ -44,7 +44,7 @@ Python 使用 snake_case projection names，例如 `tool_calls`。每个 subagen
 | `tool_calls` | 作用域限定到 subagent 的 tool calls。 |
 
 
-## 跟踪 subagent lifecycle
+## 跟踪 subagent 生命周期 {#track-subagent-lifecycle}
 
 当你只需要显示哪些 subagents 已开始和已结束时，请使用 `stream.subagents`。除非你访问某个具体 subagent 上的 message 或 value streams，否则不需要订阅这些 streams。
 
@@ -74,7 +74,7 @@ for subagent in stream.subagents:
 
 
 
-## Stream messages
+## 流式传输消息 {#stream-messages}
 
 Deep Agents 可以从 coordinator agent 和被 delegated 的 subagents 发出 messages。使用 `stream.messages` 获取 top-level messages，并为每个 delegated subagent 使用 `subagent.messages`。
 
@@ -92,7 +92,7 @@ for subagent in stream.subagents:
 
 
 
-## Stream tool calls
+## 流式传输工具调用 {#stream-tool-calls}
 
 Deep Agents 会在 agent tree 的每个层级暴露 tool calls。使用 top-level `stream.tool_calls` 获取 coordinator tools，并为 delegated work 使用每个 `subagent.tool_calls`。
 
@@ -118,7 +118,7 @@ for subagent in stream.subagents:
 
 
 
-## Stream nested work
+## 流式传输嵌套工作 {#stream-nested-work}
 
 你可以递归进入 subagent stream，观察 nested subagents、messages 和 tool calls。
 
@@ -140,7 +140,7 @@ for subagent in stream.subagents:
 
 
 
-## 并发消费
+## 并发消费 {#consume-concurrently}
 
 Coordinator 和 subagent output 经常会交错出现。当你需要 live UI updates 时，请并发消费 projections。
 
@@ -203,11 +203,11 @@ for event in stream:
 
 
 
-## Subagents 与 subgraphs
+## Subagents 与 subgraphs {#subagents-versus-subgraphs}
 
 `stream.subgraphs` 显示 graph execution structure。`stream.subagents` 显示产品层面的 Deep Agents task delegations。面向用户的 UI 请使用 `stream.subagents`，因为它会隐藏内部 graph nodes，并直接暴露 subagent 概念。
 
-## Related
+## 相关 {#related}
 
 - [LangChain Event Streaming](/oss/python/langchain/event-streaming) 介绍通用 agent message 和 tool-call streaming 概念。
 - [Subagent frontend streaming](/oss/python/deepagents/frontend/subagent-streaming) 展示将 coordinator messages 与 subagent cards 分开的 UI patterns。

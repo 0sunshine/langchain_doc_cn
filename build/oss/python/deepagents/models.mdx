@@ -1,5 +1,5 @@
 ---
-title: Models
+title: 模型
 description: 为 Deep Agents 配置 model providers 和 parameters
 ---
 
@@ -7,13 +7,13 @@ import EvalCategoryMatrix from '/snippets/deepagents-eval-category-matrix.mdx';
 
 Deep Agents 可与任何支持 [tool calling](/oss/python/langchain/models#tool-calling) 的 [LangChain chat model](/oss/python/langchain/models) 配合使用。
 
-## Supported models
+## 支持的模型 {#supported-models}
 
 用 `provider:model` 格式指定 models（例如 `google_genai:gemini-3.5-flash`、`openai:gpt-5.4` 或 `anthropic:claude-sonnet-4-6`）。provider prefix 会选择 LangChain integration，冒号后面的所有内容会作为 model identifier 传递给该 provider。有效 provider strings 请参阅 [`init_chat_model`](https://reference.langchain.com/python/langchain/chat_models/base/init_chat_model) 的 `model_provider` 参数。provider-specific configuration 请参阅 [chat model integrations](/oss/python/integrations/chat)。
 
 model identifier 必须匹配 provider 期望的格式。有些 providers 使用 `gpt-5.4` 这样的简单名称；有些使用 namespaced IDs 或 deployment paths，例如 `zai-org/GLM-5.1`，因此完整的 Deep Agents 字符串会是 `baseten:zai-org/GLM-5.1`。请查看 provider 的 model catalog 或 integration docs 获取当前 identifiers。
 
-### Suggested models
+### 推荐模型 {#suggested-models}
 
 这些 models 在 [Deep Agents eval suite](https://github.com/langchain-ai/deepagents/tree/main/libs/evals#readme) 上表现良好；该 suite 测试基础 agent operations。通过这些 evals 是在更长、更复杂任务上取得强表现的必要条件，但并不充分。
 
@@ -29,7 +29,7 @@ Open-weight models 可通过 [Baseten](/oss/python/integrations/providers/basete
 
 
 
-### Model evaluations
+### Model 评测 {#model-evaluations}
 
 [Deep Agents eval suite](https://github.com/langchain-ai/deepagents/tree/main/libs/evals#readme) 会测试热门 models：
 
@@ -41,7 +41,7 @@ Open-weight models 可通过 [Baseten](/oss/python/integrations/providers/basete
 
 更多信息请参阅 [Eval runs](https://github.com/langchain-ai/deepagents/actions/workflows/evals.yml)。
 
-## 配置 model parameters
+## 配置 model parameters {#configure-model-parameters}
 
 以 `provider:model` 格式向 [`create_deep_agent`](https://reference.langchain.com/python/deepagents/graph/create_deep_agent) 传入 model string，或传入 configured model instance 以获得完全控制。底层会通过 [`init_chat_model`](https://reference.langchain.com/python/langchain/chat_models/base/init_chat_model) 解析 model strings。
 
@@ -81,7 +81,7 @@ Open-weight models 可通过 [Baseten](/oss/python/integrations/providers/basete
     可用 parameters 会因 provider 而异。provider-specific configuration options 请参阅 [chat model integrations](/oss/python/integrations/chat) 页面。
 </Note>
 
-### Provider profiles
+### Provider profiles {#provider-profiles}
 
 [`ProviderProfile`](/oss/python/deepagents/profiles#provider-profiles) 会打包 initialization parameters；当你在创建 deep agent 时提供 `provider:model` 字符串，它们会被应用。若你通过 [`init_chat_model`](https://reference.langchain.com/python/langchain/chat_models/base/init_chat_model) 传入 preconfigured model，则不会应用。
 
@@ -113,7 +113,7 @@ register_provider_profile(
     若要塑造 model 构建完成后 *agent* 的行为，请使用 [harness profile](/oss/python/deepagents/profiles#harness-profiles)。
 </Tip>
 
-## 在 runtime 选择 model
+## 在 runtime 选择 model {#select-a-model-at-runtime}
 
 如果你的应用允许用户选择 model（例如在 UI 中使用 dropdown），请使用 [middleware](/oss/python/langchain/middleware) 在 runtime 替换 model，而无需重建 agent。
 
@@ -160,7 +160,7 @@ result = agent.invoke(
     关于更多 dynamic model patterns（例如基于 conversation complexity 或 cost optimization 路由），请参阅 LangChain agents guide 中的 [Dynamic model](/oss/python/langchain/models#dynamic-model-selection)。
 </Tip>
 
-## 了解更多
+## 了解更多 {#learn-more}
 
 - [Models in LangChain](/oss/python/langchain/models)：chat model features，包括 tool calling、structured output 和 multimodality
 

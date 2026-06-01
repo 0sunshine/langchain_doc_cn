@@ -1,15 +1,15 @@
 ---
-title: Use remote sandboxes
+title: 使用 remote sandboxes
 sidebarTitle: Remote sandboxes
 description: 在 LangSmith、Daytona、Modal、Runloop 或 AgentCore sandboxes 中运行 Deep Agents Code tool execution。安装 provider extras、设置 credentials，并使用 flags 和 setup scripts。
 ---
 
-Deep Agents Code 使用 [sandbox as tool](/oss/javascript/deepagents/sandboxes#sandbox-as-tool-pattern) pattern：`dcode` process（LLM loop、memory、tool dispatch）运行在你的机器上，但 agent tool calls（`read_file`、`write_file`、`execute` 等）会指向 remote sandbox，而不是你的 local filesystem。要把 files 放进 sandbox，请使用 [setup script](#setup-scripts) 或 provider 的 file transfer APIs（参见 [Working with files](/oss/javascript/deepagents/sandboxes#working-with-files)）。
+Deep Agents Code 使用 [sandbox as tool](/oss/javascript/deepagents/sandboxes#sandbox-as-tool-pattern) pattern：`dcode` process（LLM loop、memory、tool dispatch）运行在你的机器上，但 agent tool calls（`read_file`、`write_file`、`execute` 等）会指向 remote sandbox，而不是你的 local filesystem。要把 files 放进 sandbox，请使用 [setup script](#setup-scripts) 或 provider 的 file transfer APIs（参见 [Working with files](/oss/javascript/deepagents/sandboxes#working-with-files-2)）。
 
 如需更深入了解 sandbox architecture、integration patterns 和 security best practices，请参阅 [Sandboxes](/oss/javascript/deepagents/sandboxes)。
 
 <Steps>
-    <Step title="Install provider dependency" icon="download">
+    <Step title="安装 provider dependency" icon="download">
         <Tabs>
             <Tab title="LangSmith">
                 安装 `deepagents-code` 时默认包含。不需要额外安装。
@@ -37,7 +37,7 @@ Deep Agents Code 使用 [sandbox as tool](/oss/javascript/deepagents/sandboxes#s
         </Tabs>
     </Step>
 
-    <Step title="Set provider credentials" icon="key">
+    <Step title="设置 provider 凭证" icon="key">
         <Tabs>
             <Tab title="LangSmith">
                 ```bash
@@ -70,7 +70,7 @@ Deep Agents Code 使用 [sandbox as tool](/oss/javascript/deepagents/sandboxes#s
         </Tabs>
     </Step>
 
-    <Step title="Run Deep Agents Code with a sandbox" icon="player-play">
+    <Step title="使用 sandbox 运行 Deep Agents Code" icon="player-play">
         <Tabs>
             <Tab title="LangSmith">
                 ```bash
@@ -101,7 +101,7 @@ Deep Agents Code 使用 [sandbox as tool](/oss/javascript/deepagents/sandboxes#s
     </Step>
 </Steps>
 
-## Sandbox flags and examples
+## Sandbox 标志和示例 {#sandbox-flags-and-examples}
 
 | Flag | Description |
 |------|-------------|
@@ -122,7 +122,7 @@ dcode --sandbox runloop --sandbox-id dbx_abc123
 dcode --sandbox modal --sandbox-setup ./setup.sh
 ```
 
-## Setup scripts
+## 设置脚本 {#setup-scripts}
 
 使用 `--sandbox-setup` 在 sandbox 创建后运行 shell script。这对于 cloning repos、installing dependencies 和 configuring environment variables 很有用。
 

@@ -25,7 +25,7 @@ graph TB
     Result --> Main
 ```
 
-## Why use subagents?
+## 为什么使用 subagents？ {#why-use-subagents}
 
 Subagents 解决的是 **context bloat problem**。当 agents 使用会产生大型输出的 tools（web search、file reads、database queries）时，context window 会很快被 intermediate results 填满。Subagents 会隔离这些细节工作：main agent 只接收最终结果，而不是生成结果的几十个 tool calls。
 
@@ -40,11 +40,11 @@ Subagents 解决的是 **context bloat problem**。当 agents 使用会产生大
 - ✗ 需要保留 intermediate context 时
 - ✗ overhead 超过收益时
 
-## Configuration
+## 配置 {#configuration}
 
 `subagents` 应该是 dictionaries 或 [`CompiledSubAgent`](https://reference.langchain.com/python/deepagents/middleware/subagents/CompiledSubAgent) objects 的列表。有两种类型：
 
-### Default subagent
+### 默认 subagent {#default-subagent}
 
 Deep Agents 会自动添加一个同步的 `general-purpose` subagent，除非你已经提供了同名的同步 subagent。
 
@@ -54,7 +54,7 @@ Deep Agents 会自动添加一个同步的 `general-purpose` subagent，除非�
 - 如需重命名或重新设置自动添加版本的 prompt，请在当前 [harness profile](/oss/python/deepagents/profiles#harness-profiles) 上设置 `general_purpose_subagent=GeneralPurposeSubagentProfile(...)`。
 - 如需禁用它，请参阅下方 [Running without subagents](#running-without-subagents)。
 
-### Running without subagents
+### 不使用 subagents 运行 {#running-without-subagents}
 
 如果要运行一个没有 `task` tool 的 agent，需要做两件事：
 
@@ -69,17 +69,17 @@ Async subagents 不受影响；它们会经过自己的 middleware 和 tools，�
     这里不要使用 `excluded_middleware`；`SubAgentMiddleware` 是必需 scaffolding，把它列进去会抛出 `ValueError`。受支持的方式是使用 `general_purpose_subagent.enabled = False` 这个开关。
 </Tip>
 
-## Custom subagents
+## 自定义 subagents {#custom-subagents}
 
 你可以通过 `subagents` 参数定义带特定 tools 的 specialized subagents，例如 code reviewer、web researcher 或 test runner。
 
 大多数场景下，请用 [SubAgent dictionaries](#subagent-dictionary-based) 定义 subagents。对于复杂 workflows，请使用 [`CompiledSubAgent`](#compiledsubagent)：
 
-### SubAgent (Dictionary-based)
+### SubAgent（dictionary-based） {#subagent-dictionary-based}
 
 把 subagents 定义为符合 [`SubAgent`](https://reference.langchain.com/python/deepagents/middleware/subagents/SubAgent) spec 的 dictionaries，包含以下字段：
 
-| Field | Type | Description |
+| 字段 | 类型 | 说明 |
 |-------|------|-------------|
 | `name` | `str` | 必填。subagent 的 unique identifier。main agent 调用 `task()` tool 时会使用这个名称。subagent name 也会成为 `AIMessage`s 和 streaming 的 metadata，帮助区分 agents。 |
 | `description` | `str` | 必填。描述这个 subagent 做什么。请具体、action-oriented。main agent 会用它判断何时 delegate。 |
@@ -100,20 +100,20 @@ Async subagents 不受影响；它们会经过自己的 middleware 和 tools，�
 
 对于复杂 workflows，可以使用预先构建的 LangGraph graph 作为 [`CompiledSubAgent`](https://reference.langchain.com/python/deepagents/middleware/subagents/CompiledSubAgent)：
 
-| Field | Type | Description |
+| 字段 | 类型 | 说明 |
 |-------|------|-------------|
 | `name` | `str` | 必填。subagent 的 unique identifier。subagent name 会成为 `AIMessage`s 和 streaming 的 metadata，帮助区分 agents。 |
 | `description` | `str` | 必填。说明这个 subagent 做什么。 |
 | `runnable` | `Runnable` | 必填。已 compiled 的 LangGraph graph（必须先调用 `.compile()`）。 |
 
-## Using SubAgent
+## 使用 SubAgent {#using-subagent}
 
 <SubagentBasicPy />
 
 
 
 
-## Using CompiledSubAgent
+## 使用 CompiledSubAgent {#using-compiledsubagent}
 
 对于更复杂的 use cases，你可以使用 [`CompiledSubAgent`](https://reference.langchain.com/python/deepagents/middleware/subagents/CompiledSubAgent) 提供 custom subagents。
 你可以使用 LangChain 的 [`create_agent`](https://reference.langchain.com/python/langchain/agents/factory/create_agent) 创建 custom subagent，或用 [graph API](/oss/python/langgraph/graph-api) 创建 custom LangGraph graph。
@@ -151,7 +151,7 @@ agent = create_deep_agent(
 
 
 
-## Streaming
+## 流式传输 {#streaming}
 
 streaming tracing information 时，agents 的名称会以 `lc_agent_name` 出现在 metadata 中。
 review tracing information 时，你可以使用这个 metadata 区分数据来自哪个 agent。
@@ -201,7 +201,7 @@ agent = create_deep_agent(
 
 ![LangSmith Example trace showing the metadata](/oss/images/deepagents/deepagents-langsmith.png)
 
-## Structured output
+## 结构化输出 {#structured-output}
 
 Subagents 支持 [structured output](/oss/python/langchain/structured-output)，因此 parent agent 会收到可预测、可解析的 JSON，而不是 free-form text。
 
@@ -251,7 +251,7 @@ result = await agent.ainvoke(
 
 关于 schema types 和 strategies（tool calling vs. provider-native）的完整细节，请参阅 [Structured output](/oss/python/langchain/structured-output)。
 
-## The general-purpose subagent
+## general-purpose subagent {#the-general-purpose-subagent}
 
 除了用户定义的 subagents，每个 deep agent 都始终可以访问一个 `general-purpose` subagent。这个 subagent：
 
@@ -260,7 +260,7 @@ result = await agent.ainvoke(
 - 使用相同 model（除非覆盖）
 - 从 main agent 继承 skills（配置 skills 时）
 
-### Override the general-purpose subagent
+### 覆盖 general-purpose subagent {#override-the-general-purpose-subagent}
 
 在 `subagents` list 中包含 `name="general-purpose"` 的 subagent，可以替换默认版本。你可以用它为 general-purpose subagent 配置不同的 model、tools 或 system prompt：
 
@@ -290,15 +290,15 @@ agent = create_deep_agent(
 
 如果不是替换，而是要彻底移除内置 general-purpose subagent，请把当前 harness profile 的 general-purpose subagent `enabled` flag 设置为 `False`。
 
-### When to use it
+### 何时使用它 {#when-to-use-it}
 
 general-purpose subagent 适合不需要 specialized behavior 的 context isolation。main agent 可以把复杂 multi-step task 委托给该 subagent，并获得简洁结果，而不会让 intermediate tool calls 膨胀自己的 context。
 
-<Card title="Example">
+<Card title="示例">
     与其让 main agent 发起 10 次 web searches 并用结果填满 context，不如委托给 general-purpose subagent：`task(name="general-purpose", task="Research quantum computing trends")`。subagent 会在内部完成所有搜索，并只返回 summary。
 </Card>
 
-### Skills inheritance
+### Skills 继承 {#skills-inheritance}
 
 使用 `create_deep_agent` 配置 [skills](/oss/python/deepagents/skills) 时：
 
@@ -331,9 +331,9 @@ agent = create_deep_agent(
 
 
 
-## Best practices
+## 最佳实践 {#best-practices}
 
-### Write clear descriptions
+### 编写清晰 descriptions {#write-clear-descriptions}
 
 main agent 会用 descriptions 判断该调用哪个 subagent。请写具体：
 
@@ -341,7 +341,7 @@ main agent 会用 descriptions 判断该调用哪个 subagent。请写具体：
 
 ✗ **Bad:** `"Does finance stuff"`
 
-### Keep system prompts detailed
+### 保持 system prompts 详细 {#keep-system-prompts-detailed}
 
 包含关于如何使用 tools、如何格式化 outputs 的具体指导：
 
@@ -369,7 +369,7 @@ research_subagent = {
 
 
 
-### Minimize tool sets
+### 最小化 tool sets {#minimize-tool-sets}
 
 只给 subagents 它们需要的 tools。这会提升聚焦度和安全性：
 
@@ -390,7 +390,7 @@ email_agent = {
 
 
 
-### Choose models by task
+### 按任务选择 models {#choose-models-by-task}
 
 不同 models 擅长不同 tasks：
 
@@ -416,7 +416,7 @@ subagents = [
 
 
 
-### Return concise results
+### 返回简洁结果 {#return-concise-results}
 
 指示 subagents 返回 summaries，而不是 raw data：
 
@@ -439,9 +439,9 @@ data_analyst = {
 
 
 
-## Common patterns
+## 常见模式 {#common-patterns}
 
-### Multiple specialized subagents
+### 多个 specialized subagents {#multiple-specialized-subagents}
 
 为不同 domains 创建 specialized subagents：
 
@@ -488,7 +488,7 @@ agent = create_deep_agent(
 
 每个 subagent 都在只聚焦自身 task 的 clean context 中工作。
 
-## Context management
+## Context 管理 {#context-management}
 
 当你使用 [runtime context](/oss/python/langchain/runtime) invoke parent agent 时，该 context 会自动传播到所有 subagents。每个 subagent run 都会接收你在 parent `invoke` / `ainvoke` call 上传入的相同 runtime context。
 
@@ -535,7 +535,7 @@ result = await agent.invoke(
 
 
 
-### Per-subagent context
+### 每个 subagent 的 context {#per-subagent-context}
 
 所有 subagents 都接收相同的 parent context。如果要传递某个特定 subagent 专属的配置，请在 flat `context` mapping 中使用 **namespaced keys**（用 subagent name 作为 prefix，例如 `researcher:max_depth`），**或**把这些 settings 建模为你的 context type 上的独立 fields：
 
@@ -572,7 +572,7 @@ def verify_claim(claim: str, runtime: ToolRuntime[Context]) -> str:
 
 
 
-### Identifying which subagent called a tool
+### 识别哪个 subagent 调用了 tool {#identifying-which-subagent-called-a-tool}
 
 当同一个 tool 被 parent 和多个 subagents 共享时，你可以使用 `lc_agent_name` metadata（与 [streaming](#streaming) 中使用的值相同）判断是哪一个 agent 发起了调用：
 
@@ -613,9 +613,9 @@ def flexible_search(query: str, runtime: ToolRuntime[Context]) -> str:
 
 
 
-## Troubleshooting
+## 故障排除 {#troubleshooting}
 
-### Subagent not being called
+### Subagent 未被调用 {#subagent-not-being-called}
 
 **Problem**：Main agent 尝试自己完成工作，而不是 delegate。
 
@@ -650,7 +650,7 @@ def flexible_search(query: str, runtime: ToolRuntime[Context]) -> str:
 
 
 
-### Context still getting bloated
+### Context 仍然膨胀 {#context-still-getting-bloated}
 
 **Problem**：即使用了 subagents，context 仍然膨胀。
 
@@ -683,7 +683,7 @@ def flexible_search(query: str, runtime: ToolRuntime[Context]) -> str:
 
 
 
-### Wrong subagent being selected
+### 选择了错误的 subagent {#wrong-subagent-being-selected}
 
 **Problem**：Main agent 为任务调用了不合适的 subagent。
 

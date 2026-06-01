@@ -1,6 +1,6 @@
 ---
-title: Data locations
-sidebarTitle: App data
+title: 数据位置
+sidebarTitle: App 数据
 description: Deep Agents Code 存储 configuration、sessions 和 customization files 的位置
 ---
 
@@ -9,7 +9,7 @@ Deep Agents Code 会把 data 存在两套 directory hierarchies 中：
 - **`~/.deepagents/`** - Deep Agents 专用 data（agent memory、skills、sessions）
 - **`~/.agents/`** - Tool-agnostic data（可在多个 AI CLI tools 之间共享的 skills）
 
-## Directory structure
+## 目录结构 {#directory-structure}
 
 ```text
 ~/.deepagents/
@@ -47,9 +47,9 @@ Deep Agents Code 会把 data 存在两套 directory hierarchies 中：
             `-- SKILL.md
 ```
 
-## What goes where
+## 各数据位置 {#what-goes-where}
 
-| Data | Location | Read/Write | Notes |
+| 数据 | 位置 | 读/写 | 备注 |
 |------|----------|------------|-------|
 | **Sessions** | `~/.deepagents/.state/sessions.db` | R/W | SQLite checkpoint database |
 | **Input history** | `~/.deepagents/.state/history.jsonl` | R/W | JSON-lines，可用 up/down arrow recall |
@@ -62,11 +62,11 @@ Deep Agents Code 会把 data 存在两套 directory hierarchies 中：
 | **Custom subagents** | `~/.deepagents/{agent}/agents/` | R/W | User-defined subagents |
 | **Project subagents** | `.deepagents/agents/` | R | Project-defined subagents |
 
-## Precedence rules
+## 优先级规则 {#precedence-rules}
 
 当同一个 item 出现在多个 locations 中时，**higher precedence 会完全胜出**（不会 merging）。
 
-### Skills
+### Skills {#skills}
 
 Precedence order（从低到高）：
 
@@ -77,7 +77,7 @@ Precedence order（从低到高）：
 
 加载 skill 时，Deep Agents Code 会验证 resolved file path 是否仍位于这些 directories 之一内。解析到所有 skill roots 之外的 symlinks 会被拒绝。若要允许 symlink targets 位于额外 directories 中，请参阅 [`[skills].extra_allowed_dirs`](/oss/python/deepagents/code/configuration#skills-extra-allowed-directories)。
 
-### Subagents
+### Subagents {#subagents}
 
 Precedence order（从低到高）：
 
@@ -86,7 +86,7 @@ Precedence order（从低到高）：
 
 每个 subagent 都是一个带 YAML frontmatter（`name`、`description`、可选 `model`）的 `AGENTS.md` file，并使用 markdown body 作为 system prompt。完整格式参考请参阅 [Use subagents in Deep Agents Code](/oss/python/deepagents/code/subagents)。
 
-### Instructions
+### 指令 {#instructions}
 
 所有 instruction sources 都会 **combined**（不是 overridden）：
 
@@ -97,7 +97,7 @@ Precedence order（从低到高）：
 
 ## `.deepagents` vs `.agents`
 
-| Directory | Purpose | When to use |
+| Directory | 用途 | 何时使用 |
 |-----------|---------|-------------|
 | `.deepagents/` | Deep Agents Code-specific | 使用 Deep Agents Code-specific features 的 skills 和 config |
 | `.agents/` | Tool-agnostic | 想在不同 AI CLI tools 之间共享的 skills |
@@ -107,9 +107,9 @@ Precedence order（从低到高）：
 使用 `.deepagents/skills/` 存放依赖 Deep Agents-specific tools 或 conventions 的 skills。
 </Tip>
 
-## Cleaning up
+## 清理 {#cleaning-up}
 
-| Need | Action |
+| 需求 | 操作 |
 |------|--------|
 | Reset all data | `rm -rf ~/.deepagents` |
 | Clear sessions only | `rm ~/.deepagents/.state/sessions.db*` |

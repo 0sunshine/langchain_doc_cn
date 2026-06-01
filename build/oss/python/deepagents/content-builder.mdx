@@ -1,5 +1,5 @@
 ---
-title: Build a content builder agent
+title: 构建 content builder agent
 sidebarTitle: Content Builder
 description: 使用 brand memory、skills、subagents 和 image generation 构建 content writing agent
 ---
@@ -11,7 +11,7 @@ import ContentBuilderToolsJs from '/snippets/code-samples/content-builder-tools-
 import ContentBuilderCreateAgentJs from '/snippets/code-samples/content-builder-create-agent-js.mdx';
 import ContentBuilderEntryPointJs from '/snippets/code-samples/content-builder-entry-point-js.mdx';
 
-## Overview
+## 概览 {#overview}
 
 本指南演示如何使用 [Deep Agents](/oss/python/deepagents) 从零构建一个 content writing agent。
 
@@ -24,7 +24,7 @@ import ContentBuilderEntryPointJs from '/snippets/code-samples/content-builder-e
 
 本教程中的代码会接入 image generation tools 和 filesystem backend，让 agent 可以在 project directory 下读写 posts、research notes 和 images。完整可运行项目请参阅 [content-builder-agent](https://github.com/langchain-ai/deepagents/tree/main/examples/content-builder-agent) 示例。
 
-### Key concepts
+### 核心概念 {#key-concepts}
 
 本教程会覆盖：
 
@@ -34,7 +34,7 @@ import ContentBuilderEntryPointJs from '/snippets/code-samples/content-builder-e
 - 用于 file read 和 write 的 [Filesystem backends](/oss/python/deepagents/backends)
 - 用于 search 和 image generation 的自定义 [tools](/oss/python/langchain/tools)
 
-## Prerequisites
+## 前置条件 {#prerequisites}
 
 API keys：
 
@@ -48,10 +48,10 @@ Python 3.11 或更高版本。
 
 
 
-## Setup
+## 设置 {#setup}
 
 <Steps>
-<Step title="Create project directory">
+<Step title="创建项目目录">
 
 ```bash
 mkdir content-builder-agent
@@ -59,7 +59,7 @@ cd content-builder-agent
 ```
 
 </Step>
-<Step title="Install dependencies">
+<Step title="安装依赖">
 
 <CodeGroup>
 ```bash pip wrap
@@ -76,7 +76,7 @@ uv sync
 在你自己的项目中，把 `deepagents` pin 到支持范围内（例如 `>=0.3.5,<0.4.0`），以匹配 upstream example。
 
 </Step>
-<Step title="Set API keys">
+<Step title="设置 API keys">
 
 ```bash
 export ANTHROPIC_API_KEY="your_anthropic_api_key"
@@ -91,12 +91,12 @@ export LANGSMITH_API_KEY="your_langsmith_api_key"     # Optional
 
 
 
-## Add configuration files
+## 添加配置文件 {#add-configuration-files}
 
 这个示例把 behavior 放在三类文件中：memory、skills 和 subagent definitions。
 
 <Steps>
-<Step title="Add AGENTS.md">
+<Step title="添加 AGENTS.md">
 
 在 project root 创建 `AGENTS.md`。
 稍后创建 agent 并把这个文件指定为 [memory](/oss/python/deepagents/long-term-memory) parameter 的一部分时，它会被加载到 system prompt 中，因此 brand voice 和 research expectations 会应用到每一次运行。
@@ -149,7 +149,7 @@ export LANGSMITH_API_KEY="your_langsmith_api_key"     # Optional
 要让这个 agent 符合你自己的 tone、pillars 和 formatting rules，请更新 `AGENTS.md` 中的文本。
 
 </Step>
-<Step title="Add subagents.yaml">
+<Step title="添加 subagents.yaml">
 
 创建一个名为 `subagents.yaml` 的文件。
 然后添加下面的文本，它描述了一个 `researcher` subagent：该 subagent 使用基于 Tavily 的 `web_search` tool、一个 Haiku model id，以及一组 instructions，要求它在从 main agent 委派任务时把 findings 保存到你指定的路径：
@@ -191,7 +191,7 @@ researcher:
 </Step>
 
 
-<Step title="Add skills">
+<Step title="添加 skills">
 
 创建一个 `skills/` directory。每个 skill 都是一个 folder，其中包含带 YAML frontmatter（`name`、`description`）和 skill instructions 的 `SKILL.md` 文件。
 
@@ -531,7 +531,7 @@ Two overlapping translucent circles, one blue one orange, creating a glowing int
 </Step>
 </Steps>
 
-## Build the script
+## 构建脚本 {#build-the-script}
 
 在 project root 创建 `content_writer.py`。下面各节应按顺序放在同一个文件中。
 
@@ -539,7 +539,7 @@ Two overlapping translucent circles, one blue one orange, creating a glowing int
 
 
 <Steps>
-<Step title="Add tools">
+<Step title="添加 tools">
 
 researcher subagent 使用 Tavily search。
 Blog 和 social workflows 使用 Gemini image generation。
@@ -551,7 +551,7 @@ Blog 和 social workflows 使用 Gemini image generation。
 
 
 </Step>
-<Step title="Create the agent">
+<Step title="创建 agent">
 
 使用 [create_deep_agent](https://reference.langchain.com/python/deepagents/graph/create_deep_agent) 创建 deep agent 时，传入 memory paths、skills directory、image tools、来自 YAML 的 subagents，以及一个以 example directory 为根目录的 [FilesystemBackend](/oss/python/deepagents/backends)，这样 `./AGENTS.md` 和 `./skills/` 之类的 paths 就能正确解析。
 
@@ -561,7 +561,7 @@ Blog 和 social workflows 使用 Gemini image generation。
 
 
 </Step>
-<Step title="Add an entry point">
+<Step title="添加入口点">
 
 用一条 user message 调用 agent，验证 agent 是否正常工作：
 
@@ -573,7 +573,7 @@ Blog 和 social workflows 使用 Gemini image generation。
 </Step>
 </Steps>
 
-## Run the agent
+## 运行 agent {#run-the-agent}
 
 <Warning>
 filesystem backend 可以在 `root_dir` 下 read、write 和 delete files。请仅在专用 directory 中运行，并在发布前 review 生成内容。
@@ -596,7 +596,7 @@ python content_writer.py Write a blog post about prompt engineering
 
 设置 `LANGSMITH_API_KEY` 后，你可以在 [LangSmith](/langsmith/home) 中检查 runs。
 
-## Output
+## 输出 {#output}
 
 
 
@@ -614,11 +614,11 @@ research/
 
 Paths 会遵循 `SKILL.md` 中的 skill instructions。
 
-## Full code
+## 完整代码 {#full-code}
 
 在 GitHub 上浏览完整的 [content-builder-agent example](https://github.com/langchain-ai/deepagents/tree/main/examples/content-builder-agent)，其中包括基于 Rich 的 streaming UI。
 
-## Next steps
+## 下一步 {#next-steps}
 
 - 编辑 `AGENTS.md` 来修改 brand voice 和 research requirements
 - 在 `skills/<name>/SKILL.md` 下添加 skills，以支持新的 content types

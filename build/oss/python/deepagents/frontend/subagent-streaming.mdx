@@ -1,5 +1,5 @@
 ---
-title: Subagent streaming
+title: Subagent 流式传输
 description: 使用 streaming content、progress tracking 和 collapsible cards 展示 specialist subagents
 ---
 
@@ -9,7 +9,7 @@ import { PatternEmbed } from "/snippets/pattern-embed.jsx"
 
 <PatternEmbed pattern="deep-agent-subagent-cards" />
 
-## 为什么过滤 subagent messages
+## 为什么过滤 subagent 消息 {#why-filter-subagent-messages}
 
 如果不进行过滤，每个 subagent 生成的每个 token 都会交错出现在 coordinator 的 message stream 中，导致不可读。启用 `filterSubagentMessages: true` 后：
 
@@ -19,7 +19,7 @@ import { PatternEmbed } from "/snippets/pattern-embed.jsx"
 
 这种分离让你可以在一个位置渲染 orchestrator 的 messages，并把每个 subagent 的 progress card 准确地放到它所属的位置：触发该 subagent 的 coordinator message 下方。
 
-## 设置 useStream
+## 设置 useStream {#setting-up-usestream}
 
 始终设置 `filterSubagentMessages: true`。它会从 main message stream 中移除 subagent tokens，让你可以独立渲染 coordinator messages 和 subagent output。
 
@@ -139,7 +139,7 @@ export class DeepAgentChatComponent {
 ```
 </CodeGroup>
 
-## 使用 subgraph streaming 提交
+## 使用 subgraph streaming 提交 {#submitting-with-subgraph-streaming}
 
 提交 message 时，启用 subgraph streaming，并设置合适的 recursion limit。Deep agent workflows 往往包含多层 nested subgraphs，因此更高的 recursion limit 可以防止过早终止：
 
@@ -154,7 +154,7 @@ stream.submit(
 Deep Agents 设置了默认 recursion limit 10,000，足以满足大多数 multi-expert setups。如有需要，你可以通过 `config.recursion_limit` 覆盖它。
 </Note>
 
-## SubagentStreamInterface
+## SubagentStreamInterface {#the-subagentstreaminterface}
 
 每个 subagent 都会暴露一个 `SubagentStreamInterface`，其中包含 subagent task、status 和 timing 相关 metadata：
 
@@ -178,7 +178,7 @@ interface SubagentStreamInterface {
 }
 ```
 
-| Property | Description |
+| 属性 | 说明 |
 | --- | --- |
 | `id` | 此 subagent instance 的唯一标识符 |
 | `status` | Lifecycle state：`pending` -> `running` -> `complete` 或 `error` |
@@ -190,7 +190,7 @@ interface SubagentStreamInterface {
 | `startedAt` | subagent 开始执行时的 timestamp |
 | `completedAt` | subagent 完成时的 timestamp |
 
-## 将 subagents 关联到 messages
+## 将 subagents 关联到消息 {#linking-subagents-to-messages}
 
 `getSubagentsByMessage` method 会返回由特定 AI message 生成的 subagents。这样你就可以将 subagent cards 直接渲染在触发它们的 coordinator message 下方：
 
@@ -200,7 +200,7 @@ const turnSubagents = stream.getSubagentsByMessage(msg.id);
 
 它返回一个 `SubagentStreamInterface` objects array。如果该 message 没有生成任何 subagents，则返回空 array。
 
-## 构建 SubagentCard
+## 构建 SubagentCard {#building-the-subagentcard}
 
 每个 subagent card 会显示 specialist 的 name、task description、streaming content 或 final result，以及 timing information：
 
@@ -278,7 +278,7 @@ function getElapsedTime(
 }
 ```
 
-## Status icons and badges
+## 状态图标和徽章 {#status-icons-and-badges}
 
 一致的 visual indicators 能帮助用户一眼理解 subagent status：
 
@@ -312,7 +312,7 @@ function StatusBadge({ status }: { status: SubagentStreamInterface["status"] }) 
 }
 ```
 
-## Progress tracking
+## 进度跟踪 {#progress-tracking}
 
 显示 progress bar 和 counter，让用户知道已经有多少 subagents 完成：
 
@@ -345,7 +345,7 @@ function SubagentProgress({
 }
 ```
 
-## 用 subagent cards 渲染 messages
+## 用 subagent 卡片渲染消息 {#rendering-messages-with-subagent-cards}
 
 关键 layout pattern 是渲染每条 coordinator message；如果该 message 生成了 subagents，就在它下方立即渲染它们的 cards：
 
@@ -382,7 +382,7 @@ function MessageWithSubagents({
 }
 ```
 
-## Synthesis indicator
+## 综合指示器 {#synthesis-indicator}
 
 所有 subagents 完成后，coordinator 需要时间把它们的 results 合成为最终 response。在这个阶段显示清晰的 indicator：
 
@@ -414,11 +414,11 @@ function SynthesisIndicator({
 对于复杂 multi-expert workflows，synthesis phase 可能需要几秒钟。清晰的 "Synthesizing results..." indicator 可以避免用户误以为 agent 卡住了。
 </Tip>
 
-## Debug unfiltered output
+## 调试未过滤输出 {#debug-unfiltered-output}
 
 开发期间，你可以临时设置 `filterSubagentMessages: false`，在 main message stream 中查看来自所有 subagents 的原始交错 output。这有助于验证 subagent tokens 是否正确流动，但不应在 production UIs 中使用。
 
-## Use cases
+## 使用场景 {#use-cases}
 
 当你的 agent workflow 涉及以下内容时，deep agent subagent cards 是合适选择：
 
@@ -427,7 +427,7 @@ function SynthesisIndicator({
 - **Complex task decomposition**：planner 将大型 task 拆成 subtasks，并分配给 specialist worker
 - **Code review pipelines**：独立 agents 分别处理 security review、style checking、performance analysis 和 documentation review
 
-## 访问完整 subagents map
+## 访问完整 subagents 映射 {#accessing-the-full-subagents-map}
 
 除了按 message 查询之外，你还可以通过 `stream.subagents` 一次性访问所有 subagents：
 
@@ -440,7 +440,7 @@ const errors = allSubagents.filter((s) => s.status === "error");
 
 这对于构建 global progress indicators 或 dashboards 很有用，可以汇总所有 subagent activity，而不管它们是由哪条 coordinator message 生成的。
 
-## Best practices
+## 最佳实践 {#best-practices}
 
 - **始终设置 `filterSubagentMessages: true`**。未过滤 streams 会产生 coordinator 和 subagent tokens 的不可读交错。
 - **显示 task descriptions**。`toolCall.args.description` field 会告诉用户每个 subagent 具体被要求做什么。请始终突出显示它。

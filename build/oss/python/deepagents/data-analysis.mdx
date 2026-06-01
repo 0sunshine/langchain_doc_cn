@@ -1,10 +1,10 @@
 ---
-title: Build a data analysis agent
-sidebarTitle: Data Analysis
+title: 构建 data analysis agent
+sidebarTitle: 数据分析
 description: 构建一个可以分析数据文件、生成可视化并分享结果的 agent
 ---
 
-## Overview
+## 概览 {#overview}
 
 本指南演示如何使用 [deep agent](/oss/python/deepagents) 构建一个 data analysis agent。Data analysis 任务通常需要 planning、code execution，以及处理 scripts、reports、plots 等 artifacts，这正是 deep agents 被设计来处理的能力。
 
@@ -18,16 +18,16 @@ description: 构建一个可以分析数据文件、生成可视化并分享结�
 Slack integration 是可选的。你也可以修改 agent，让它把 artifacts 保存到本地，或通过其他 channel 分享结果。
 </Tip>
 
-### Key concepts
+### 核心概念 {#key-concepts}
 
 本教程会覆盖：
 
 - 用于 sandboxed code execution 的 [Backends](/oss/python/deepagents/backends)
 - 用于外部 integrations 的自定义 [tools](/oss/python/langchain/tools)
 
-## Setup
+## 设置 {#setup}
 
-### Installation
+### 安装 {#installation}
 
 安装 core dependencies：
 
@@ -36,7 +36,7 @@ pip install deepagents
 ```
 
 
-### Optional dependencies
+### 可选依赖 {#optional-dependencies}
 
 本教程会使用：
 - 用于分享结果的 [Slack Python SDK](https://docs.slack.dev/tools/python-slack-sdk/)（[token setup](https://docs.slack.dev/authentication/tokens/)）
@@ -73,7 +73,7 @@ os.environ["LANGSMITH_API_KEY"] = getpass.getpass()
 ```
 
 
-## Set up the backend
+## 设置 backend {#set-up-the-backend}
 
 Deep Agents 使用 [backends](/oss/python/deepagents/backends) 在 sandboxed environments 中执行代码。
 
@@ -167,7 +167,7 @@ backend = RunloopSandbox(devbox=devbox)
     ```
 
   </Tab>
-<Tab title="Local shell">
+<Tab title="本地 shell" id="local-shell">
 <Warning>
 此 backend 会提供不受限制的 filesystem 和 shell access。请仅在受控环境中用于 development 和 testing。更多详情请参阅 [security considerations](/oss/python/deepagents/backends#localshellbackend-local-shell)。
 </Warning>
@@ -180,7 +180,7 @@ backend = LocalShellBackend(root_dir=".", env={"PATH": "/usr/bin:/bin"})
 </Tab>
 </Tabs>
 
-### Upload sample data
+### 上传示例数据 {#upload-sample-data}
 
 创建并上传示例 sales data 到 backend：
 ```python
@@ -208,7 +208,7 @@ text_buf.close()
 backend.upload_files([("/home/daytona/data/sales_data.csv", csv_bytes)])
 ```
 
-## Implement custom tools
+## 实现自定义 tools {#implement-custom-tools}
 
 Data analysis 任务可能会生成 artifacts，例如 reports 或 plots。
 下面这个简单的 [tool](/oss/python/langchain/tools) 会使用 `backend.download_files` 下载它们，然后用 Slack SDK 上传。
@@ -247,7 +247,7 @@ def slack_send_message(text: str, file_path: str | None = None) -> str:
 通常最好避免把 credentials 和其他 secrets 放进 sandbox。这里我们在 sandbox 外部的 tool 中管理 Slack token。
 </Note>
 
-## Run the agent
+## 运行 agent {#run-the-agent}
 
 现在实例化一个 agent：
 
@@ -618,7 +618,7 @@ Message sent.
 
 Excellent! I've successfully completed the analysis and sent everything to Slack. Here's what I did:
 
-## Summary
+## 总结 {#summary}
 
 **Analysis Completed:**
 - Analyzed the sales data from August 1-5, 2025
@@ -649,7 +649,7 @@ The analysis reveals that Widget A is the top performer, while Widget C shows ro
 
 查看本次执行的完整 [LangSmith trace](https://smith.langchain.com/public/ac2443a8-16ad-4e00-8f02-afde6a737534/r)。
 
-## Results
+## 结果 {#results}
 
 agent 成功分析数据，并把包含 visualizations 的综合 report 分享到 Slack：
 
@@ -668,7 +668,7 @@ backend.download_files(list_of_filepaths)
 完成后如何清理 sandbox，请参阅 [provider guides](/oss/python/deepagents/sandboxes#available-providers)。
 </Note>
 
-## Next steps
+## 下一步 {#next-steps}
 
 现在你已经构建了一个 data analysis agent，可以继续探索这些资源来扩展它的能力：
 

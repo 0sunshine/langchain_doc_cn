@@ -10,7 +10,7 @@ description: 对比 LangChain Deep Agents 与 Claude Agent SDK，为你的 use c
     Deep Agents 已在 [OpenSWE](https://github.com/langchain-ai/open-swe) 和 [LangSmith Fleet](/langsmith/fleet/index) 的生产环境中使用。
 </Info>
 
-## 快速对比
+## 快速对比 {#at-a-glance}
 
 | | **Deep Agents** | **Claude Agent SDK** |
 | --- | --- | --- |
@@ -22,9 +22,9 @@ description: 对比 LangChain Deep Agents 与 Claude Agent SDK，为你的 use c
 | **Multi-tenancy** | [内置](/oss/python/deepagents/going-to-production#multi-tenancy)：scoped threads、per-user sandboxes、RBAC | 需要自己构建 |
 | **License** | MIT | MIT（Claude Code 本身是 proprietary） |
 
-## 主要区别
+## 主要区别 {#main-differences}
 
-### Agent 和 execution environment
+### Agent 和执行环境 {#agent-and-execution-environment}
 
 将 agents 连接到 sandboxes 有 [两种模式](https://www.langchain.com/blog/the-two-patterns-by-which-agents-connect-sandboxes)：让 agent 运行在 sandbox *内部*，或让 agent 在外部运行并**将 sandbox 作为 tool 使用**。
 
@@ -36,7 +36,7 @@ Deep Agents 同时支持这两种方式，并允许你选择一个 [backend](/os
 - 在 long-lived container 中运行 agent，并 [将 remote sandbox 作为 tool 使用](https://www.langchain.com/blog/the-two-patterns-by-which-agents-connect-sandboxes)，通过网络执行命令。
 - 为 tests 换入 virtual filesystem，或为你自己的 infrastructure 换入 custom backend。
 
-### Multi-tenancy
+### 多租户 {#multi-tenancy}
 
 当你将应用投入生产时，通常会把它暴露给许多 end users，并且必须为每个用户隔离执行环境。
 
@@ -44,13 +44,13 @@ Deep Agents 同时支持这两种方式，并允许你选择一个 [backend](/os
 
 Deep Agents 会直接处理这一点：在 harness 中为 [per user 或 per assistant](/oss/python/deepagents/going-to-production#lifecycle) 配置 sandbox，并包含 scoped threads、run history 和 [RBAC](/oss/python/deepagents/going-to-production#team-access-control-rbac)。如果使用 [LangSmith Sandbox](/langsmith/sandbox-auth-proxy)，还可以开箱即用地获得 auth proxy，让 end users 能从 sandbox 调用 third-party APIs，而不需要你为每个用户配置 credentials。
 
-### Production agent server
+### 生产级 agent server {#a-production-agent-server}
 
 要把 [self-hosted Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk/hosting) app 暴露给 end users，你需要自己编写 HTTP/WebSocket 或 SSE server，用它来调用 agent、stream tokens，并管理 conversation threads。这个 server 需要你自行构建、运维和保护。
 
 Deep Agents deployments 开箱即包含 [agent server](/langsmith/agent-server)：streaming endpoints、thread management、run history、webhooks 和 [authentication](/langsmith/auth)。
 
-### Managed cloud 或 self-hosted
+### 托管云或自托管 {#managed-cloud-or-self-hosted}
 
 Claude Agent SDK deployments 是 [self-hosted](https://code.claude.com/docs/en/agent-sdk/hosting)。SDK 和 [Claude managed agents](https://platform.claude.com/docs/en/managed-agents/overview) 是独立产品。针对 SDK 编写的代码不能直接部署到 managed offering。
 
@@ -69,11 +69,11 @@ Claude Agent SDK execution 将 model、backend 和 deployment 打包在一起，
 
 使用 Deep Agents 时，你可以独立选择 model provider、execution backend 和 deployment target。选择这个 harness 可以让你在 model 和 infrastructure 选择上保留最大灵活性。
 
-### Ecosystems
+### 生态系统 {#ecosystems}
 
 Claude Agent SDK 专为 Claude 和 Anthropic 的 product surface 构建。Deep Agents 与更广泛的 LangChain ecosystem 集成，包括用于 observability、evaluation 和 deployment 的 LangSmith，并可跨任意 model provider 工作。
 
-## 总结
+## 总结 {#summary}
 
 - 如果你想要 model 和 infrastructure 的灵活性、内置 multi-tenant deployment，以及无需改代码即可选择 managed 或 self-hosted 的能力，请选择 **Deep Agents**。
 - 如果你已经深度投入 Anthropic ecosystem，并希望自行 self-host，同时自己构建 API、auth 和 multi-tenant layers，请选择 **Claude Agent SDK**。

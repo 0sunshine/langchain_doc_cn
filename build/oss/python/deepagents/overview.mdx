@@ -49,7 +49,7 @@ Deep Agents 是一种 ["agent harness"](/oss/python/concepts/products#agent-harn
 [LangChain](/oss/python/langchain/) 是为你的 agents 提供核心 building blocks 的 framework。
 要进一步了解 LangChain、LangGraph 和 Deep Agents 之间的区别，请参阅 [Frameworks, runtimes, and harnesses](/oss/python/concepts/products)。如果想和 Anthropic 的 harness 做并排比较，请参阅 [Deep Agents vs. Claude Agent SDK](/oss/python/deepagents/comparison)。
 
-## <Icon icon="wand" /> 创建 deep agent
+## <Icon icon="wand" /> 创建 deep agent {#create-a-deep-agent}
 
 <Tabs>
     <Tab title="Google">
@@ -210,7 +210,7 @@ Deep Agents 是一种 ["agent harness"](/oss/python/concepts/products#agent-harn
 使用 [LangSmith](https://smith.langchain.com?utm_source=docs&utm_medium=cta&utm_campaign=langsmith-signup&utm_content=oss-deepagents-overview) trace requests、debug agent behavior，并 evaluate outputs。按照 [tracing quickstart](/langsmith/trace-with-langchain) 完成设置。当准备进入生产环境时，可以 [deploy to LangSmith Cloud](/langsmith/deploy-to-cloud) 使用托管 hosting。
 </Tip>
 
-## 何时使用 Deep Agents
+## 何时使用 Deep Agents {#when-to-use-deep-agents}
 
 当你想构建具备以下能力的 agents 时，可以使用 **Deep Agents SDK**：
 
@@ -230,7 +230,7 @@ Deep Agents 是一种 ["agent harness"](/oss/python/concepts/products#agent-harn
 
 
 
-## 核心能力
+## 核心能力 {#core-capabilities}
 
 Deep Agents 为 agent 提供处理长时间运行、多步骤任务所需的 scaffolding。这些能力可以分为几类：
 
@@ -253,41 +253,41 @@ Deep Agents 为 agent 提供处理长时间运行、多步骤任务所需的 sca
 - **控制执行：** [Pluggable backends](/oss/python/deepagents/backends) 决定文件存储位置。[Permission rules](/oss/python/deepagents/permissions) 限制 filesystem access，[human-in-the-loop](/oss/python/deepagents/human-in-the-loop) workflows 要求对敏感 tool operations 进行审批。
 - **从有用默认值开始：** Deep Agents 包含 system prompts，引导 models 在行动前规划、验证工作并管理 context。你可以自定义或替换这些默认值。
 
-## 开始使用
+## 开始使用 {#get-started}
 
 <CardGroup cols={2}>
-    <Card title="Quickstart" icon="rocket" href="/oss/python/deepagents/quickstart">
+    <Card title="快速开始" icon="rocket" href="/oss/python/deepagents/quickstart">
         构建你的第一个 deep agent
     </Card>
-    <Card title="Customization" icon="adjustments" href="/oss/python/deepagents/customization">
+    <Card title="自定义" icon="adjustments" href="/oss/python/deepagents/customization">
         了解 customization options
     </Card>
-    <Card title="Models" icon="cpu" href="/oss/python/deepagents/models">
-        配置 models 和 providers
+    <Card title="模型" icon="cpu" href="/oss/python/deepagents/models">
+        配置模型和 providers
     </Card>
     <Card title="Backends" icon="plug" href="/oss/python/deepagents/backends">
-        选择并配置 pluggable filesystem backends
+        选择并配置可插拔文件系统 backends
     </Card>
     <Card title="Sandboxes" icon="cube" href="/oss/python/deepagents/sandboxes">
         在隔离环境中执行代码
     </Card>
     <Card title="Interpreters" icon="code" href="/oss/python/deepagents/interpreters">
-        在 QuickJS 中组合 tools 并转换数据
+        在 QuickJS 中组合工具并转换数据
     </Card>
-    <Card title="Permissions" icon="lock" href="/oss/python/deepagents/permissions">
-        使用 permission rules 控制 filesystem access
+    <Card title="权限" icon="lock" href="/oss/python/deepagents/permissions">
+        使用 permission rules 控制文件系统访问
     </Card>
-    <Card title="Human-in-the-loop" icon="user-check" href="/oss/python/deepagents/human-in-the-loop">
+    <Card title="人在环" icon="user-check" href="/oss/python/deepagents/human-in-the-loop">
         为敏感操作配置审批
     </Card>
     <Card title="Code" icon="terminal" href="/oss/python/deepagents/code/overview">
         使用 Deep Agents Code
     </Card>
     <Card title="ACP" icon="plug-connected" href="/oss/python/deepagents/acp">
-        通过 ACP 在 code editors 中使用 deep agents
+        通过 ACP 在代码编辑器中使用 deep agents
     </Card>
-    <Card title="Reference" icon="external-link" href="https://reference.langchain.com/python/deepagents/">
-        查看 `deepagents` API reference
+    <Card title="参考" icon="external-link" href="https://reference.langchain.com/python/deepagents/">
+        查看 `deepagents` API 参考
     </Card>
 </CardGroup>
 

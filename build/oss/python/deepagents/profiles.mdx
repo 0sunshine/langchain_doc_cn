@@ -7,7 +7,7 @@ description: 打包 per-provider 和 per-model defaults，在选择 model 时由
 
 **Provider profiles** 是一个范围更窄的配套 API，用于 *model-construction* kwargs，它们不会影响 harness。大多数调用方不需要它们；当你希望将 `init_chat_model` defaults、credential checks 或 runtime-derived kwargs 作为 provider 选择的默认值时（例如打包 provider integration），可以使用它们。
 
-## Harness profiles
+## Harness profiles {#harness-profiles}
 
 `HarnessProfile` 描述 prompt-assembly、tool-visibility、middleware 和 default-subagent adjustments；这些会在 chat model 构建完成后由 `create_deep_agent` 应用：
 
@@ -82,7 +82,7 @@ register_harness_profile(
     3. provider-only fallback
 </Accordion>
 
-## Registration keys
+## 注册键 {#registration-keys}
 
 两种 profile types 使用相同的 key format：
 
@@ -97,7 +97,7 @@ register_harness_profile(
     没有能匹配所有 providers 的 wildcard key。若要到处应用相同 overrides，例如无论选择哪个 model 都删除 `TodoListMiddleware`，请在你使用的每个 provider key 下注册 profile。Profiles 适用于依赖所选 model 的 adjustments。无论 model 如何都应应用的 global adjustments，应该在 `create_deep_agent` call site 处完成。
 </Note>
 
-## Merge semantics
+## 合并语义 {#merge-semantics}
 
 | 字段 | Merge behavior |
 | --- | --- |
@@ -110,7 +110,7 @@ register_harness_profile(
 | `pre_init` (provider) | Callables 串联：先运行 existing，再运行 new |
 | `init_kwargs_factory` (provider) | Factories 串联，并在每次 `resolve_model` call 时 merge 它们的输出 |
 
-## Provider profiles
+## Provider profiles {#provider-profiles}
 
 `ProviderProfile` 声明 Deep Agents 应如何为给定 provider 或具体 model spec 构建 chat model。它只在你创建 deep agent 时提供 `provider:model` 字符串时应用；如果你通过 [`init_chat_model`](https://reference.langchain.com/python/langchain/chat_models/base/init_chat_model) 传入 preconfigured model，则不应用：
 
@@ -135,7 +135,7 @@ register_provider_profile(
     从 runtime state 派生的 kwargs（例如从 environment variables 读取 headers）。
 </ResponseField>
 
-## 从 config files 加载 profiles
+## 从 config files 加载 profiles {#load-profiles-from-config-files}
 
 对于 YAML/JSON-backed workflows，请使用 `HarnessProfileConfig`。它镜像 `HarnessProfile` 的声明式子集（prompt text、tool-description overrides、excluded tools 和 middleware、general-purpose subagent edits），并拥有 `to_dict` / `from_dict`。Runtime-only state，例如 middleware instances、factories 和 class-form `excluded_middleware` entries，会保留在 `HarnessProfile` 上。
 
@@ -171,7 +171,7 @@ with open("openai.yaml") as f:
 - Class-form `excluded_middleware` entries 会序列化为 public alias（当 class 通过 `serialized_name: ClassVar[str]` 暴露 alias 时），或序列化为 `module:Class` import ref。
 - 非空 `extra_middleware`，以及在 `__main__` 或 function scope 内声明的 middleware classes 无法序列化，export 会引发 `ValueError`。
 
-## 将 profile 作为 plugin 分发
+## 将 profile 作为 plugin 分发 {#ship-a-profile-as-a-plugin}
 
 可分发 profiles 可以通过 `importlib.metadata` entry points 自行注册，而不需要调用方手动运行 `register_*_profile`。加载顺序是 **built-ins 先加载，然后是 entry-point plugins，最后是 user code 中的任何直接 `register_*_profile` calls**；三条路径都会流入相同的 additive registration，因此同一 key 下的较晚注册会叠加在较早注册之上。
 
@@ -210,7 +210,7 @@ def register_provider() -> None:
     )
 ```
 
-## 相关
+## 相关 {#related}
 
 - [Harness](/oss/python/deepagents/harness)：harness capabilities 概览
 - [Models](/oss/python/deepagents/models)：配置 model providers 和 parameters

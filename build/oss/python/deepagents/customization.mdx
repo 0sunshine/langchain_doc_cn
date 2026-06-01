@@ -78,7 +78,7 @@ agent = create_deep_agent(
 | [`response_format=`](#structured-output) | Structured output schema |
 | [profiles](#profiles) | 作为 reusable bundle 的 per-model defaults |
 
-<Accordion title="完整函数签名">
+<Accordion title="完整函数签名" id="full-function-signature">
 <CreateDeepAgentConfigOptionsPy />
 </Accordion>
 
@@ -113,7 +113,7 @@ agent = create_deep_agent(
 
 
 
-## System prompt
+## System prompt {#system-prompt}
 
 Deep Agents 自带 built-in system prompt。deep agent 的价值来自 SDK 在 model 之上提供的 orchestration layer，包括 planning、virtual-filesystem tools 和 subagents；model 需要知道这些能力存在，以及何时应该使用它们。内置 prompt 会教 agent 如何使用这套 scaffolding，因此你不必在每个项目里重新推导它；可以通过 [profile](/oss/python/deepagents/profiles#harness-profiles) 或你自己的 `system_prompt=` 来微调，而不是逐字复制它。
 
@@ -126,7 +126,7 @@ Deep Agents 自带 built-in system prompt。deep agent 的价值来自 SDK 在 m
 
 
 
-### Prompt assembly
+### Prompt 组装 {#prompt-assembly}
 
 Deep Agents 会从最多四个命名部分构建 system prompt，使调用方提供的 instructions、SDK 内置 agent guidance，以及任何 model-specific [profile](/oss/python/deepagents/profiles) overrides 能够以可预测的优先级共存。没有这层结构时，针对 Claude 调优的 profile suffix 可能会根据调用顺序覆盖你的 `system_prompt=` 参数，或被它覆盖；命名 slots 让顺序显式且稳定。
 
@@ -179,7 +179,7 @@ agent = create_deep_agent(
 </Note>
 
 <AccordionGroup>
-    <Accordion title="Subagent prompts">
+    <Accordion title="Subagent prompts" id="subagent-prompts">
         同样的 overlay 规则也适用于声明式 [subagents](/oss/python/deepagents/subagents)：每个 subagent 会基于**自己的 model**重新执行 profile resolution，然后把解析出的 profile 的 `base_system_prompt` / `system_prompt_suffix` 应用到它自己编写的 `system_prompt` 上。subagent 的 `system_prompt` 扮演 `BASE` 角色；`CUSTOM` 和 `SUFFIX` 来自与 subagent model 匹配的 profile（它可能与 main agent 的 profile 不同）。
 
         | `spec["system_prompt"]` | profile `base_system_prompt` (`CUSTOM`) | profile `system_prompt_suffix` (`SUFFIX`) | 最终 subagent system prompt |
@@ -191,7 +191,7 @@ agent = create_deep_agent(
 
         subagents 没有 `USER` segment；spec 中编写的 `system_prompt` 是最接近的类比，并留在 `BASE` slot 中。只提供 `system_prompt_suffix` 的 profile（built-in Anthropic / OpenAI profiles 的常见情况）只会追加到 subagent 作者写的内容后面；设置 `base_system_prompt` 的 profile 会直接*替换*原 authored prompt，因此要谨慎使用这个字段。
     </Accordion>
-    <Accordion title="General-purpose subagent prompt">
+    <Accordion title="General-purpose subagent prompt" id="general-purpose-subagent-prompt">
         自动添加的 [general-purpose subagent](/oss/python/deepagents/subagents#the-general-purpose-subagent) 遵循相同的 overlay 规则，但多一层：GP base prompt 的解析顺序是 **`general_purpose_subagent.system_prompt`（如果设置） -> `HarnessProfile.base_system_prompt`（如果设置） -> SDK GP default**。profile suffix 会叠加在最终结果之上。
 
         这两个 override 字段都可以携带 base-prompt replacement，但它们不能互换。`general_purpose_subagent.system_prompt` 是 GP-specific configuration；`base_system_prompt` 是主要面向 main agent 的 global override。当二者都设置时，**GP-specific intent 会在 GP subagent 中胜出**，因此同时调优这两个字段时，用户不会看到 GP override 被悄悄丢弃：
@@ -237,7 +237,7 @@ Deep Agents 支持任何 [middleware](/oss/python/langchain/middleware/overview)
 - [`SkillsMiddleware`](https://reference.langchain.com/python/deepagents/middleware/skills/SkillsMiddleware)：当提供 `skills` 参数时启用 custom skills
 - `HumanInTheLoopMiddleware`：当提供 `interruptOn` 参数时，在指定位置暂停以等待 human approval 或 input
 
-### Prebuilt middleware
+### 预构建 middleware {#prebuilt-middleware}
 
 LangChain 暴露了额外的 prebuilt middleware，可让你添加 retries、fallbacks 或 PII detection 等功能。更多信息请参阅 [Prebuilt middleware](/oss/python/langchain/middleware/built-in)。
 
@@ -247,11 +247,11 @@ LangChain 暴露了额外的 prebuilt middleware，可让你添加 retries、fal
 
 
 
-### Provider-specific middleware
+### Provider 专用 middleware {#provider-specific-middleware}
 
 关于针对特定 LLM providers 优化的 provider-specific middleware，请参阅 [Official integrations](/oss/python/integrations/middleware#official-integrations) 和 [Community integrations](/oss/python/integrations/middleware#community-integrations)。
 
-### Custom middleware
+### 自定义 middleware {#custom-middleware}
 
 你可以提供额外 middleware 来扩展功能、添加 tools，或实现 custom hooks：
 
@@ -476,7 +476,7 @@ Sandboxes 是一类特殊的 [backends](/oss/python/deepagents/backends)，它�
 
 
 
-## Structured output
+## 结构化输出 {#structured-output}
 
 Deep Agents 支持 [structured output](/oss/python/langchain/structured-output)。
 你可以通过向 `create_deep_agent()` 调用传入 `response_format` 参数，设置期望的 structured output schema。
@@ -489,7 +489,7 @@ Deep Agents 支持 [structured output](/oss/python/langchain/structured-output)�
 
 更多信息和示例请参阅 [response format](/oss/python/langchain/structured-output#response-format)。
 
-## Advanced
+## 高级 {#advanced}
 
 `create_deep_agent` 会在 [`create_agent`](https://reference.langchain.com/python/langchain/agents/factory/create_agent) 之上预组装 middleware stack。若要构建完全自定义的 agent，也就是精确选择要包含哪些 capabilities，请参阅 [Configure the harness](/oss/python/langchain/agents#configure-the-harness)。
 
