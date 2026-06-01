@@ -37,11 +37,11 @@ Sandboxes 和 @[`LocalShellBackend`] 也会提供 `execute` tool。
 - 以及 [update existing backends to v2](#update-existing-backends-to-v2)
 :::
 
-## Quickstart
+## 快速开始 {#quickstart}
 
 下面是一些可以快速用于 deep agent 的预构建 filesystem backends：
 
-| Built-in backend | Description |
+| 内置 backend | 说明 |
 |---|---|
 | [Default](#statebackend) | `agent = create_deep_agent(model="google_genai:gemini-3.5-flash")` <br></br> Thread-scoped。agent 的默认 filesystem backend 存储在 `langgraph` state 中。Files 会通过你的 checkpointer 在同一个 thread 的多个 turns 之间持久存在，但不会在 threads 之间共享。 |
 | [Local filesystem persistence](#filesystembackend-local-disk) | `agent = create_deep_agent(model="google_genai:gemini-3.5-flash", backend=FilesystemBackend(root_dir="/Users/nh/Desktop/"))` <br></br>这会让 deep agent 访问你本机的 filesystem。你可以指定 agent 有权访问的 root directory。注意，提供的任何 `root_dir` 都必须是 absolute path。通常应包在 [CompositeBackend](#compositebackend-router) 中，让内部 agent data（offloaded tool results、conversation history）和你的 project files 分离。 |
@@ -84,7 +84,7 @@ graph TB
     class Execute output
 ```
 
-## Built-in backends
+## 内置 backends {#built-in-backends}
 
 ### StateBackend
 
@@ -111,7 +111,7 @@ graph TB
 注意，这个 backend 会由 supervisor agent 和 subagents 共享；subagent 写入的任何 files 都会保留在 LangGraph agent state 中，
 即使该 subagent 的执行已经完成。这些 files 会继续对 supervisor agent 和其他 subagents 可用。
 
-### FilesystemBackend (local disk)
+### FilesystemBackend（本地磁盘） {#filesystembackend-local-disk}
 
 @[`FilesystemBackend`] 会在可配置 root directory 下读取和写入真实 files。
 
@@ -196,7 +196,7 @@ const agent = createDeepAgent({
 这样，agent 在 `/workspace/` 下的读写会进入真实磁盘，而 offloaded tool results 和其他内部数据会留在 ephemeral state 中。更多 routing patterns 请参阅 [Route to different backends](#route-to-different-backends)。
 </Tip>
 
-### LocalShellBackend (local shell)
+### LocalShellBackend（本地 shell） {#localshellbackend-local-shell}
 
 <Warning>
 该 backend 会授予 agents 直接 filesystem read/write access，**并且**允许在你的 host 上不受限制地执行 shell。
@@ -245,7 +245,7 @@ const agent = createDeepAgent({
 - 本地 coding assistants 和 development tools
 - 当你信任 agent 时，在开发期间快速迭代
 
-### StoreBackend (LangGraph store)
+### StoreBackend（LangGraph store） {#storebackend-langgraph-store}
 
 :::python
 <BackendStorePy />
@@ -270,7 +270,7 @@ const agent = createDeepAgent({
 - 当你已经运行在配置好的 LangGraph store 上时（例如 Redis、Postgres，或 @[`BaseStore`] 背后的 cloud implementations）。
 - 当你通过 [LangSmith Deployment](/langsmith/deployment) 部署 agent 时（平台会自动为 agent provision store）。
 
-#### Namespace factories
+#### 命名空间工厂 {#namespace-factories}
 
 namespace factory 控制 `StoreBackend` 从哪里读取和向哪里写入数据。它接收 LangGraph @[`Runtime`]，并返回一个字符串 tuple 作为 store namespace。使用 namespace factories 可以在 users、tenants 或 assistants 之间隔离数据。
 
@@ -396,7 +396,7 @@ Namespace components 只能包含 alphanumeric characters、hyphens、underscore
 - LangSmith-native durable filesystem persistence，无需单独接入 LangGraph `BaseStore`。
 - 受益于 filesystem changes 的 Hub commit history 的 workflows。
 
-### CompositeBackend (router)
+### CompositeBackend（router） {#compositebackend-router}
 
 :::python
 <BackendCompositePy />
@@ -415,7 +415,7 @@ Namespace components 只能包含 alphanumeric characters、hyphens、underscore
 - 当你有多个信息来源，希望把它们作为单个 filesystem 的一部分提供给 agent 时。
     - 例如，你把 long-term memories 存在某个 Store 的 `/memories/` 下，同时还有一个 custom backend 在 `/docs/` 下提供 documentation。
 
-## Specify a backend
+## 指定 backend {#specify-a-backend}
 
 :::python
 - 向 `create_deep_agent(model=..., backend=...)` 传入 backend instance。filesystem middleware 会把它用于所有 tooling。
@@ -433,7 +433,7 @@ Namespace components 只能包含 alphanumeric characters、hyphens、underscore
 </Note>
 :::
 
-## Route to different backends
+## 路由到不同 backends {#route-to-different-backends}
 
 把 namespace 的不同部分路由到不同 backends。常见用途是让 `/memories/*` 跨 threads 持久存在，同时让其他内容保持 thread-scoped。
 
@@ -479,7 +479,7 @@ Notes:
 - 使用 StoreBackend routing 时，请确保通过 `create_deep_agent(model=..., store=...)` 提供了 store，或由平台 provision。
 - Deep Agents 会把内部数据（offloaded tool results、conversation history）写入 default backend。使用 `StateBackend` 作为 default，可以让这些 artifacts 保持 ephemeral，并避免写到磁盘或 persistent store。完整示例请参阅 [FilesystemBackend tip](#filesystembackend-local-disk)。
 
-## Use a virtual filesystem
+## 使用 virtual filesystem {#use-a-virtual-filesystem}
 
 构建 custom backend，把远程或数据库 filesystem（例如 S3 或 Postgres）投射到 tools namespace 中。
 
@@ -621,7 +621,7 @@ Postgres-style outline:
   - `grep` 可以按 extension 或 last modified time fetch candidate rows，然后 scan lines（跳过 `mime_type` 是 binary 的 rows）-> 返回 `GrepResult`
 :::
 
-## Permissions
+## 权限 {#permissions}
 
 使用 [permissions](/oss/deepagents/permissions) 声明式控制 agent 可以 read 或 write 哪些 files 和 directories。Permissions 适用于内置 filesystem tools，并在调用 backend 之前进行评估。
 
@@ -655,7 +655,7 @@ agent = create_deep_agent(
 
 完整选项，包括 rule ordering、subagent permissions 和 composite backend interactions，请参阅 [permissions guide](/oss/deepagents/permissions)。
 
-## Add policy hooks
+## 添加 policy hooks {#add-policy-hooks}
 
 如果需要超出 path-based allow/deny rules 的自定义 validation logic（rate limiting、audit logging、content inspection），可以通过 subclassing 或 wrapping backend 来执行 enterprise rules。
 
@@ -792,7 +792,7 @@ class PolicyWrapper implements BackendProtocolV2 {
 :::
 
 :::js
-## Multimodal and binary files
+## 多模态和二进制文件 {#multimodal-and-binary-files}
 
 <Note>
 Multi-modal file support（PDFs、audio、video）需要 `deepagents>=1.9.0`。
@@ -800,9 +800,9 @@ Multi-modal file support（PDFs、audio、video）需要 `deepagents>=1.9.0`。
 
 V2 backends 原生支持 binary files。当 `read()` 遇到 binary file（根据 file extension 的 MIME type 判断）时，它会返回包含 `Uint8Array` content 和对应 `mimeType` 的 `ReadResult`。Text files 返回 `string` content。
 
-### Supported MIME types
+### 支持的 MIME 类型 {#supported-mime-types}
 
-| Category | Extensions | MIME types |
+| 类别 | 扩展名 | MIME types |
 |----------|-----------|------------|
 | Images | `.png`, `.jpg`/`.jpeg`, `.gif`, `.webp`, `.svg`, `.heic`, `.heif` | `image/png`, `image/jpeg`, `image/gif`, `image/webp`, `image/svg+xml`, `image/heic`, `image/heif` |
 | Audio | `.mp3`, `.wav`, `.aiff`, `.aac`, `.ogg`, `.flac` | `audio/mpeg`, `audio/wav`, `audio/aiff`, `audio/aac`, `audio/ogg`, `audio/flac` |
@@ -810,7 +810,7 @@ V2 backends 原生支持 binary files。当 `read()` 遇到 binary file（根据
 | Documents | `.pdf`, `.ppt`, `.pptx` | `application/pdf`, `application/vnd.ms-powerpoint`, `application/vnd.openxmlformats-officedocument.presentationml.presentation` |
 | Text | `.txt`, `.html`, `.json`, `.js`, `.ts`, `.py`, etc. | `text/plain`, `text/html`, `application/json`, etc. |
 
-### Read binary files
+### 读取二进制文件 {#read-binary-files}
 
 ```typescript
 const result = await backend.read("/workspace/screenshot.png");
@@ -826,7 +826,7 @@ if (result.error) {
 }
 ```
 
-### FileData format
+### FileData 格式 {#filedata-format}
 
 `FileData` 是用于在 state 和 store backends 中存储 file content 的类型。
 
@@ -850,7 +850,7 @@ type FileData =
 从 state 或 store 读取时，backends 可能遇到任一种格式。framework 会透明处理两者。新的 writes 默认使用 v2 format。在 rolling deployments 中，如果旧 readers 需要 legacy format，请向 backend constructor 传入 `fileFormat: "v1"`（例如 `new StoreBackend({ fileFormat: "v1" })`）。
 :::
 
-## Migrate from backend factories
+## 从 backend factories 迁移 {#migrate-from-backend-factories}
 
 <Warning>
 :::python
@@ -863,9 +863,9 @@ backend factory pattern 从 `deepagents` 1.9.0 起已**弃用**。请直接传�
 
 以前，`StateBackend` 和 `StoreBackend` 等 backends 需要一个接收 runtime object 的 factory function，因为它们需要 runtime context（state、store）才能运行。现在 backends 会通过 LangGraph 的 `get_config()`、`get_store()` 和 `get_runtime()` helpers 在内部解析这些 context，因此你可以直接传入 instances。
 
-### What changed
+### 变更内容 {#what-changed}
 
-| Before (deprecated) | After |
+| 之前（已弃用） | 之后 |
 |---|---|
 | `backend=lambda rt: StateBackend(rt)` | `backend=StateBackend()` |
 | `backend=lambda rt: StoreBackend(rt)` | `backend=StoreBackend()` |
@@ -873,11 +873,11 @@ backend factory pattern 从 `deepagents` 1.9.0 起已**弃用**。请直接传�
 | `backend: (config) => new StateBackend(config)` | `backend: new StateBackend()` |
 | `backend: (config) => new StoreBackend(config)` | `backend: new StoreBackend()` |
 
-### Deprecated APIs
+### 已弃用 API {#deprecated-apis}
 
 :::python
 
-| Deprecated | Replacement |
+| 已弃用 | 替代方式 |
 |---|---|
 | 在 `create_deep_agent` 中向 `backend=` 传入 callable | 直接传入 backend instance |
 | `StateBackend(runtime)` 上的 `runtime` constructor argument | `StateBackend()`（无需 arguments） |
@@ -889,7 +889,7 @@ backend factory pattern 从 `deepagents` 1.9.0 起已**弃用**。请直接传�
 
 :::js
 
-| Deprecated | Replacement |
+| 已弃用 | 替代方式 |
 |---|---|
 | `BackendFactory` type | 直接传入 backend instance |
 | `BackendRuntime` interface | Backends 会在内部解析 context |
@@ -903,7 +903,7 @@ backend factory pattern 从 `deepagents` 1.9.0 起已**弃用**。请直接传�
 factory pattern 在运行时仍然可用，并会发出 deprecation warning。请在下一个 major version 前把代码更新为使用 direct instances。
 </Note>
 
-### Migration example
+### 迁移示例 {#migration-example}
 
 :::python
 ```python
@@ -956,7 +956,7 @@ const agent = createDeepAgent({
 ```
 :::
 
-### Migrating from `BackendContext`
+### 从 `BackendContext` 迁移 {#migrating-from-backendcontext}
 
 在 `deepagents>=0.5.2`（Python）和 `deepagents>=1.9.1`（TypeScript）中，namespace factories 会直接接收 LangGraph @[`Runtime`]，而不是 `BackendContext` wrapper。旧的 `BackendContext` 形式仍可通过 backwards-compatible `.runtime` 和 `.state` accessors 使用，但这些 accessors 会发出 deprecation warning，并将在 `deepagents>=0.7` 中移除。
 
@@ -994,7 +994,7 @@ new StoreBackend({
 ```
 :::
 
-## Protocol reference
+## 协议参考 {#protocol-reference}
 
 Backends 必须实现 @[`BackendProtocol`]。
 
@@ -1027,7 +1027,7 @@ Supporting types:
 :::js
 Backends 实现 `BackendProtocolV2`。所有 query methods 都返回形如 `{ error?: string, ...data }` 的 structured Result objects。
 
-### Required methods
+### 必需方法 {#required-methods}
 
 - **`ls(path: string) -> LsResult`**
   - 列出指定 directory 中的 files 和 directories（non-recursive）。Directories 的 path 以 `/` 结尾，并且 `is_dir=true`。可用时包含 `is_dir`、`size`、`modified_at`。
@@ -1050,14 +1050,14 @@ Backends 实现 `BackendProtocolV2`。所有 query methods 都返回形如 `{ er
 - **`edit(filePath: string, oldString: string, newString: string, replaceAll?: boolean) -> EditResult`**
   - 除非 `replaceAll=true`，否则强制 `oldString` 唯一。如果找不到则返回 error。成功时包含 `occurrences`。
 
-### Optional methods
+### 可选方法 {#optional-methods}
 
 - **`uploadFiles(files: Array<[string, Uint8Array]>) -> FileUploadResponse[]`** - 上传多个 files（用于 sandbox backends）。
 - **`downloadFiles(paths: string[]) -> FileDownloadResponse[]`** - 下载多个 files（用于 sandbox backends）。
 
-### Result types
+### 结果类型 {#result-types}
 
-| Type | Success fields | Error field |
+| 类型 | 成功字段 | 错误字段 |
 |------|----------------|-------------|
 | `ReadResult` | `content?: string \| Uint8Array`, `mimeType?: string` | `error` |
 | `ReadRawResult` | `data?: FileData` | `error` |
@@ -1067,13 +1067,13 @@ Backends 实现 `BackendProtocolV2`。所有 query methods 都返回形如 `{ er
 | `WriteResult` | `path?: string` | `error` |
 | `EditResult` | `path?: string`, `occurrences?: number` | `error` |
 
-### Supporting types
+### 支持类型 {#supporting-types}
 
 - **`FileInfo`** - `path`（必填），可选 `is_dir`、`size`、`modified_at`。
 - **`GrepMatch`** - `path`、`line`（1-indexed）、`text`。
 - **`FileData`** - 带 timestamps 的 file content。请参阅 [FileData format](#filedata-format)。
 
-### Sandbox extension
+### Sandbox 扩展 {#sandbox-extension}
 
 `SandboxBackendProtocolV2` 用以下内容扩展 `BackendProtocolV2`：
 
@@ -1082,13 +1082,13 @@ Backends 实现 `BackendProtocolV2`。所有 query methods 都返回形如 `{ er
 :::
 
 :::js
-## Update existing backends to V2
+## 将现有 backends 更新到 V2 {#update-existing-backends-to-v2}
 
-<Accordion title="Migration guide">
+<Accordion title="迁移指南" id="migration-guide">
 
-### Method renames
+### 方法重命名 {#method-renames}
 
-| V1 method | V2 method | Return type change |
+| V1 method | V2 method | 返回类型变化 |
 |-----------|-----------|-------------------|
 | `lsInfo(path)` | `ls(path)` | `FileInfo[]` -> `LsResult` |
 | `read(filePath, offset, limit)` | `read(filePath, offset, limit)` | `string` -> `ReadResult` |
@@ -1098,14 +1098,14 @@ Backends 实现 `BackendProtocolV2`。所有 query methods 都返回形如 `{ er
 | `write(...)` | `write(...)` | 不变（`WriteResult`） |
 | `edit(...)` | `edit(...)` | 不变（`EditResult`） |
 
-### Type renames
+### 类型重命名 {#type-renames}
 
 | V1 type | V2 type |
 |---------|---------|
 | `BackendProtocol` | `BackendProtocolV2` |
 | `SandboxBackendProtocol` | `SandboxBackendProtocolV2` |
 
-### Adaptation utilities
+### 适配工具 {#adaptation-utilities}
 
 如果你有现有 V1 backends 需要在 V2-only code 中使用，请使用 adaptation functions：
 

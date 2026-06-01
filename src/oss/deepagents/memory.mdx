@@ -11,7 +11,7 @@ Memory 让你的 agent 能跨 conversations 学习和改进。Deep Agents 将 me
 ![Short-term memory is scoped to a single thread via checkpoints; long-term memory persists across threads via the store](/oss/images/deepagents/production/memory.png)
 </Note>
 
-## Memory 如何工作
+## Memory 如何工作 {#how-memory-works}
 
 1. **让 agent 指向 memory files。** 创建 agent 时，将 file paths 传给 `memory=`。你也可以通过 `skills=` 传入 [skills](/oss/deepagents/skills)，作为 procedural memory（告诉 agent *如何*执行任务的可复用 instructions）。[backend](/oss/deepagents/backends) 控制文件存储位置以及谁可以访问它们。
 2. **Agent 读取 memory。** agent 可以在启动时将 memory files 加载进 system prompt，也可以在 conversation 期间按需读取。例如，[skills](/oss/deepagents/skills) 使用 on-demand loading：agent 启动时只读取 skill descriptions，只有当某个 skill 匹配 task 时才读取完整 skill file。这能让 context 在需要 capability 之前保持精简。
@@ -19,11 +19,11 @@ Memory 让你的 agent 能跨 conversations 学习和改进。Deep Agents 将 me
 
 最常见的两种模式是 [agent-scoped memory](#agent-scoped-memory)（所有用户共享）和 [user-scoped memory](#user-scoped-memory)（按用户隔离）。
 
-## Scoped memory
+## 有作用域的 memory {#scoped-memory}
 
 Agent memory 可以设置 scope，使同一组 memory files 对所有使用该 agent 的人可见，或者让 memory files 对每个用户独立。
 
-### Agent-scoped memory
+### Agent 作用域 memory {#agent-scoped-memory}
 
 为 agent 提供一个随时间演化的持久身份。Agent-scoped memory 在所有用户之间共享，因此 agent 会通过每次 conversation 积累自己的 persona、知识和偏好。随着它与用户交互，它会发展专业能力、改进处理方式，并记住哪些做法有效。如果它拥有 write access，也可以学习并更新 [skills](/oss/deepagents/skills)。
 
@@ -91,7 +91,7 @@ const agent = createDeepAgent({
 ```
 :::
 
-<Accordion title="完整示例：seed memory 并 invoke">
+<Accordion title="完整示例：seed memory 并 invoke" id="full-example-seed-memory-and-invoke">
 
 先向 store 写入初始 memories，然后跨两个 threads invoke agent，观察它如何记住并更新学到的内容。
 
@@ -230,7 +230,7 @@ await agent.invoke({
 
 </Accordion>
 
-### User-scoped memory
+### User 作用域 memory {#user-scoped-memory}
 
 为每个用户提供自己的 memory file。agent 会按用户记住 preferences、context 和 history，同时 core agent instructions 保持固定。如果 user-scoped backend 中保存了 per-user [skills](/oss/deepagents/skills)，用户也可以拥有自己的 skills。
 
@@ -282,7 +282,7 @@ const agent = createDeepAgent({
 ```
 :::
 
-<Accordion title="完整示例：跨用户隔离 memory">
+<Accordion title="完整示例：跨用户隔离 memory" id="full-example-isolated-memory-across-users">
 
 为不同用户 seed per-user memories，并以两个不同用户身份 invoke agent。每个用户只会看到自己的 preferences。
 
@@ -430,7 +430,7 @@ await agent.invoke(
 
 </Accordion>
 
-## Advanced usage
+## 高级用法 {#advanced-usage}
 
 除了 memory paths 和 scope 的基本配置外，你还可以为 memory 配置更高级的参数：
 
@@ -443,7 +443,7 @@ await agent.invoke(
 | **Retrieval** | Memories 如何读取？ | 加载到 prompt（默认）或 on demand（例如 [skills](/oss/deepagents/skills)） |
 | **Agent permissions** | agent 可以写入 memory 吗？ | [Read-write](#read-only-vs-writable-memory)（默认）或 [read-only](#read-only-vs-writable-memory)（适用于 shared policies） |
 
-### Episodic memory
+### Episodic memory {#episodic-memory}
 
 Episodic memory 存储过往经历的记录：发生了什么、顺序如何，以及结果是什么。不同于 semantic memory（存储在 `AGENTS.md` 等文件中的 facts 和 preferences），episodic memory 会保留完整 conversational context，让 agent 能回忆某个问题是 *如何* 被解决的，而不只是从中学到了 *什么*。
 
@@ -540,7 +540,7 @@ const orgThreads = await client.threads.search({
 
 这对于执行复杂 multi-step tasks 的 agents 很有用。例如，coding agent 可以回看过去的 debugging session，并直接跳到可能的 root cause。
 
-### Organization-level memory
+### 组织级 memory {#organization-level-memory}
 
 Organization-level memory 遵循与 user-scoped memory 相同的模式，但使用 organization-wide namespace，而不是 per-user namespace。它适用于应在 organization 中所有 users 和 agents 之间生效的 policies 或 knowledge。
 
@@ -636,7 +636,7 @@ await client.store.putItem(
 
 使用 [permissions](/oss/deepagents/permissions) 强制 org-level memory 为 read-only，或使用 [policy hooks](/oss/deepagents/backends#add-policy-hooks) 实现自定义 validation logic。
 
-### Background consolidation
+### 后台整理 {#background-consolidation}
 
 默认情况下，agent 会在 conversation 期间写入 memories（hot path）。另一种方式是将 memories 作为 background task 在 **conversations 之间**处理，有时称为 **sleep time compute**。一个独立 deep agent 会 review 最近 conversations、抽取关键 facts，并将它们与现有 memories 合并。
 
@@ -649,7 +649,7 @@ await client.store.putItem(
 
 推荐模式是将一个 **consolidation agent** 与 main agent 一起部署：这是一个 deep agent，负责读取最近 conversation history、抽取关键 facts，并将其合并到 memory store 中；然后用 [cron schedule](#cron) 触发它。选择 cadence 时应反映用户真实交互频率：一个日常流量稳定的 chat product 可能每几小时 consolidate 一次，而每周只使用几次的 tool 可能 nightly 或 weekly 运行就够了。比用户 conversation 更频繁地 consolidate，通常只是在 no-op runs 上消耗 tokens。
 
-#### Consolidation agent
+#### 整理 agent {#consolidation-agent}
 
 consolidation agent 会读取最近 conversation history，并将关键 facts 合并到 memory store。请在 `langgraph.json` 中把它和 main agent 一起注册：
 
@@ -825,11 +825,11 @@ cron interval 必须与 consolidation agent 内部的 lookback window 匹配。�
 
 关于使用 background processes 部署 agents 的更多信息，请参见 [going to production](/oss/deepagents/going-to-production)。
 
-### Read-only vs writable memory
+### 只读与可写 memory {#read-only-vs-writable-memory}
 
 默认情况下，agent 可以读写 memory files。对于 organization policies 或 compliance rules 这样的 shared state，你可能希望让 memory **read-only**，使 agent 能引用它但不能修改它。这可以防止通过 shared memory 进行 prompt injection，并确保文件内容只由你的 application code 控制。
 
-| Permission | Use case | How it works |
+| 权限 | 使用场景 | 工作方式 |
 |---|---|---|
 | **Read-write**（默认） | User preferences、agent self-improvement、学到的 [skills](/oss/deepagents/skills) | Agent 通过 `edit_file` tool 更新 files |
 | **Read-only** | Organization policies、compliance rules、shared knowledge bases、developer-defined [skills](/oss/deepagents/skills) | 通过 application code 或 [Store API](/langsmith/custom-store) 填充。使用 [permissions](/oss/deepagents/permissions) 拒绝写入特定 paths，或使用 [policy hooks](/oss/deepagents/backends#add-policy-hooks) 实现 custom validation logic。 |
@@ -842,13 +842,13 @@ cron interval 必须与 consolidation agent 内部的 lookback window 匹配。�
 
 要强制 read-only memory，请使用 [permissions](/oss/deepagents/permissions) 声明式拒绝写入特定 paths。对于 custom validation logic（rate limiting、audit logging、content inspection），请使用 [backend policy hooks](/oss/deepagents/backends#add-policy-hooks)。
 
-### Concurrent writes
+### 并发写入 {#concurrent-writes}
 
 多个 threads 可以并行写入 memory，但对**同一个 file** 的 concurrent writes 可能导致 last-write-wins conflicts。对于 user-scoped memory，这种情况较少见，因为用户通常一次只有一个 active conversation。对于 agent-scoped 或 organization-scoped memory，可以考虑使用 [background consolidation](#background-consolidation) 来串行化 writes，或将 memory 按 topic 拆成多个 files，以减少 contention。
 
 实践中，如果一次 write 因 conflict 失败，LLM 通常足够聪明，可以 retry 或优雅恢复，因此单次 lost write 通常不是灾难性的。
 
-### 同一 deployment 中的多个 agents
+### 同一 deployment 中的多个 agents {#multiple-agents-in-the-same-deployment}
 
 要在 shared deployment 中为每个 agent 提供自己的 memory，请将 `assistant_id` 加入 namespace：
 

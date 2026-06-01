@@ -13,7 +13,7 @@ import DeepResearchAgentClaudeJs from '/snippets/code-samples/deep-research-agen
 import DeepResearchRunSyncJs from '/snippets/code-samples/deep-research-run-sync-js.mdx';
 import DeepResearchRunStreamJs from '/snippets/code-samples/deep-research-run-stream-js.mdx';
 
-## Overview
+## 概览 {#overview}
 
 本指南演示如何使用 [Deep Agents](/oss/deepagents) 从零构建一个 multi-step web research agent。该 agent 会把 research questions 分解成聚焦的 tasks，把它们委托给 specialized sub-agents，并把 findings 综合成一份完整报告。
 
@@ -26,7 +26,7 @@ import DeepResearchRunStreamJs from '/snippets/code-samples/deep-research-run-st
 
 生成的 sub-agents 会使用 Tavily 进行 web searches，并获取完整 webpage content 进行分析。
 
-### Key concepts
+### 核心概念 {#key-concepts}
 
 本教程涵盖：
 
@@ -34,7 +34,7 @@ import DeepResearchRunStreamJs from '/snippets/code-samples/deep-research-run-st
 - 自定义 [tools](/oss/langchain/tools)：用于 web search
 - 使用[内置 planning tool](/oss/deepagents/harness#task-planning) 进行 multi-step planning
 
-## Prerequisites
+## 前置条件 {#prerequisites}
 
 需要以下 API keys：
 
@@ -42,7 +42,7 @@ import DeepResearchRunStreamJs from '/snippets/code-samples/deep-research-run-st
 - [Tavily](https://www.tavily.com/) 用于 web search（可选，free tier 足够）
 - [LangSmith](https://smith.langchain.com) 用于 tracing（可选）
 
-## Setup
+## 设置 {#setup}
 
 :::python
 <Steps>
@@ -54,7 +54,7 @@ cd deep-research-agent
 ```
 
 </Step>
-<Step title="安装 dependencies">
+<Step title="安装依赖">
 
 <Tabs>
 <Tab title="Claude">
@@ -119,7 +119,7 @@ cd deep-research-agent
 ```
 
 </Step>
-<Step title="安装 dependencies">
+<Step title="安装依赖">
 
 <Tabs>
 <Tab title="Claude">
@@ -158,7 +158,7 @@ export LANGSMITH_API_KEY="your_langsmith_api_key"   # Optional
 </Steps>
 :::
 
-## Build the agent
+## 构建 agent {#build-the-agent}
 
 :::python
 在你的项目目录中创建 `agent.py`：
@@ -563,7 +563,7 @@ agent = create_deep_agent(
 </Step>
 </Steps>
 
-## Run the agent
+## 运行 agent {#run-the-agent}
 
 你可以同步运行 agent，也就是等待完整结果后再打印；也可以随着 updates 到来进行 streaming。
 
@@ -576,7 +576,7 @@ agent = create_deep_agent(
 :::
 
 <Tabs>
-<Tab title="同步运行" value="sync">
+<Tab title="同步运行" id="run-synchronously" value="sync">
 
 :::python
 <DeepResearchRunSyncPy />
@@ -587,7 +587,7 @@ agent = create_deep_agent(
 :::
 
 </Tab>
-<Tab title="Stream updates" value="stream">
+<Tab title="流式传输更新" value="stream" id="stream-updates">
 
 :::python
 <DeepResearchRunStreamPy />
@@ -616,11 +616,11 @@ npx tsx agent.ts
 
 如果你在运行前设置了 `LANGSMITH_API_KEY` environment variable，就可以在 [LangSmith](/langsmith/home) 中查看 agent traces，用于 debug 和监控 multi-step behavior。
 
-## Full code
+## 完整代码 {#full-code}
 
 在 GitHub 上查看完整 [Deep Research example](https://github.com/langchain-ai/deepagents/tree/main/examples/deep_research)。
 
-## Next steps
+## 下一步 {#next-steps}
 
 现在你已经构建了 agent，可以通过修改 agent 文件中的 prompt constants 来调整 workflow、delegation strategy 或 researcher behavior。
 你也可以调节 delegation limits，以允许更多 parallel sub-agents 或 delegation rounds。

@@ -1,5 +1,5 @@
 ---
-title: Streaming
+title: 流式传输
 description: 从 deep agent runs 和 subagent execution stream 实时 updates
 ---
 
@@ -16,7 +16,7 @@ deep agent streaming 可以做到：
 * <Icon icon="screwdriver-wrench" size={16} /> [**Stream tool calls**](#tool-calls)：查看 subagent execution 中的 tool calls 和 results。
 * <Icon icon="table" size={16} /> [**Stream custom updates**](#custom-updates)：从 subagent nodes 内部发出 user-defined signals。
 
-## 启用 subgraph streaming
+## 启用 subgraph streaming {#enable-subgraph-streaming}
 
 Deep Agents 使用 LangGraph 的 subgraph streaming 暴露来自 subagent execution 的 events。要接收 subagent events，请在 streaming 时启用 `stream_subgraphs`。
 
@@ -87,7 +87,7 @@ for await (const [namespace, chunk] of await agent.stream(
 ```
 :::
 
-## Namespaces
+## 命名空间 {#namespaces}
 
 启用 `subgraphs` 后，每个 streaming event 都会包含一个 **namespace**，用于标识该 event 由哪个 agent 产生。namespace 是由 node names 和 task IDs 组成的 path，表示 agent hierarchy。
 
@@ -148,7 +148,7 @@ for await (const [namespace, chunk] of await agent.stream(
 ```
 :::
 
-## Subagent progress
+## Subagent 进度 {#subagent-progress}
 
 使用 `stream_mode="updates"` 跟踪每个 step 完成时的 subagent progress。这对于显示哪些 subagents 处于 active 状态，以及它们完成了哪些工作很有用。
 
@@ -279,7 +279,7 @@ Main agent step: model_request
 ```
 :::
 
-## LLM tokens
+## LLM tokens {#llm-tokens}
 
 使用 `stream_mode="messages"` 从 main agent 和 subagents stream 单个 tokens。每个 message event 都包含用于识别 source agent 的 metadata。
 
@@ -365,7 +365,7 @@ process.stdout.write("\n");
 ```
 :::
 
-## Tool calls
+## 工具调用 {#tool-calls}
 
 当 subagents 使用 tools 时，你可以 stream tool call events，以展示每个 subagent 正在做什么。Tool call chunks 会出现在 `messages` stream mode 中。
 
@@ -462,7 +462,7 @@ process.stdout.write("\n");
 ```
 :::
 
-## Custom updates
+## 自定义更新 {#custom-updates}
 
 :::python
 在 subagent tools 内部使用 @[`get_stream_writer`] 发出 custom progress events：
@@ -626,7 +626,7 @@ for await (const [namespace, chunk] of await agent.stream(
 ```
 :::
 
-## Stream multiple modes
+## 流式传输多个模式 {#stream-multiple-modes}
 
 组合多个 stream modes，以获得 agent execution 的完整视图：
 
@@ -738,9 +738,9 @@ process.stdout.write("\n");
 ```
 :::
 
-## Common patterns
+## 常见模式 {#common-patterns}
 
-### 跟踪 subagent lifecycle
+### 跟踪 subagent 生命周期 {#track-subagent-lifecycle}
 
 监控 subagents 何时 start、run 和 complete：
 
@@ -893,7 +893,7 @@ for (const [id, sub] of activeSubagents) {
 :::
 
 :::python
-## v2 streaming format
+## v2 streaming 格式 {#v2-streaming-format}
 
 <Note>
 需要 LangGraph >= 1.1。
@@ -933,7 +933,7 @@ for namespace, chunk in agent.stream(
 关于 v2 format 的更多细节，包括 type narrowing 和 Pydantic/dataclass coercion，请参见 [LangGraph streaming docs](/oss/langgraph/streaming#stream-output-format-v2)。
 :::
 
-## Related
+## 相关 {#related}
 
 - [Subagents](/oss/deepagents/subagents)：配置并使用 Deep Agents 的 subagents
 - [Frontend streaming](/oss/deepagents/streaming/frontend)：使用 `useStream` 为 Deep Agents 构建 React UIs

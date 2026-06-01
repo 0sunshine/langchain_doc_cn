@@ -1,5 +1,5 @@
 ---
-title: Todo list
+title: Todo 列表
 description: 用从 agent state 同步的实时 todo list 跟踪 agent progress
 ---
 
@@ -9,7 +9,7 @@ import { PatternEmbed } from "/snippets/pattern-embed.jsx"
 
 <PatternEmbed pattern="deep-agent-todo-list" />
 
-## 工作原理
+## 工作原理 {#how-it-works}
 
 在 LangGraph agent 中，state 不限于 messages。你可以定义 **custom state keys** 来保存任意数据。在这个例子里，就是一个 `todos` array。当 agent 执行计划时，它会将每个 todo 的 status 从 `"pending"` 更新到 `"in_progress"`，再更新到 `"completed"`。`useStream` hook 会通过 `stream.values` 暴露这些 custom state values，你的 UI 会响应式地渲染它们。
 
@@ -21,7 +21,7 @@ import { PatternEmbed } from "/snippets/pattern-embed.jsx"
 4. 随着 agent 推进，`stream.values.todos` 会实时更新
 5. 你的 UI 用当前 statuses 重新渲染 todo list
 
-## 设置 useStream
+## 设置 useStream {#setting-up-usestream}
 
 不需要特殊配置。让 `useStream` 指向你的 agent，并从 `stream.values` 读取 `todos` 即可。
 
@@ -158,7 +158,7 @@ export class TodoAgentComponent {
 ```
 </CodeGroup>
 
-## Todo interface
+## Todo 接口 {#the-todo-interface}
 
 array 中的每个 todo 都有一个简单结构：
 
@@ -169,14 +169,14 @@ interface Todo {
 }
 ```
 
-| Property | Description |
+| 属性 | 说明 |
 | --- | --- |
 | `status` | 这个 task 的当前状态。选项：`pending`（尚未开始）、`in_progress`（agent 正在处理）、`completed`（已完成） |
 | `content` | 对 task 内容的人类可读描述 |
 
 agent 在创建 plan 时填充这个 array，然后在执行每个步骤时更新单个 items。
 
-## 构建 TodoList component
+## 构建 TodoList 组件 {#building-the-todolist-component}
 
 todo list 会用 status icon、color coding 和反映当前 state 的 visual styling 渲染每个 item：
 
@@ -208,7 +208,7 @@ function TodoList({ todos }: { todos: Todo[] }) {
 }
 ```
 
-## Progress bar
+## 进度条 {#progress-bar}
 
 visual progress bar 能让用户一眼看到整体完成情况：
 
@@ -231,7 +231,7 @@ function ProgressBar({ percentage }: { percentage: number }) {
 }
 ```
 
-## 单个 todo items
+## 单个 todo 项 {#individual-todo-items}
 
 每个 item 都会有一个 status icon、按颜色区分的 text，以及 completed tasks 的 strikethrough styling：
 
@@ -275,7 +275,7 @@ function TodoItem({ todo }: { todo: Todo }) {
 
 `in_progress` icon 使用 `animate-pulse`，用来吸引用户注意当前 active task。
 
-## 计算 progress
+## 计算进度 {#calculating-progress}
 
 直接从 todos array 派生 progress metrics：
 
@@ -292,7 +292,7 @@ const percentage = todos.length
 
 随着 agent 修改 state，这些 values 会响应式更新，让 progress bar 和 counters 保持同步。
 
-## 与 chat messages 结合
+## 与 chat 消息结合 {#combining-with-chat-messages}
 
 todo list 可以和常规 chat interface 一起工作。一个实用 layout 会把 todo list 显示为持久 sidebar 或 header panel，并在下方显示 chat messages：
 
@@ -336,7 +336,7 @@ function TodoAgentLayout() {
 只有当 `todos.length > 0` 时才显示 todo list。在 agent 创建 plan 之前，没有任何内容需要显示。显示空 component 会浪费空间。
 </Tip>
 
-## Todos 之外的 custom state
+## Todos 之外的自定义状态 {#custom-state-beyond-todos}
 
 这个 pattern 展示了一个强大的原则：`stream.values` 可以暴露 agent 定义的 **任何 custom state**，不只是 messages。`todos` array 只是一个例子。你可以用同样的方法实现：
 
@@ -356,7 +356,7 @@ const confidence = stream.values?.confidence_score;
 Custom state keys 在你的 LangGraph graph 的 state schema 中定义。`useStream` hook 会自动将它们包含在 `stream.values` 中，不需要额外的 client-side configuration。
 </Info>
 
-## Animating transitions
+## 动画化过渡 {#animating-transitions}
 
 Todo status transitions 会实时发生，smooth animations 会让这些变化显得精致，而不是突兀：
 
@@ -393,7 +393,7 @@ function TodoItem({ todo }: { todo: Todo }) {
 
 `transition-all duration-300` classes 确保 color changes、strikethrough 和 opacity shifts 都能平滑动画。
 
-## Use cases
+## 使用场景 {#use-cases}
 
 todo list pattern 适合任何 agent 执行 structured plan 的场景：
 
@@ -403,7 +403,7 @@ todo list pattern 适合任何 agent 执行 structured plan 的场景：
 - **Onboarding flows**：agent 逐步完成 setup steps，并在配置 services 时逐项勾选
 - **Report generation**：报告的各个 sections 变成 todos：gather data、analyze trends、write summary、format output
 
-## 处理 empty 和 loading states
+## 处理空状态和加载状态 {#handling-empty-and-loading-states}
 
 在 agent 尚未创建 plan 前处理 initial state：
 
@@ -432,7 +432,7 @@ function TodoList({ todos, isLoading }: { todos: Todo[]; isLoading: boolean }) {
 }
 ```
 
-## Best practices
+## 最佳实践 {#best-practices}
 
 - **突出显示 todo list**。它是 plan-based agents 的主要 progress indicator。不要把它埋到首屏以下。
 - **为 status transitions 添加动画**。平滑 transitions 会让 agent 显得更 responsive。对 background color、text decoration 和 opacity 使用 CSS transitions。

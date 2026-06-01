@@ -1,11 +1,11 @@
 ---
-title: Overview
+title: 概览
 description: 为 Deep Agents 构建展示实时 subagent streams、task progress 和 sandbox 的 UI
 ---
 
 构建能够实时可视化 deep agent workflows 的 frontends。这些 patterns 展示如何从使用 `createDeepAgent` 创建的 agents 中，渲染 subagent progress、task planning、streaming content，以及类似 IDE 的 sandbox experiences。
 
-## Architecture
+## 架构 {#architecture}
 
 Deep Agents 使用 coordinator-worker architecture。main agent 规划任务并 delegate 给 specialized subagents，每个 subagent 都隔离运行。在 frontend 中，`useStream` 会暴露 coordinator 的 messages，以及每个 subagent 的 streaming state。
 
@@ -95,20 +95,20 @@ function App() {
 }
 ```
 
-## Patterns
+## 模式 {#patterns}
 
 <CardGroup cols={3}>
-  <Card title="Subagent streaming" icon="arrows-split" href="/oss/deepagents/frontend/subagent-streaming">
-    显示 specialist subagents，包括 streaming content、progress tracking 和 collapsible cards。
+  <Card title="Subagent 流式传输" icon="arrows-split" href="/oss/deepagents/frontend/subagent-streaming">
+    显示 specialist subagents，包括流式内容、进度跟踪和可折叠卡片。
   </Card>
-  <Card title="Todo list" icon="list-check" href="/oss/deepagents/frontend/todo-list">
-    用从 agent state 同步的实时 todo list 跟踪 agent progress。
+  <Card title="Todo 列表" icon="list-check" href="/oss/deepagents/frontend/todo-list">
+    用从 agent state 同步的实时 todo 列表跟踪 agent 进度。
   </Card>
   <Card title="Sandbox" icon="code" href="/oss/deepagents/frontend/sandbox">
-    构建由 sandbox 支撑的类 IDE UI，包括 file browser、code viewer 和 diff panel。
+    构建由 sandbox 支撑的类 IDE UI，包括文件浏览器、代码查看器和 diff 面板。
   </Card>
 </CardGroup>
 
-## Related patterns
+## 相关模式 {#related-patterns}
 
 [LangChain frontend patterns](/oss/langchain/frontend/overview) 中的 markdown messages、tool calling 和 human-in-the-loop 等模式，也都适用于 deep agents。Deep Agents 构建在同一个 LangGraph runtime 之上，因此 `useStream` 提供相同的核心 API。

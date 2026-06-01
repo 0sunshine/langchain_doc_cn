@@ -1,12 +1,12 @@
 ---
-title: Configuration
-sidebarTitle: Configuration
+title: 配置
+sidebarTitle: 配置
 description: 使用 config.toml、hooks 和 MCP servers 配置 Deep Agents Code
 ---
 
 Deep Agents Code 会把 configuration 存储在 `~/.deepagents/` directory 中。主要 config files 包括：
 
-| File | Format | Purpose |
+| 文件 | 格式 | 用途 |
 |------|--------|---------|
 | `config.toml` | TOML | Model defaults、provider settings、constructor params、profile overrides、themes、update settings、MCP trust store |
 | `.env` | Dotenv | Global API keys 和 secrets |
@@ -17,7 +17,7 @@ Deep Agents Code 会把 configuration 存储在 `~/.deepagents/` directory 中�
     `~/.deepagents/.state/` 下的 files 保存 per-machine Deep Agents Code state，并由系统自动管理。
 </Note>
 
-## Provider credentials
+## Provider 凭证 {#provider-credentials}
 
 对于每个 provider，Deep Agents Code 会按顺序检查两个 credential sources：
 
@@ -26,7 +26,7 @@ Deep Agents Code 会把 configuration 存储在 `~/.deepagents/` directory 中�
 
 同一个 provider 同时存在 stored key 和 env-var key 时，stored key 总是优先。
 
-### Use `/auth` (recommended)
+### 使用 `/auth`（推荐） {#use-/auth-recommended}
 
 在任意 session 中打开 credential manager：
 
@@ -36,7 +36,7 @@ Deep Agents Code 会把 configuration 存储在 `~/.deepagents/` directory 中�
 
 manager 会列出 Deep Agents Code 已知的每个 LLM provider，标记已经有 key 的 providers，并允许你 inline paste、rotate 或 clear credentials。每个 provider 会显示为以下状态之一：
 
-| Label | Meaning |
+| 标签 | 含义 |
 |-------|---------|
 | `credentials set` | 可用 stored key 或 env-var key |
 | `! missing OPENAI_API_KEY` | 指定 env var 未设置且没有 stored key；选择该行即可粘贴 key |
@@ -52,7 +52,7 @@ manager 会列出 Deep Agents Code 已知的每个 LLM provider，标记已经�
 
 `/auth` 只管理 **LLM provider** credentials。`TAVILY_API_KEY`（web search）和 `LANGSMITH_API_KEY`（tracing）等 tool credentials 会从 environment 读取。请[在 `~/.deepagents/.env` 或 shell 中设置它们](#environment-variables)。
 
-### Environment variables (CI and headless)
+### 环境变量（CI 和 headless） {#environment-variables-ci-and-headless}
 
 对于 non-interactive runs、CI/CD pipelines 或任何无法使用 TUI 的地方，请 export provider 的 env var，或写入 `~/.deepagents/.env`：
 
@@ -63,11 +63,11 @@ export OPENAI_API_KEY="sk-..."
 
 loading order、`DEEPAGENTS_CODE_` prefix 和 per-project overrides 请参阅下面的 [Environment variables](#environment-variables)。
 
-## Environment variables
+## 环境变量 {#environment-variables}
 
 Deep Agents Code 会从 dotenv files 加载 environment variables，因此你不需要在 shell profile 中 `export` API keys，也不需要在各 projects 中重复 `.env` files。
 
-### Loading order and precedence
+### 加载顺序和优先级 {#loading-order-and-precedence}
 
 startup 时会加载两个 `.env` files：
 
@@ -76,7 +76,7 @@ startup 时会加载两个 `.env` files：
 
 实际 precedence 是：**shell environment > project `.env` > global `.env`**。shell 中已经设置的 values 永远不会被覆盖，包括 `/reload` 时也是如此。
 
-### `DEEPAGENTS_CODE_` prefix
+### `DEEPAGENTS_CODE_` 前缀 {#deepagents_code_-prefix}
 
 所有 Deep Agents Code-specific environment variables 都使用 `DEEPAGENTS_CODE_` prefix（例如 `DEEPAGENTS_CODE_AUTO_UPDATE`、`DEEPAGENTS_CODE_DEBUG`）。完整列表请参阅 [environment variable reference](#environment-variable-reference)。
 
@@ -92,7 +92,7 @@ DEEPAGENTS_CODE_ANTHROPIC_API_KEY=
 
 在 `/reload` 时，Deep Agents Code 会重新读取 `.env` files 并拾取 prefixed values，因此你可以不重启就 rotate keys。
 
-### Example
+### 示例 {#example}
 
 把 API keys 一次性存到 `~/.deepagents/.env`：
 
@@ -109,16 +109,16 @@ DEEPAGENTS_CODE_OPENAI_API_KEY=sk-cli-only-...
 
 需要 per-project override 时，在 project directory 中放置 `.env`。
 
-### Enable web search with Tavily
+### 启用 Tavily web search {#enable-web-search-with-tavily}
 
 built-in `web_search` tool 使用 [Tavily](https://tavily.com)。在你提供 key 之前，Deep Agents Code 会在 startup 时显示 "Web search disabled - `TAVILY_API_KEY` is not set" notification。与 model provider keys 不同，Tavily **不** 由 `/auth` 管理，而是直接从 environment 读取。
 
 <Steps>
-    <Step title="Get a key">
+    <Step title="获取 key">
         在 [tavily.com](https://tavily.com) 注册并复制 key（它以 `tvly-` 开头）。free tier 足以满足大多数 Deep Agents Code 用法。
     </Step>
 
-    <Step title="Add it to your environment">
+    <Step title="添加到你的环境">
         将 key 添加到 `~/.deepagents/.env`，让每个 session 都能拾取：
 
         ```bash title="~/.deepagents/.env"
@@ -134,18 +134,18 @@ built-in `web_search` tool 使用 [Tavily](https://tavily.com)。在你提供 ke
         Shell exports 的优先级高于 `.env` values（参见 [Loading order and precedence](#loading-order-and-precedence)）。如果只想把 key scoped 到 Deep Agents Code，而不影响其他读取 `TAVILY_API_KEY` 的 tools，请使用 [`DEEPAGENTS_CODE_` prefix](#deepagents_code_-prefix)：`DEEPAGENTS_CODE_TAVILY_API_KEY=tvly-...`。
     </Step>
 
-    <Step title="Reload or restart">
+    <Step title="重新加载或重启">
         在 existing session 中运行 `/reload` 重新读取 `.env` files。下一次 launch 时，"Web search disabled" notification 会消失，agent 就可以调用 `web_search`。
     </Step>
 </Steps>
 
 ---
 
-## Config file
+## 配置文件 {#config-file}
 
 `~/.deepagents/config.toml` 可用于自定义 model providers、设置 defaults，以及向 model constructors 传递额外 parameters。
 
-### Default and recent model
+### 默认和最近使用的 model {#default-and-recent-model}
 
 ```toml
 [models]
@@ -155,7 +155,7 @@ recent = "google_genai:gemini-3.5-flash"   # last /model switch (written automat
 
 `[models].default` 总是优先于 `[models].recent`。`/model` command 只会写入 `[models].recent`，因此你配置的 default 不会被 mid-session switches 覆盖。要移除 default，请使用 `/model --default --clear`，或从 config file 删除 `default` key。
 
-### Default and recent agent
+### 默认和最近使用的 agent {#default-and-recent-agent}
 
 ```toml
 [agents]
@@ -167,7 +167,7 @@ recent = "frontend-dev"  # last /agents switch (written automatically)
 
 显式 `-a`/`--agent` 总是覆盖两者，`-r`/`--resume` 会绕过两者，以恢复 thread 原始 agent。相关 flags 请参阅 [Command reference](/oss/deepagents/code/overview#command-reference)。
 
-### Provider configuration
+### Provider 配置 {#provider-configuration}
 
 每个 provider 都是 `[models.providers]` 下的 TOML table：
 
@@ -223,7 +223,7 @@ Providers 支持以下 configuration options：
     控制该 provider 是否出现在 `/model` selector 中。设置为 `false` 可以隐藏从 installed package 自动发现的 provider（例如你不想让它挤占 switcher 的 transitive dependency）。disabled provider 仍可通过 `/model provider:model` 或 `--model` 直接使用。
 </ResponseField>
 
-### Model constructor params
+### Model constructor 参数 {#model-constructor-params}
 
 任何 provider 都可以使用 `params` table 向 model constructor 传递额外 arguments：
 
@@ -233,7 +233,7 @@ temperature = 0
 num_ctx = 8192
 ```
 
-#### Per-model overrides
+#### 按 model 覆盖 {#per-model-overrides}
 
 如果某个特定 model 需要不同 params，请在 `params` 下添加 model-keyed sub-table，这样不用复制整个 provider config 就能覆盖 individual values：
 
@@ -261,7 +261,7 @@ merge 是 shallow 的：model sub-table 中出现的 key 会替换 provider-leve
     如果只是做一次性调整，不想编辑 `config.toml`，可以在 launch 时通过 `--model-params` 传入 JSON object，或在 session 中用 `/model` 设置。CLI flags 的优先级高于 config file。语法和 provider-specific examples 请参阅 providers 页面上的 [Model parameters](/oss/deepagents/code/providers#model-parameters)。
 </Tip>
 
-### Profile overrides (Advanced)
+### Profile overrides（高级） {#profile-overrides-advanced}
 
 覆盖 model runtime profile 中的字段，以改变 Deep Agents Code 对 model capabilities 的理解。最常见用途是降低 `max_input_tokens`，更早触发 auto-summarization，这对 testing 或限制 context usage 很有用：
 
@@ -284,7 +284,7 @@ max_input_tokens = 8192
 
 Profile overrides 会在 model 创建后 merge 到 model profile 中。任何读取 profile 的功能，例如 status bar 中的 context-limit display、auto-summarization thresholds、capability checks，都会看到被覆盖后的 values。
 
-#### CLI profile overrides with `--profile-override` (Advanced)
+#### 使用 `--profile-override` 的 CLI profile overrides（高级） {#cli-profile-overrides-with-profile-override-advanced}
 
 如果想在 runtime 覆盖 model profile fields，而不编辑 config file，请通过 `--profile-override` 传入 JSON object：
 
@@ -302,7 +302,7 @@ dcode -n "Summarize this repo" --profile-override '{"max_input_tokens": 4096}'
 
 `--profile-override` values 会在 mid-session `/model` hot-swaps 之间保持；切换 models 后会把 override 重新应用到新 model。
 
-### Custom base URL
+### 自定义 base URL {#custom-base-url}
 
 一些 provider packages 接受 `base_url` 来覆盖 default endpoint。例如，`langchain-ollama` 通过 underlying `ollama` client 默认使用 `http://localhost:11434`。要指向其他地址，请在 configuration 中设置 `base_url`：
 
@@ -313,7 +313,7 @@ base_url = "http://your-host-here:port"
 
 compatibility information 和其他 considerations 请参阅 provider reference documentation。
 
-### Compatible APIs
+### 兼容 APIs {#compatible-apis}
 
 对于暴露 OpenAI 或 Anthropic wire-compatible APIs 的 providers，你可以使用现有的 `langchain-openai` 或 `langchain-anthropic` packages，并把 `base_url` 指向 provider endpoint：
 
@@ -344,7 +344,7 @@ models = ["my-model"]
     ```
 </Warning>
 
-### Adding models to the interactive switcher
+### 向交互式 switcher 添加 models {#adding-models-to-the-interactive-switcher}
 
 一些 providers（例如 `langchain-ollama`）不会捆绑 model profile data（完整列表请参阅 [Provider reference](/oss/deepagents/code/providers#provider-reference)）。这种情况下，interactive `/model` switcher 不会列出该 provider 的 models。你可以在 config file 中为 provider 定义 `models` list 来补齐：
 
@@ -365,7 +365,7 @@ models = ["llama3", "mistral", "codellama"]
     当安装了 `langchain-ollama` 且 daemon 可访问时，Deep Agents Code 会 auto-discover 本地 pulled models，并把它们 merge 到 switcher 中，不需要 `models` list。pull 新 models 后运行 `/reload` 刷新，或设置 `DEEPAGENTS_CODE_OLLAMA_DISCOVERY=0` 退出该行为。
 </Note>
 
-### Arbitrary providers
+### 任意 providers {#arbitrary-providers}
 
 你可以通过 `class_path` 使用任何 [LangChain `BaseChatModel`](https://reference.langchain.com/python/langchain_core/language_models/#langchain_core.language_models.BaseChatModel) subclass。Deep Agents Code 会直接 import 并实例化 class，不需要 built-in provider package。
 
@@ -427,7 +427,7 @@ provider package 也可以在 `<package>.data._profiles` 中通过 `_PROFILES` d
 
 ---
 
-## Skills extra allowed directories
+## Skills 额外允许的目录 {#skills-extra-allowed-directories}
 
 默认情况下，当 Deep Agents Code 加载 skills 时，会验证 resolved skill file path 是否位于 standard [skill directories](/oss/deepagents/code/data-locations#skills) 之一中。这可以防止 skill directories 内的 symlinks 读取这些 roots 之外的任意 files。
 
@@ -455,7 +455,7 @@ export DEEPAGENTS_CODE_EXTRA_SKILLS_DIRS="~/shared-skills:/opt/team-skills"
 
 ---
 
-## Themes
+## 主题 {#themes}
 
 使用 `/theme` 打开 interactive theme selector。浏览列表即可实时 preview themes，按 `Enter` 会把你的选择持久化到 `config.toml`。
 
@@ -466,7 +466,7 @@ Deep Agents Code 随附很多 built-in themes。默认 theme 是 `langchain`，�
 theme = "langchain-dark"
 ```
 
-### User-defined themes
+### 用户定义 themes {#user-defined-themes}
 
 在 `config.toml` 的 `[themes.<name>]` sections 下定义 custom themes。每个 section 都需要 `label`（str）。如果省略，`dark`（bool）默认为 `false`；dark themes 请设置为 `true`。所有 color fields 都是 optional；省略的 fields 会根据 `dark` flag fallback 到 built-in dark 或 light palette。
 
@@ -486,7 +486,7 @@ background = "#CAF0F8"
 
 User-defined themes 会与 built-in themes 一起出现在 `/theme` selector 中。
 
-### Override built-in theme colors
+### 覆盖内置 theme colors {#override-built-in-theme-colors}
 
 如果只想微调 built-in theme colors，而不是创建新 theme，请使用 `[themes.<builtin-name>]` section。只会读取 color fields；`label` 和 `dark` 会从 built-in 继承：
 
@@ -499,7 +499,7 @@ primary = "#FF5500"
 
 `[themes.*]` sections 的 changes 会在 `/reload` 后生效。
 
-### Map themes to terminals
+### 将 themes 映射到 terminals {#map-themes-to-terminals}
 
 如果你在不同 color schemes 的 terminals 之间切换（例如 dark iTerm 和 light Apple Terminal），可以在 `[ui.terminal_themes]` 下为每个 terminal 映射一个 theme。Deep Agents Code 会匹配 shell 的 `TERM_PROGRAM`，并自动应用 mapped theme：
 
@@ -511,7 +511,7 @@ primary = "#FF5500"
 
 在 `/theme` picker 中按 `T`，可以为当前 terminal 保存 highlighted theme；也可以运行 `echo $TERM_PROGRAM` 找到 terminal identifier，并手动添加。
 
-<Accordion title="Advanced: picker shortcuts, resolution order, terminal identifiers">
+<Accordion title="高级：picker shortcuts、解析顺序和 terminal identifiers" id="advanced-picker-shortcuts-resolution-order-terminal-identifiers">
     #### Picker shortcuts
 
     在 `/theme` selector 中：
@@ -519,7 +519,7 @@ primary = "#FF5500"
     - `N` 在 display labels 和 canonical registry keys 之间切换；这些 keys 是 `[ui] theme` 和 `[ui.terminal_themes]` 接受的值。
     - `T` 会把 highlighted theme 保存到当前 `TERM_PROGRAM` 的 `[ui.terminal_themes]` 中。mapped theme 会在 picker 中标记为 `(default)`。
 
-    #### Common `TERM_PROGRAM` values
+    #### 常见 `TERM_PROGRAM` 值
 
     Keys 会与 environment variable 做逐字匹配；当它们包含 dots 或 special characters 时，请在 TOML 中加引号。
 
@@ -531,7 +531,7 @@ primary = "#FF5500"
     | VS Code integrated terminal | `vscode` |
     | Ghostty | `ghostty` |
 
-    #### Resolution order
+    #### 解析顺序
 
     Deep Agents Code 每次 launch 都会按以下 precedence 解析 theme：
 
@@ -543,18 +543,18 @@ primary = "#FF5500"
 
 ---
 
-## Auto-update
+## 自动更新 {#auto-update}
 
 Deep Agents Code 可以自动检查并安装 updates。
 
 <Tabs>
-    <Tab title="Config file">
+    <Tab title="配置文件" id="auto-update-config-file">
         ```toml
         [update]
         auto_update = true
         ```
     </Tab>
-    <Tab title="Environment variable">
+    <Tab title="环境变量" id="environment-variable">
         ```bash
         export DEEPAGENTS_CODE_AUTO_UPDATE=1
         ```
@@ -573,7 +573,7 @@ environment variable 的优先级高于 config file。
 
 ---
 
-## Managed deployments
+## 托管 deployments {#managed-deployments}
 
 [install script](https://github.com/langchain-ai/deepagents/blob/main/libs/cli/scripts/install.sh) 支持以 root 身份运行，面向 Kandji、Jamf 等 macOS MDM tools，这些 tools 通常会在 minimal root environment 中执行 scripts。
 
@@ -588,7 +588,7 @@ Non-root installs 不受影响：当不是 root 运行时，所有 root-specific
 
 ---
 
-## Environment variable reference
+## 环境变量参考 {#environment-variable-reference}
 
 所有 Deep Agents Code-specific environment variables 都使用 `DEEPAGENTS_CODE_` prefix。该 prefix 如何作为 third-party credentials 的 override，请参阅 [`DEEPAGENTS_CODE_` prefix](#deepagents_code_-prefix)。
 
@@ -626,7 +626,7 @@ Non-root installs 不受影响：当不是 root 运行时，所有 root-specific
 
 ---
 
-## External editor
+## 外部 editor {#external-editor}
 
 按 `Ctrl+X` 或输入 `/editor`，可以在 external editor 中编写 prompts。Deep Agents Code 会先检查 `$VISUAL`，再检查 `$EDITOR`，最后 fallback 到 `vi`（macOS/Linux）或 `notepad`（Windows）。GUI editors（VS Code、Cursor、Zed、Sublime Text、Windsurf）会自动收到 `--wait` flag，这样 Deep Agents Code 会阻塞到你关闭 file。
 
@@ -644,7 +644,7 @@ Hooks 让 external programs 可以响应 Deep Agents Code lifecycle events。在
 
 Hooks 会在 background thread 中 fire-and-forget 运行；它们不会阻塞 Deep Agents Code，失败也只会被 logged，不会中断你的 session。
 
-### Setup
+### 设置 {#setup}
 
 创建 `~/.deepagents/hooks.json`：
 
@@ -661,7 +661,7 @@ Hooks 会在 background thread 中 fire-and-forget 运行；它们不会阻塞 D
 
 现在每次 session 开始或结束时，Deep Agents Code 都会把 event payload 追加到 `~/deepagents-events.log`。
 
-### Hook configuration
+### Hook 配置 {#hook-configuration}
 
 config file 包含一个 `hooks` array。每个 entry 包含：
 
@@ -689,7 +689,7 @@ config file 包含一个 `hooks` array。每个 entry 包含：
 
 上面的第二个 hook 没有 `events` filter，因此会接收 Deep Agents Code emits 的每个 event。
 
-### Payload format
+### Payload 格式 {#payload-format}
 
 每个 hook command 会在 stdin 上收到一个 JSON object，其中包含 `"event"` key 和 event-specific fields：
 
@@ -700,7 +700,7 @@ config file 包含一个 `hooks` array。每个 entry 包含：
 }
 ```
 
-### Events reference
+### Events 参考 {#events-reference}
 
 #### `session.start`
 
@@ -760,7 +760,7 @@ Deep Agents Code compact（summarize）conversation context 前触发。
 
 没有 additional fields。
 
-### Execution model
+### 执行模型 {#execution-model}
 
 - **Background thread**：Hook subprocesses 会通过 `asyncio.to_thread` 在线程中运行，因此 main event loop 永远不会被阻塞。
 - **Concurrent dispatch**：当多个 hooks 匹配同一 event 时，它们会在线程池中并发运行。
@@ -769,9 +769,9 @@ Deep Agents Code compact（summarize）conversation context 前触发。
 - **Lazy loading**：config file 会在第一次 event dispatch 时读取一次，并在 session 剩余期间缓存。
 - **No shell expansion**：Commands 会直接执行（不会通过 shell）。如果需要 pipes 或 variable expansion 等 shell features，请包在 `["bash", "-c", "..."]` 中。
 
-### Hook examples
+### Hook 示例 {#hook-examples}
 
-<Accordion title="Log all events to a file">
+<Accordion title="将所有 events 记录到文件" id="log-all-events-to-a-file">
 ```json
 {
   "hooks": [
@@ -784,7 +784,7 @@ Deep Agents Code compact（summarize）conversation context 前触发。
 ```
 </Accordion>
 
-<Accordion title="Desktop notification on task completion (macOS)">
+<Accordion title="任务完成时发送桌面通知（macOS）" id="desktop-notification-on-task-completion-macos">
 ```json
 {
   "hooks": [
@@ -828,7 +828,7 @@ elif event == "permission.request":
 ```
 </Accordion>
 
-### Security considerations
+### 安全注意事项 {#security-considerations}
 
 Hooks 遵循与 Git hooks 或 shell aliases 相同的 trust model：任何能写入 `~/.deepagents/hooks.json` 的 user 都可以执行 arbitrary commands。这是 intentional design：
 
